@@ -203,6 +203,15 @@
   #glosLista{max-height:52vh}
   #glosLista p{font-size:13.5px;line-height:1.5;margin:0 0 10px}
   #glosLista b{color:var(--blu-chiaro)}
+  /* ---- copertina + mappa dei 28 Mac (schermata iniziale) ---- */
+  .cover{display:block;width:100%;max-height:160px;object-fit:cover;border-radius:12px;
+    margin:2px 0 10px;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  .mac-mappa{display:grid;grid-template-columns:repeat(7,30px);gap:4px;justify-content:center;margin:0 auto 12px}
+  .mac-mappa .mac-q{width:30px;height:30px;padding:0;margin:0;min-height:0;line-height:1;box-shadow:none;
+    border-radius:5px;border:2px solid #888;background:rgba(255,255,255,.06);color:#fff;
+    font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .mac-mappa .mac-q:hover{background:rgba(255,255,255,.16);transform:none}
+  .mac-mappa .mac-q.sel{background:rgba(255,255,255,.30);box-shadow:0 0 0 2px rgba(255,255,255,.6) inset}
   /* ---- logo sacrafamiglia.education ---- */
   .wm{font-size:20px;letter-spacing:-.3px;color:#fff;line-height:1;white-space:nowrap}
   .wm-r{font-weight:400}.wm-b{font-weight:700}.wm-i{font-weight:700;font-style:italic}
@@ -247,19 +256,8 @@
 
 <div class="overlay" id="consegna">
   <div class="box">
-    <div class="brandlogo">
-<span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
-    </div>
-    <h2>Escape <span>Lab</span></h2>
-    <p>La campanella &egrave; suonata ma la porta del laboratorio &egrave; bloccata. Nei computer dell&rsquo;aula
-       sono nascosti <b>12 enigmi di cittadinanza digitale</b>: risolvili tutti, di Mac in Mac,
-       per sbloccare la serratura e uscire nel corridoio.</p>
-    <p>Ogni enigma chiede una <b>parola-chiave</b>. Se &egrave; giusta ricevi l&rsquo;<b>indizio</b> per
-       il Mac successivo: a volte un numero da calcolare, a volte una posizione nell&rsquo;aula.</p>
-    <p><b>Parti dal TUO computer.</b> Scrivi qui il numero della tua postazione: il primo enigma &egrave; l&igrave;.
-       L&rsquo;ultimo enigma sar&agrave; sulla <b>cattedra del prof. Andrea</b>, e apre la porta.</p>
-    <input id="macStud" type="number" min="1" max="28" placeholder="Il numero del tuo Mac (1&ndash;28)" autocomplete="off">
-    <p style="font-size:12px;opacity:.6;margin-top:4px">Se lo lasci vuoto, la partenza &egrave; casuale.</p>
+    <img class="cover" src="escape.jpg" alt="Escape Lab">
+    <div class="mac-mappa" id="macMappa" title="I 28 computer del laboratorio"></div>
     <button id="btnInizia">Inizia la fuga</button>
   </div>
 </div>
@@ -1836,8 +1834,7 @@ const INTRO_LOOK=new THREE.Vector3(-2.35,1.15,0.15);   // guarda la cattedra att
 // ---- avvio / vittoria ----
 function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al termine
   $('consegna').style.display='none';
-  const nMac=parseInt(($('macStud')&&$('macStud').value)||'',10);
-  costruisciPartita(nMac);      // parte dal Mac dello studente (o casuale); domande e percorso sempre diversi
+  costruisciPartita(macScelto); // parte dal Mac scelto (o casuale se non selezionato)
   G.intro=true; G.introT=0; G.gioco=false; G.finita=false; G.tappa=0;
   $('btnSalta').style.display='block';
   avviaMusica();                   // il clic su "Inizia" sblocca l'autoplay della musica
@@ -1885,6 +1882,20 @@ addEventListener('mousemove',e=>{
 
 // pulsanti overlay
 $('btnInizia').addEventListener('click',iniziaGioco);
+// mappa dei 28 Mac nella schermata iniziale: quadratini colorati per fila, cliccabili per scegliere la propria postazione
+let macScelto=0;
+(function(){
+  const cont=$('macMappa'); if(!cont) return;
+  const bordo=n=> n<=7?'#2e9bd6' : n<=14?'#c0392b' : n<=21?'#2f8a5b' : '#e8b62a';   // azzurro · rosso · verde · giallo
+  const quad=[];
+  for(let n=1;n<=28;n++){
+    const b=document.createElement('button');
+    b.className='mac-q'; b.type='button'; b.textContent=n; b.style.borderColor=bordo(n);
+    b.title='Mac '+n;
+    b.addEventListener('click',()=>{ macScelto=n; quad.forEach((q,i)=>q.classList.toggle('sel', i+1===n)); });
+    cont.appendChild(b); quad.push(b);
+  }
+})();
 $('btnSalta').addEventListener('click',avviaGameplay);
 
 // ---- MUSICA di sottofondo (YouTube IFrame API) ----
