@@ -276,6 +276,27 @@
     opacity:.9;pointer-events:none}
   #brandmini svg{width:26px;height:26px;flex:none}
   #brandmini .wm{font-size:14px}
+  /* ---- enigma tastiera (aula di musica) ---- */
+  #tastieraBox{background:linear-gradient(180deg,#0f1830,#0a1120);border:1px solid rgba(120,160,235,.4);
+    border-radius:18px;padding:22px 26px;max-width:min(680px,92vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  #tastieraBox h3{color:#8fc0ff;font-size:21px;margin-bottom:6px}
+  #tastieraBox #tkTesto{color:rgba(220,230,250,.85);font-size:14px;margin-bottom:14px}
+  .tk-riga{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0}
+  .tk-lab{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8fb0e6;min-width:78px;text-align:right}
+  #tkTarget,#tkStato{display:flex;gap:5px;flex-wrap:wrap;min-height:28px;justify-content:center}
+  #tkTarget span,#tkStato span{display:inline-block;padding:3px 9px;border-radius:7px;font-weight:800;font-size:13px}
+  #tkTarget span{background:rgba(90,145,235,.28);color:#dbe7ff}
+  #tkStato span{background:rgba(143,192,255,.55);color:#08122a}
+  #tkKeys{display:flex;gap:4px;justify-content:center;margin:16px 0 6px}
+  #tkKeys .tk-key{width:46px;height:120px;border:1px solid #b9c2d4;border-radius:0 0 7px 7px;background:linear-gradient(180deg,#fbfcff,#e6ebf5)!important;
+    color:#20304e!important;font-weight:800;font-size:13px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;cursor:pointer;transition:transform .05s,background .1s}
+  #tkKeys .tk-key:hover{background:linear-gradient(180deg,#eaf1ff,#cdd8ee)!important}
+  #tkKeys .tk-key:active,#tkKeys .tk-key.on{background:linear-gradient(180deg,#8fc0ff,#5a91e6)!important;color:#fff!important;transform:translateY(2px)}
+  #tkFeedback{min-height:22px;font-size:14px;font-weight:700;margin-top:8px}
+  #tkFeedback.ok{color:#7ddc9a}#tkFeedback.ko{color:#ffcf6b}
+  #tkAzioni{display:flex;gap:10px;justify-content:center;margin-top:12px}
+  #tkAzioni button{padding:9px 20px;border-radius:22px;border:1px solid rgba(120,160,235,.5);background:rgba(30,60,140,.5);color:#fff;font-weight:700;cursor:pointer}
+  #tkAzioni button:hover{background:var(--arancio,#e8721c);border-color:transparent}
 </style>
 </head>
 <body>
@@ -383,6 +404,17 @@
   </div>
 </div>
 
+<div class="overlay" id="tastieraOv" style="display:none">
+  <div id="tastieraBox">
+    <h3 id="tkTitolo">Il pianoforte del maniero</h3>
+    <p id="tkTesto">Suona la melodia scritta sulla pergamena: clicca i tasti nell&rsquo;ordine giusto.</p>
+    <div class="tk-riga"><span class="tk-lab">Da suonare</span><div id="tkTarget"></div></div>
+    <div class="tk-riga"><span class="tk-lab">Suonato</span><div id="tkStato"></div></div>
+    <div id="tkKeys"></div>
+    <div id="tkFeedback"></div>
+    <div id="tkAzioni"><button id="tkCanc" type="button">Ricomincia</button><button id="tkChiudi" type="button">Esci</button></div>
+  </div>
+</div>
 <div class="overlay" id="galassiaMac" style="display:none">
   <canvas id="galMacBg"></canvas>
   <div id="galMacHead">La <span>galassia delle parole</span> &middot; cittadinanza digitale</div>
@@ -498,7 +530,7 @@ function texSchermoViola(){
   g.fillStyle='#fff'; g.font='bold 24px Arial'; g.fillText('Web App Didattiche',106,90);
   g.font='11px Arial'; g.fillStyle='rgba(255,255,255,.92)'; g.fillText('Andrea Cerioli · Animatore Digitale',108,108);
   // statistiche
-  const stats=[['161','web app'],['20','riservata'],['6','genitori'],['26 lug','aggiorn.']];
+  const stats=[['161','web app'],['20','riservata'],['6','genitori']];
   stats.forEach((s,i)=>{ const x=112+i*94;
     g.fillStyle='rgba(255,255,255,.95)'; g.font='bold 16px Arial'; g.fillText(s[0],x,140);
     g.fillStyle='rgba(255,255,255,.7)'; g.font='7px Arial'; g.fillText(s[1],x,148); });
@@ -797,7 +829,11 @@ const matLegno=new THREE.MeshStandardMaterial({map:legnoTex,roughness:.55});
   const soff=new THREE.Mesh(new THREE.PlaneGeometry(16,6.7),matSoffitto);
   soff.rotation.x=Math.PI/2; soff.position.y=3.0; scene.add(soff);
   const mkParete=(w,h,mat)=>new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
-  const pDx=mkParete(16,3.0,matBianco); pDx.position.set(0,1.5,-3.35); scene.add(pDx);           // parete porte bianca
+  // parete porte (z=-3.35) a SEGMENTI: lascia un varco sulla porta della fuga (x=-0.5) così, aperta la porta,
+  // si vede davvero il corridoio dietro. DoubleSide: visibile anche dal lato corridoio.
+  const matMuroDS=new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:.95,side:THREE.DoubleSide});
+  { const segSx=mkParete(7.25,3.0,matMuroDS); segSx.position.set(-4.375,1.5,-3.35); scene.add(segSx);   // da x=-8 a x=-1.25
+    const segDx=mkParete(7.75,3.0,matMuroDS); segDx.position.set(4.125,1.5,-3.35); scene.add(segDx); }  // da x=0.25 a x=8 (include la porta 6.5, che resta chiusa)
   // (le uniche pareti arancioni sono le due corte di fondo)
   const pFin=mkParete(16,3.0,matBianco); pFin.position.set(0,1.5,3.35); pFin.rotation.y=Math.PI; scene.add(pFin);
   const pFondo=mkParete(6.7,3.0,matArancio); pFondo.position.set(8,1.5,0); pFondo.rotation.y=-Math.PI/2; scene.add(pFondo);
@@ -1297,11 +1333,10 @@ const tasti={};
 const canvasEl=document.getElementById('scena');
 const clock=new THREE.Clock();
 const raycaster=new THREE.Raycaster();
-const G={ gioco:false, tappa:0, mirato:null, overlay:false, finita:false,
+const G={ gioco:false, tappa:0, mirato:null, overlay:false, finita:false, uscito:false,
           inv:{cifrario:false, chiave:false}, serraturaPronta:false };
 
-const PORTA_X=-0.5;                    // la porta della fuga
-const CORR_HW=0.65;                    // semi-larghezza del passaggio/corridoio
+const PORTA_X=-0.5;                    // la porta della fuga (verso il corridoio)
 
 // ---- POOL di domande di cittadinanza digitale (più di 12): ogni partita ne pesca 12 ----
 // La prima chiave di ogni domanda è la parola-chiave "primaria" (usata anche per l'enigma cifrato).
@@ -1577,9 +1612,83 @@ function usaMirato(){
   const m=G.mirato; if(!m) return;
   if(m.tipo==='pickup') raccogli(m.pickup,m.mesh);
   else if(m.tipo==='porta') usaPorta();
+  else if(m.tipo==='quiz') apriQuiz(m);
+  else if(m.tipo==='tastiera') apriTastiera();
   else if(m.tipo==='lego') attivaMatrix();
   else if(m.tipo==='macbook') apriGalassiaMac();
   else if(m.macNum!=null) accediMac(m.macNum);
+}
+// ---- ENIGMI TEMATICI delle aule (musica / scienze): riusano l'overlay dell'enigma ----
+// ---- ENIGMA TASTIERA (aula di musica): suona la melodia sulla tastiera, con audio Web Audio ----
+let audioCtx=null, tkSeq=[], tkBloc=false;
+const NOTE_FREQ={do:261.63,re:293.66,mi:329.63,fa:349.23,sol:392.0,la:440.0,si:493.88};
+function suonaNota(n){
+  try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain(), t=audioCtx.currentTime;
+    o.type='triangle'; o.frequency.value=NOTE_FREQ[n]||440;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.28,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.57);
+  }catch(e){}
+}
+function apriTastiera(){
+  if(G.overlay) return;
+  G.overlay=true; tkBloc=false; if(document.pointerLockElement) document.exitPointerLock();
+  tkSeq=[];
+  $('tkTarget').innerHTML=MELODIA.seq.map(n=>'<span>'+n.toUpperCase()+'</span>').join('');
+  $('tkStato').innerHTML=''; $('tkFeedback').textContent=''; $('tkFeedback').className='';
+  $('tastieraOv').style.display='flex';
+}
+function chiudiTastiera(){ $('tastieraOv').style.display='none'; G.overlay=false; if(G.gioco&&!G.finita) canvasEl.requestPointerLock(); }
+function premiTasto(n){
+  if(tkBloc) return;
+  suonaNota(n); tkSeq.push(n);
+  $('tkStato').innerHTML=tkSeq.map(x=>'<span>'+x.toUpperCase()+'</span>').join('');
+  const i=tkSeq.length-1;
+  if(tkSeq[i]!==MELODIA.seq[i]){
+    tkBloc=true; $('tkFeedback').textContent='Stecca! Riascolta la melodia e ricomincia.'; $('tkFeedback').className='ko';
+    setTimeout(()=>{ tkSeq=[]; $('tkStato').innerHTML=''; $('tkFeedback').textContent=''; $('tkFeedback').className=''; tkBloc=false; },1000);
+    return;
+  }
+  if(tkSeq.length===MELODIA.seq.length){
+    tkBloc=true; $('tkFeedback').textContent=MELODIA.esito; $('tkFeedback').className='ok';
+    setTimeout(()=>{ chiudiTastiera(); splash('Enigma di musica risolto!','#8fc0ff'); },1500);
+  }
+}
+(function(){
+  const cont=$('tkKeys'); if(!cont) return;
+  ['do','re','mi','fa','sol','la','si'].forEach(n=>{ const b=document.createElement('button');
+    b.type='button'; b.className='tk-key'; b.textContent=n.toUpperCase(); b.addEventListener('click',()=>premiTasto(n)); cont.appendChild(b); });
+  $('tkCanc').addEventListener('click',()=>{ tkSeq=[]; tkBloc=false; $('tkStato').innerHTML=''; $('tkFeedback').textContent=''; $('tkFeedback').className=''; });
+  $('tkChiudi').addEventListener('click',chiudiTastiera);
+})();
+let quizCorrente=null;
+function apriQuiz(m){
+  if(G.overlay) return;
+  const q=m.quiz; quizCorrente=q; G.overlay=true;
+  if(document.pointerLockElement) document.exitPointerLock();
+  $('enCifrario').style.display='none';
+  $('enTesto').textContent=q.testo;
+  $('enInput').value=''; $('enFeedback').textContent='';
+  $('enEsito').style.display='none'; $('enForm').style.display='block'; $('btnContinua').style.display='none';
+  $('enigma').classList.remove('pericolo'); $('enDecoy').style.display='none'; $('enTema').style.display='';
+  document.querySelector('#enBox .dive-hint').textContent=m.nome+'…';
+  $('enTema').textContent=q.tema;
+  $('enigma').style.display='flex';
+  avviaGalassia(false); $('cardsFaint').innerHTML='';
+  const box=$('enBox'); box.style.transition='none'; box.style.transform='scale(.16)'; box.style.opacity='0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ box.style.transition='transform .6s cubic-bezier(.2,.85,.25,1),opacity .55s'; box.style.transform='scale(1)'; box.style.opacity='1'; }));
+  setTimeout(()=>$('enInput').focus(),260);
+}
+function verificaQuiz(){
+  const q=quizCorrente; if(!q) return;
+  if(rispostaOk($('enInput').value,q.chiavi)){
+    $('enForm').style.display='none';
+    $('enEsito').innerHTML='<h3 style="color:#8fc0ff;margin-bottom:8px">Esatto!</h3><p>'+q.esito+'</p>';
+    $('enEsito').style.display='block'; $('btnContinua').style.display='inline-block'; q._done=true;
+  } else {
+    $('enFeedback').textContent='Non è la parola giusta. Indizio: '+q.sugg;
+  }
 }
 // ---- EASTER EGG: la mela del LEGO si apre → Ambiente segreto (Algoritmi & IA) → VISIONE MATRIX ----
 let matrixOn=false, matrixT=0, melaTarget=0, mrRAF=null, mrDrops=[];
@@ -1681,28 +1790,213 @@ function aggiornaInventario(){
   $('invChiave').classList.toggle('has',G.inv.chiave);
 }
 
-// ---- CORRIDOIO oltre la porta della fuga (z < -3.35) ----
+// ============================================================================
+//  OLTRE LA PORTA: corridoio esplorabile + AULA DI MUSICA + LABORATORIO DI SCIENZE
+//  Layout (coord. mondo): lab z[-3.35..3.35]; corridoio z[-6..-3.35]; aule z[-12..-6].
+//  Aula MUSICA a sinistra (x[-9..-1]), lab SCIENZE a destra (x[1..9]).
+// ============================================================================
+// ZONE calpestabili (rettangoli interni) e OSTACOLI (arredi ingombranti): usati dal movimento.
+// Le zone marcate gate:true restano chiuse finché non apri la porta della fuga.
+const ZONE=[
+  {x0:-7.6,x1:7.6, z0:-2.95,z1:3.05},                    // LAB informatica
+  {x0:-1.15,x1:0.15,z0:-3.55,z1:-2.85, gate:true},       // varco porta di fuga
+  {x0:-8.7,x1:8.7, z0:-5.70,z1:-3.35, gate:true},        // CORRIDOIO
+  {x0:-4.65,x1:-3.35,z0:-6.15,z1:-5.55, gate:true},      // varco porta MUSICA
+  {x0:-8.7,x1:-1.35,z0:-11.65,z1:-5.75, gate:true},      // AULA DI MUSICA
+  {x0:3.35,x1:4.65, z0:-6.15,z1:-5.55, gate:true},       // varco porta SCIENZE
+  {x0:1.35,x1:8.7,  z0:-11.65,z1:-5.75, gate:true},      // LAB DI SCIENZE
+];
+const OSTACOLI=[];
+function posValida(x,z){
+  const aperto = PORTA_USCITA && PORTA_USCITA.aperta;
+  for(const r of ZONE){ if(x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1){ if(r.gate&&!aperto) continue; return true; } }
+  return false;
+}
+function bloccato(x,z){ return dentroTavolo(x,z) || OSTACOLI.some(r=>x>r.x0&&x<r.x1&&z>r.z0&&z<r.z1); }
+// quiz tematici delle due aule (oggetti da mirare)
+// --- Enigmi del LABORATORIO DI SCIENZE (programma di scuola secondaria di I grado) ---
+const QUIZ_SCHELETRO ={tema:'Lo scheletro', testo:'Nella coscia si trova l’osso più lungo e robusto del corpo umano. Come si chiama?',
+  chiavi:['femore'], sugg:'Va dall’anca fino al ginocchio: fe-…', esito:'Il femore: l’osso più lungo dello scheletro umano.'};
+const QUIZ_CORPO ={tema:'Il corpo umano', testo:'L’organo che, battendo di continuo, spinge il sangue in tutto il corpo dentro vene e arterie?',
+  chiavi:['cuore'], sugg:'Sta al centro del petto e fa “tu-tum”: è la pompa del sistema circolatorio.', esito:'Il cuore: il motore del sistema circolatorio.'};
+const QUIZ_SOLARE ={tema:'Il Sistema Solare', testo:'Quanti sono oggi i pianeti che orbitano attorno al Sole?',
+  chiavi:['otto','8'], sugg:'Da Mercurio a Nettuno; Plutone dal 2006 non è più contato tra i pianeti.', esito:'Otto pianeti: Mercurio, Venere, Terra, Marte, Giove, Saturno, Urano, Nettuno.'};
+const QUIZ_MICRO ={tema:'Il microscopio', testo:'La più piccola parte vivente di ogni essere, che si osserva sui vetrini al microscopio, è la …?',
+  chiavi:['cellula'], sugg:'È il “mattoncino” di cui sono fatti tutti i viventi.', esito:'La cellula: l’unità fondamentale di ogni organismo vivente.'};
+// --- Enigma dell'AULA DI MUSICA: suonare una melodia sulla tastiera ---
+const MELODIA={ tema:'Aula di Musica', titolo:'Inno alla Gioia — Beethoven',
+  seq:['mi','mi','fa','sol','sol','fa','mi','re'],
+  esito:'Hai suonato l’Inno alla Gioia! Le mura del maniero tremano di note.' };
+// luci da far sfarfallare nel loop: torce del castello (calde) e neon del laboratorio (freddi, guasti)
+const torceLuci=[], neonLuci=[];
 {
-  const matPav=new THREE.MeshStandardMaterial({color:0xcfc9bd,roughness:.95});
-  const matMuro=new THREE.MeshStandardMaterial({color:0xe9e6df,roughness:.95});
-  const pav=new THREE.Mesh(new THREE.PlaneGeometry(1.5,6.2),matPav);
-  pav.rotation.x=-Math.PI/2; pav.position.set(PORTA_X,0,-6.4); scene.add(pav);
-  const soff=new THREE.Mesh(new THREE.PlaneGeometry(1.5,6.2),matMuro);
-  soff.rotation.x=Math.PI/2; soff.position.set(PORTA_X,2.4,-6.4); scene.add(soff);
-  for(const sx of [-1,1]){
-    const mur=new THREE.Mesh(new THREE.PlaneGeometry(6.2,2.4),matMuro);
-    mur.rotation.y=sx>0?-Math.PI/2:Math.PI/2; mur.position.set(PORTA_X+sx*0.75,1.2,-6.4); scene.add(mur);
-  }
-  const fondo=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.4),matMuro);
-  fondo.position.set(PORTA_X,1.2,-9.5); scene.add(fondo);
-  // targa USCITA verde sopra il fondo
-  const uc=mkCanvas(256,96), ug=uc.getContext('2d');
-  ug.fillStyle='#1B6D3F'; ug.fillRect(0,0,256,96);
-  ug.fillStyle='#fff'; ug.font='bold 40px Segoe UI,Arial'; ug.textAlign='center'; ug.textBaseline='middle';
-  ug.fillText('USCITA',128,50);
-  const targa=new THREE.Mesh(new THREE.PlaneGeometry(1.0,.38),new THREE.MeshBasicMaterial({map:tex(uc)}));
-  targa.position.set(PORTA_X,2.0,-9.48); scene.add(targa);
-  const luceCorr=new THREE.PointLight(0xfff0d8,.5,10); luceCorr.position.set(PORTA_X,2.2,-6); scene.add(luceCorr);
+  const matPav =new THREE.MeshStandardMaterial({color:0xcfc9bd,roughness:.95});
+  const matMuro=new THREE.MeshStandardMaterial({color:0xece9e2,roughness:.95,side:THREE.DoubleSide});
+  const mkPav =(w,d,mat,x,z)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat); m.rotation.x=-Math.PI/2; m.position.set(x,0,z); scene.add(m); return m; };
+  const mkSoff=(w,d,x,z)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),matSoffitto); m.rotation.x=Math.PI/2; m.position.set(x,3.0,z); scene.add(m); return m; };
+  const mkMX=(d,x,z,mat)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(d,3.0),mat||matMuro); m.rotation.y=Math.PI/2; m.position.set(x,1.5,z); scene.add(m); return m; }; // muro lungo z (normale ±x)
+  const mkMZ=(w,x,z,mat)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,3.0),mat||matMuro); m.position.set(x,1.5,z); scene.add(m); return m; };               // muro lungo x (normale ±z)
+  const luce=(x,y,z,i,dist,col)=>{ const l=new THREE.PointLight(col||0xfff0d8,i,dist); l.position.set(x,y,z); scene.add(l); return l; };
+  const plafo=(x,z)=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(1.2,.05,.4),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff6e2,emissiveIntensity:.8})); p.position.set(x,2.94,z); scene.add(p); };
+  const insegna=(txt,col,x,z,ry)=>{ const c=mkCanvas(320,80),g=c.getContext('2d'); g.fillStyle=col; rRect(g,0,0,320,80,14); g.fill();
+    g.fillStyle='#fff'; g.font='bold 30px Segoe UI,Arial'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,160,44);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.375),new THREE.MeshBasicMaterial({map:tex(c),transparent:true})); m.position.set(x,2.45,z); if(ry)m.rotation.y=ry; scene.add(m); return m; };
+
+  // ---------------- CORRIDOIO (x[-9..9], z[-6..-3.35]) ----------------
+  mkPav(18,2.65,matPav,0,-4.675); mkSoff(18,2.65,0,-4.675);
+  mkMX(2.65,-9,-4.675); mkMX(2.65,9,-4.675);                          // pareti laterali corridoio
+  // parete di fondo corridoio (z=-6) con due aperture per le porte delle aule
+  mkMZ(4.4,-6.8,-6); mkMZ(6.8,0,-6); mkMZ(4.4,6.8,-6);               // varchi: x[-4.6..-3.4] e x[3.4..4.6]
+  plafo(-4,-4.675); plafo(4,-4.675); luce(0,2.6,-4.675,.6,16);
+  insegna('AULA DI MUSICA','#123E90',-4,-5.99,Math.PI); insegna('LAB. DI SCIENZE','#1c5a6e',4,-5.99,Math.PI);
+
+  // ================= AULA DI MUSICA — CASTELLO MEDIEVALE (x[-9..-1], z[-12..-6]) =================
+  const texPietra=(rx,ry)=>{ const c=mkCanvas(256,256),g=c.getContext('2d'); g.fillStyle='#2b2620'; g.fillRect(0,0,256,256);
+    const bw=64,bh=32; for(let r=0;r<8;r++){ const off=(r%2)*bw/2;
+      for(let cx=-1;cx<5;cx++){ const sh=((Math.sin(r*3.1+cx*7.7)*0.5+0.5)*26)|0;
+        g.fillStyle='rgb('+(88+sh)+','+(84+sh)+','+(76+sh)+')'; g.fillRect(cx*bw+off+2, r*bh+2, bw-4, bh-4); } }
+    const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); return t; };
+  const matPietra =new THREE.MeshStandardMaterial({map:texPietra(3,1.5),roughness:.98,side:THREE.DoubleSide});
+  const matPietraP=new THREE.MeshStandardMaterial({map:texPietra(4,3),roughness:.98});
+  const matPietraSc=new THREE.MeshStandardMaterial({color:0x1c1914,roughness:1});
+  mkPav(8,6,matPietraP,-5,-9);
+  { const so=new THREE.Mesh(new THREE.PlaneGeometry(8,6),matPietraSc); so.rotation.x=Math.PI/2; so.position.set(-5,3.0,-9); scene.add(so); }
+  mkMX(6,-9,-9,matPietra); mkMX(6,-1,-9,matPietra); mkMZ(8,-5,-12,matPietra);
+  luce(-5,2.5,-9,.42,12,0xffb060);                                   // luce ambrata fioca (atmosfera cupa)
+  // TORCE alle pareti (fiamma + luce calda tremolante, registrate per lo sfarfallio)
+  const torcia=(x,z,nx)=>{
+    const supp=new THREE.Mesh(new THREE.CylinderGeometry(.028,.045,.34,8),new THREE.MeshStandardMaterial({color:0x241a10,roughness:.9}));
+    supp.position.set(x,1.75,z); supp.rotation.z=nx*0.5; scene.add(supp);
+    const fiamma=new THREE.Mesh(new THREE.ConeGeometry(.085,.26,10),new THREE.MeshBasicMaterial({color:0xffb43b}));
+    fiamma.position.set(x+nx*0.06,2.0,z); scene.add(fiamma);
+    const l=new THREE.PointLight(0xff8a28,.95,6.5); l.position.set(x+nx*0.14,2.0,z); scene.add(l);
+    torceLuci.push({l,fiamma,base:.95}); };
+  torcia(-8.85,-7.6,1); torcia(-8.85,-10.6,1);                       // parete sinistra
+  torcia(-1.15,-7.6,-1); torcia(-1.15,-10.6,-1);                     // parete destra
+  torcia(-6.6,-11.85,0); torcia(-3.4,-11.85,0);                      // parete di fondo
+  // RAGNATELE negli angoli alti
+  const ragnatela=(x,y,z,ry,size)=>{ const c=mkCanvas(128,128),g=c.getContext('2d'); g.clearRect(0,0,128,128);
+    g.strokeStyle='rgba(255,255,255,.5)'; g.lineWidth=1; const cx=6,cy=6;
+    for(let a=0;a<=6;a++){ const an=a*(Math.PI/2/6); g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx+Math.cos(an)*128,cy+Math.sin(an)*128); g.stroke(); }
+    for(let rr=16;rr<128;rr+=17){ g.beginPath(); for(let a=0;a<=6;a++){ const an=a*(Math.PI/2/6),px=cx+Math.cos(an)*rr,py=cy+Math.sin(an)*rr; a?g.lineTo(px,py):g.moveTo(px,py);} g.stroke(); }
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),new THREE.MeshBasicMaterial({map:tex(c),transparent:true,depthWrite:false,opacity:.65}));
+    m.position.set(x,y,z); m.rotation.y=ry; scene.add(m); };
+  ragnatela(-8.83,2.55,-11.75,Math.PI/2,1.1); ragnatela(-1.17,2.55,-6.35,-Math.PI/2,1.0);
+  ragnatela(-8.6,2.6,-11.9,0,0.9);
+  // STEMMA sulla parete di fondo
+  { const c=mkCanvas(200,240),g=c.getContext('2d'); g.clearRect(0,0,200,240);
+    g.fillStyle='#123E90'; g.beginPath(); g.moveTo(20,20); g.lineTo(180,20); g.lineTo(180,150); g.quadraticCurveTo(100,240,20,150); g.closePath(); g.fill();
+    g.strokeStyle='#d8b24a'; g.lineWidth=8; g.stroke();
+    g.fillStyle='#d8b24a'; g.font='bold 120px Georgia'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('𝄞',100,120);
+    const sc=new THREE.Mesh(new THREE.PlaneGeometry(.9,1.08),new THREE.MeshStandardMaterial({map:tex(c),transparent:true,roughness:.6})); sc.position.set(-3.2,1.9,-11.88); scene.add(sc); }
+  // PERGAMENA con la melodia (indizio dell'enigma)
+  { const c=mkCanvas(300,210),g=c.getContext('2d'); g.fillStyle='#e6d3a0'; rRect(g,4,4,292,202,8); g.fill();
+    g.strokeStyle='#6e4e22'; g.lineWidth=6; g.stroke();
+    g.fillStyle='#4a3316'; g.textAlign='center';
+    g.font='bold 20px Georgia'; g.fillText('Inno alla Gioia',150,42);
+    g.font='bold 27px Georgia'; g.fillText('MI  MI  FA  SOL',150,100); g.fillText('SOL  FA  MI  RE',150,140);
+    g.font='italic 13px Georgia'; g.fillText('suonala sul pianoforte del maniero',150,178);
+    const pg=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.8),new THREE.MeshStandardMaterial({map:tex(c),roughness:.85})); pg.position.set(-6.7,1.6,-11.86); scene.add(pg);
+    luce(-6.7,1.7,-11.2,.4,3.5,0xffd9a0); }
+  // PIANOFORTE del maniero (legno scuro) = enigma della tastiera suonabile
+  { const legnoSc=new THREE.MeshStandardMaterial({color:0x3a251a,roughness:.55,metalness:.1});
+    const corpo=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,.6),legnoSc); corpo.position.set(-2.2,.75,-10.6); corpo.rotation.y=-Math.PI/2; scene.add(corpo);
+    const alzata=new THREE.Mesh(new THREE.BoxGeometry(1.5,.55,.06),legnoSc); alzata.position.set(-1.9,1.45,-10.6); alzata.rotation.y=-Math.PI/2; scene.add(alzata);
+    const tast=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,1.5),new THREE.MeshStandardMaterial({color:0xefe6d2,roughness:.5})); tast.position.set(-1.86,.92,-10.6); scene.add(tast);
+    const kg=mkCanvas(32,256).getContext('2d'); kg.fillStyle='#efe6d2'; kg.fillRect(0,0,32,256);
+    kg.fillStyle='#20160e'; for(let i=0;i<15;i++){ if([0,1,3,4,5].includes(i%7)) kg.fillRect(0,i*17+11,20,7); }
+    const kt=new THREE.Mesh(new THREE.PlaneGeometry(.26,1.5),new THREE.MeshBasicMaterial({map:tex(kg.canvas)})); kt.rotation.x=-Math.PI/2; kt.rotation.z=Math.PI/2; kt.position.set(-1.72,.971,-10.6); scene.add(kt);
+    const cand=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.2,8),new THREE.MeshStandardMaterial({color:0xd8b24a,metalness:.6,roughness:.3})); cand.position.set(-1.95,1.6,-10.6); scene.add(cand);
+    luce(-2.0,1.75,-10.6,.5,3.5,0xffca6a);
+    OSTACOLI.push({x0:-2.75,x1:-1.55,z0:-11.55,z1:-9.65});
+    const proxy=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.6,2.0),new THREE.MeshBasicMaterial({visible:false}));
+    proxy.position.set(-2.1,1.0,-10.6); proxy.userData={tipo:'tastiera',nome:'Pianoforte del maniero'}; scene.add(proxy); TARGETS.push(proxy); }
+
+  // ================= LABORATORIO DI SCIENZE — FREDDO E ASETTICO (x[1..9], z[-12..-6]) =================
+  const matPavLab=new THREE.MeshStandardMaterial({color:0xeef2f5,roughness:.35,metalness:.05});   // pavimento lucido freddo
+  const matMuroLab=new THREE.MeshStandardMaterial({color:0xdfe7ec,roughness:.85,side:THREE.DoubleSide});
+  const matSoffLab=new THREE.MeshStandardMaterial({color:0xf3f7fa,roughness:.9});
+  mkPav(8,6,matPavLab,5,-9);
+  { const so=new THREE.Mesh(new THREE.PlaneGeometry(8,6),matSoffLab); so.rotation.x=Math.PI/2; so.position.set(5,3.0,-9); scene.add(so); }
+  mkMX(6,9,-9,matMuroLab); mkMX(6,1,-9,matMuroLab); mkMZ(8,5,-12,matMuroLab);
+  luce(5,2.6,-9,.5,13,0xdff0ff);
+  // NEON al soffitto: tubi che sfarfallano (registrati per l'effetto guasto)
+  const neon=(x,z)=>{ const tubo=new THREE.Mesh(new THREE.BoxGeometry(2.0,.06,.16),
+      new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xdff0ff,emissiveIntensity:1})); tubo.position.set(x,2.93,z); scene.add(tubo);
+    const l=new THREE.PointLight(0xdff0ff,.8,9); l.position.set(x,2.8,z); scene.add(l);
+    neonLuci.push({l,tubo,base:.85}); };
+  neon(4,-7.5); neon(6,-10.5); neon(3.2,-10.8);
+  // SCHELETRO su piedistallo (parete di fondo, a sinistra)
+  { const osso=new THREE.MeshStandardMaterial({color:0xeae4d2,roughness:.7});
+    const gx=2.3, gz=-11.2;
+    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.1,18),new THREE.MeshStandardMaterial({color:0x2b3138,metalness:.4,roughness:.5})); ped.position.set(gx,.05,gz); scene.add(ped);
+    const asta=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,1.9,8),new THREE.MeshStandardMaterial({color:0x8892a0,metalness:.6,roughness:.4})); asta.position.set(gx,.95,gz-.16); scene.add(asta);
+    const cranio=new THREE.Mesh(new THREE.SphereGeometry(.13,16,16),osso); cranio.position.set(gx,1.72,gz); cranio.scale.set(1,1.15,1.05); scene.add(cranio);
+    const mand=new THREE.Mesh(new THREE.BoxGeometry(.16,.06,.12),osso); mand.position.set(gx,1.58,gz+.03); scene.add(mand);
+    const colonna=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.62,8),osso); colonna.position.set(gx,1.2,gz); scene.add(colonna);
+    for(let i=0;i<5;i++){ const cost=new THREE.Mesh(new THREE.TorusGeometry(.13-i*.006,.012,8,18,Math.PI*1.1),osso);
+      cost.position.set(gx,1.42-i*.075,gz); cost.rotation.x=Math.PI/2; cost.rotation.z=-Math.PI*0.55; scene.add(cost); }
+    const bacino=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,8,18),osso); bacino.position.set(gx,.9,gz); bacino.rotation.x=Math.PI/2; bacino.scale.set(1,.7,1); scene.add(bacino);
+    const spalle=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.4,8),osso); spalle.position.set(gx,1.48,gz); spalle.rotation.z=Math.PI/2; scene.add(spalle);
+    for(const s of [-1,1]){
+      const braccio=new THREE.Mesh(new THREE.CylinderGeometry(.02,.017,.55,8),osso); braccio.position.set(gx+s*.22,1.2,gz); braccio.rotation.z=s*.12; scene.add(braccio);
+      const gamba=new THREE.Mesh(new THREE.CylinderGeometry(.025,.02,.8,8),osso); gamba.position.set(gx+s*.07,.5,gz); scene.add(gamba); }
+    luce(gx,1.8,gz+.8,.4,3,0xeaf4ff);
+    OSTACOLI.push({x0:gx-.4,x1:gx+.4,z0:gz-.45,z1:gz+.45});
+    const proxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2.0,.9),new THREE.MeshBasicMaterial({visible:false}));
+    proxy.position.set(gx,1.1,gz); proxy.userData={tipo:'quiz',quiz:QUIZ_SCHELETRO,nome:'Lo scheletro'}; scene.add(proxy); TARGETS.push(proxy); }
+  // MODELLINO DEL CORPO UMANO con organi (respiratorio, digerente, circolatorio) — parete di fondo, a destra
+  { const gx=7.5, gz=-11.2;
+    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.1,18),new THREE.MeshStandardMaterial({color:0x2b3138,metalness:.4,roughness:.5})); ped.position.set(gx,.05,gz); scene.add(ped);
+    const matVetro=new THREE.MeshStandardMaterial({color:0xbfe0ef,transparent:true,opacity:.22,roughness:.15});
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(.2,.26,.7,16),matVetro); torso.position.set(gx,1.22,gz); scene.add(torso);
+    const spalla=new THREE.Mesh(new THREE.SphereGeometry(.2,14,12),matVetro); spalla.position.set(gx,1.55,gz); spalla.scale.set(1,.7,.8); scene.add(spalla);
+    const testa=new THREE.Mesh(new THREE.SphereGeometry(.15,16,16),new THREE.MeshStandardMaterial({color:0xbfe0ef,transparent:true,opacity:.22})); testa.position.set(gx,1.78,gz); scene.add(testa);
+    // respiratorio: trachea + due polmoni
+    const trachea=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.22,8),new THREE.MeshStandardMaterial({color:0xe6b8c2})); trachea.position.set(gx,1.5,gz); scene.add(trachea);
+    for(const s of [-1,1]){ const pol=new THREE.Mesh(new THREE.SphereGeometry(.1,14,14),new THREE.MeshStandardMaterial({color:0xf2a6b0,roughness:.6}));
+      pol.position.set(gx+s*.11,1.34,gz); pol.scale.set(.8,1.25,.7); scene.add(pol); }
+    // circolatorio: cuore
+    const cuore=new THREE.Mesh(new THREE.SphereGeometry(.07,14,14),new THREE.MeshStandardMaterial({color:0xc0392b,emissive:0x5a0f0a,emissiveIntensity:.25,roughness:.5})); cuore.position.set(gx-.03,1.28,gz+.06); cuore.scale.set(1,1.2,1); scene.add(cuore);
+    // digerente: stomaco + intestino
+    const stomaco=new THREE.Mesh(new THREE.SphereGeometry(.09,14,14),new THREE.MeshStandardMaterial({color:0xd98a5a,roughness:.6})); stomaco.position.set(gx-.06,1.08,gz); stomaco.scale.set(1,.85,.7); scene.add(stomaco);
+    const intest=new THREE.Mesh(new THREE.TorusKnotGeometry(.08,.028,60,8,2,3),new THREE.MeshStandardMaterial({color:0xe0a06a,roughness:.6})); intest.position.set(gx,.9,gz); intest.scale.set(1,.8,.6); scene.add(intest);
+    luce(gx,1.8,gz+.8,.4,3,0xeaf4ff);
+    OSTACOLI.push({x0:gx-.4,x1:gx+.4,z0:gz-.4,z1:gz+.4});
+    const proxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2.0,.9),new THREE.MeshBasicMaterial({visible:false}));
+    proxy.position.set(gx,1.1,gz); proxy.userData={tipo:'quiz',quiz:QUIZ_CORPO,nome:'Il corpo umano'}; scene.add(proxy); TARGETS.push(proxy); }
+  // PLASTICO DEL SISTEMA SOLARE su tavolo centrale
+  { const tx=5, tz=-9;
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,.07,32),new THREE.MeshStandardMaterial({color:0x2b3138,roughness:.5})); top.position.set(tx,.78,tz); scene.add(top);
+    const gambo=new THREE.Mesh(new THREE.CylinderGeometry(.08,.12,.78,12),new THREE.MeshStandardMaterial({color:0xb8c2cc,metalness:.5,roughness:.4})); gambo.position.set(tx,.39,tz); scene.add(gambo);
+    const sole=new THREE.Mesh(new THREE.SphereGeometry(.14,18,18),new THREE.MeshStandardMaterial({color:0xffcc33,emissive:0xffaa11,emissiveIntensity:.8})); sole.position.set(tx,.95,tz); scene.add(sole);
+    const soleL=new THREE.PointLight(0xffcc66,.5,3); soleL.position.set(tx,.98,tz); scene.add(soleL);
+    const pianeti=[[.24,.03,0x9a8878],[.33,.045,0xd9a066],[.42,.05,0x4a86d6],[.5,.038,0xc0553a],[.66,.09,0xd6a15a],[.8,.075,0xe6c988],[.9,.06,0x8fd6d6],[.98,.055,0x5a7fd6]];
+    pianeti.forEach((p,i)=>{ const anello=new THREE.Mesh(new THREE.TorusGeometry(p[0],.004,6,48),new THREE.MeshStandardMaterial({color:0x8fa0b0,transparent:true,opacity:.5}));
+        anello.position.set(tx,.95,tz); anello.rotation.x=Math.PI/2; scene.add(anello);
+      const ang=i*0.9, px=tx+Math.cos(ang)*p[0], pz=tz+Math.sin(ang)*p[0];
+      const pl=new THREE.Mesh(new THREE.SphereGeometry(p[1],12,12),new THREE.MeshStandardMaterial({color:p[2],roughness:.7})); pl.position.set(px,.95,pz); scene.add(pl);
+      const ped=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.03,6),new THREE.MeshStandardMaterial({color:0x8fa0b0})); ped.position.set(px,.93,pz); scene.add(ped); });
+    OSTACOLI.push({x0:tx-1.05,x1:tx+1.05,z0:tz-1.05,z1:tz+1.05});
+    const proxy=new THREE.Mesh(new THREE.BoxGeometry(2.1,1.4,2.1),new THREE.MeshBasicMaterial({visible:false}));
+    proxy.position.set(tx,1.0,tz); proxy.userData={tipo:'quiz',quiz:QUIZ_SOLARE,nome:'Il plastico del Sistema Solare'}; scene.add(proxy); TARGETS.push(proxy); }
+  // BANCONE con MICROSCOPIO e VETRINI (parete destra)
+  { const bx=8.2, bz=-7.6;
+    const base=new THREE.Mesh(new THREE.BoxGeometry(.8,.9,2.4),new THREE.MeshStandardMaterial({color:0xeef2f5,roughness:.6})); base.position.set(bx,.45,bz); scene.add(base);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(.82,.06,2.5),new THREE.MeshStandardMaterial({color:0x30363d,roughness:.4})); top.position.set(bx,.92,bz); scene.add(top);
+    const mBody=new THREE.MeshStandardMaterial({color:0x30363d,metalness:.5,roughness:.4});
+    const mBase=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.05,18),mBody); mBase.position.set(bx,.98,bz-.2); scene.add(mBase);
+    const braccio=new THREE.Mesh(new THREE.BoxGeometry(.05,.32,.05),mBody); braccio.position.set(bx+.07,1.16,bz-.2); braccio.rotation.z=.18; scene.add(braccio);
+    const tubo=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.24,14),mBody); tubo.position.set(bx-.02,1.3,bz-.2); tubo.rotation.x=.5; scene.add(tubo);
+    const piano=new THREE.Mesh(new THREE.BoxGeometry(.16,.02,.16),mBody); piano.position.set(bx,1.06,bz-.2); scene.add(piano);
+    // vetrini colorati allineati
+    const vc=[0xef8aa0,0x8fd67a,0x7ab6e6,0xe0c060];
+    vc.forEach((c,i)=>{ const v=new THREE.Mesh(new THREE.BoxGeometry(.16,.008,.05),new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.7}));
+      v.position.set(bx,.955,bz+.35+i*.13); scene.add(v); });
+    luce(bx-.6,1.7,bz,.4,3,0xeaf4ff);
+    OSTACOLI.push({x0:bx-.5,x1:bx+.5,z0:bz-1.25,z1:bz+1.25});
+    const proxy=new THREE.Mesh(new THREE.BoxGeometry(.7,1.0,1.0),new THREE.MeshBasicMaterial({visible:false}));
+    proxy.position.set(bx-.2,1.1,bz-.2); proxy.userData={tipo:'quiz',quiz:QUIZ_MICRO,nome:'Il microscopio'}; scene.add(proxy); TARGETS.push(proxy); }
 }
 
 // ---- HUD / overlay ----
@@ -1811,6 +2105,7 @@ function apriEnigma(e){
   setTimeout(()=>$('enInput').focus(),260);
 }
 function chiudiEnigma(){
+  quizCorrente=null;
   $('enigma').style.display='none'; G.overlay=false;
   $('enigma').classList.remove('pericolo');
   fermaGalassia();
@@ -1893,6 +2188,7 @@ function suonoTemporale(){
   }catch(e){ sfxAttivo=false; }
 }
 function verificaRisposta(){
+  if(quizCorrente){ verificaQuiz(); return; }
   const e=ENIGMI[G.tappa-1];
   if(e.cifrato && !G.inv.cifrario){
     $('enFeedback').textContent='Messaggio cifrato: prendi prima il CIFRARIO 3D dal bancone della stampante.';
@@ -1917,6 +2213,7 @@ function verificaRisposta(){
   }
 }
 function continuaDopoEnigma(){
+  if(quizCorrente){ quizCorrente=null; chiudiEnigma(); return; }
   if(G.avanzaAllaChiusura){
     G.avanzaAllaChiusura=false;
     if(G.tappa<N_TAPPE){ G.tappa++; aggiornaHUD(); splash('Enigma risolto!','#8fc0ff'); }
@@ -1978,14 +2275,15 @@ addEventListener('keydown',e=>{
   tasti[e.key.toLowerCase()]=true;
   if(G.gioco && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
   const galMacAperta = $('galassiaMac').style.display==='flex';
+  const tastieraAperta = $('tastieraOv').style.display==='flex';
   if(e.key==='Enter'){
-    if(galMacAperta){ /* nella galassia parole l'Invio non fa nulla */ }
+    if(galMacAperta || tastieraAperta){ /* qui l'Invio non fa nulla: si usano i tasti/il mouse */ }
     else if(G.overlay && $('enDecoy').style.display==='block'){ chiudiEnigma(); }
     else if(G.overlay && $('enEsito').style.display==='block'){ continuaDopoEnigma(); }
     else if(G.overlay){ verificaRisposta(); }
     else if(G.gioco && document.pointerLockElement===canvasEl && G.mirato){ usaMirato(); }
   }
-  if(e.key==='Escape' && G.overlay){ galMacAperta ? chiudiGalassiaMac() : chiudiEnigma(); }
+  if(e.key==='Escape' && G.overlay){ tastieraAperta ? chiudiTastiera() : (galMacAperta ? chiudiGalassiaMac() : chiudiEnigma()); }
 });
 addEventListener('keyup',e=>{ tasti[e.key.toLowerCase()]=false; });
 canvasEl.addEventListener('click',()=>{
@@ -2025,6 +2323,24 @@ const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffic
 const YT_MATRIX='i_8RBP20yj8';       // musica dedicata alla Visione Matrix (parte al clic sulla mela)
 let ytPlayer=null, ytPronto=false, musicaOn=true, musicaAvviata=false;
 let matrixPlayer=null, matrixPronto=false;
+// Brani dedicati alle due aule: entrando cambia il sottofondo; nel lab/corridoio torna quello base.
+const YT_MUS_MUSICA='hWaNoK3gN6M';    // aula di musica
+const YT_MUS_SCIENZE='FBNm157S6ak';   // laboratorio di scienze
+let branoCorrente=YT_MUSICA;
+function ambienteBrano(){
+  const p=camera.position;
+  if(p.z<-5.75 && p.x<-1) return YT_MUS_MUSICA;    // aula di musica (sinistra)
+  if(p.z<-5.75 && p.x>1)  return YT_MUS_SCIENZE;   // laboratorio di scienze (destra)
+  return YT_MUSICA;                                 // lab / corridoio: sottofondo base
+}
+function aggiornaAmbiente(){
+  if(!ytPronto || matrixOn) return;
+  const b=ambienteBrano();
+  if(b===branoCorrente) return;
+  branoCorrente=b;
+  try{ ytPlayer.loadVideoById(b); ytPlayer.setVolume(32);
+    if(!musicaOn) setTimeout(()=>{ try{ytPlayer.pauseVideo();}catch(_){} },400); }catch(e){}
+}
 // Rete di sicurezza autoplay: se al clic "Inizia" l'API YT non era ancora pronta,
 // il retry di onReady cade fuori da un gesto utente e il browser blocca il play.
 // Qui riprovo ad ogni gesto (clic/tasto) finché il sottofondo non parte davvero.
@@ -2077,11 +2393,34 @@ $('btnDecoyEsci').addEventListener('click',chiudiEnigma);
 $('btnRicomincia').addEventListener('click',()=>location.reload());
 // info / regole
 (function(){
-  const apri=()=>{ if(document.pointerLockElement) document.exitPointerLock(); $('regole').style.display='flex'; };
+  const apri=()=>{ if(document.pointerLockElement) document.exitPointerLock(); $('regole').style.display='flex'; segBuf=''; };
   const chiudi=()=>{ $('regole').style.display='none'; if(G.gioco && !G.overlay && !G.finita) canvasEl.requestPointerLock(); };
   $('btnInfo').addEventListener('click',apri);
   $('btnChiudiRegole').addEventListener('click',chiudi);
 })();
+// ---- ACCESSO SEGRETO (WarGames): col pannello "Come si gioca" aperto, digita  j o s h u a  ----
+let segBuf='';
+addEventListener('keydown',e=>{
+  if($('regole').style.display!=='flex') return;
+  if(!/^[a-z]$/i.test(e.key)) return;
+  segBuf=(segBuf+e.key.toLowerCase()).slice(-6);
+  if(segBuf==='joshua'){ segBuf=''; accessoSegreto(); }
+});
+function accessoSegreto(){
+  $('regole').style.display='none';
+  if(!G.gioco){                                    // avvio rapido: salta intro e laboratorio di informatica
+    $('consegna').style.display='none'; $('btnSalta').style.display='none';
+    if(!G.intro){ costruisciPartita(macScelto||1); }   // se la partita non era ancora stata costruita
+    G.intro=false; G.gioco=true; G.tappa=1; G.finita=false;
+    aggiornaHUD(); aggiornaInventario(); avviaMusica();
+  }
+  G.serraturaPronta=true; G.inv.chiave=true;       // sblocca la porta
+  if(PORTA_USCITA){ PORTA_USCITA.aperta=true; PORTA_USCITA.ang=-1.35; PORTA_USCITA.cardine.rotation.y=-1.35; }
+  camera.position.set(0,1.5,-4.6); yaw=0; pitch=0; camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
+  G.uscito=true;
+  splash('Shall we play a game? Accesso «Joshua» — sei nel corridoio.','#8fc0ff');
+  canvasEl.requestPointerLock();
+}
 // glossario (cerca la soluzione agli enigmi)
 (function(){
   function render(filtro){
@@ -2264,6 +2603,12 @@ function animate(){
   // atmosfera: neon che sfarfalla appena + temporale fuori dalle finestre
   const fk=NEON_BASE*(0.82+0.12*Math.sin(clock.elapsedTime*8.3)) - (Math.random()<0.02?NEON_BASE*0.5:0);
   neon2.intensity=Math.max(0,fk); neon1.intensity=Math.max(0,NEON_BASE*(0.9+0.08*Math.sin(clock.elapsedTime*5.1)));
+  // torce del castello (Musica): fiamma calda che ondeggia
+  for(const t of torceLuci){ const f=t.base*(0.74+0.26*Math.sin(clock.elapsedTime*11+t.l.position.x)) - (Math.random()<0.04?t.base*0.4:0);
+    t.l.intensity=Math.max(0,f); if(t.fiamma) t.fiamma.scale.set(1,0.82+0.32*Math.sin(clock.elapsedTime*17+t.l.position.z),1); }
+  // neon del laboratorio (Scienze): sfarfallio "guasto" con spegnimenti bruschi
+  for(const n of neonLuci){ let f=n.base; if(Math.random()<0.06) f*=0.12; else f*=0.92+0.08*Math.sin(clock.elapsedTime*30+n.l.position.z);
+    n.l.intensity=f; if(n.tubo) n.tubo.material.emissiveIntensity=f*1.1; }
   aggiornaTemporale(dt);
   // easter egg LEGO: la mela si apre/chiude, e conto alla rovescia della Visione Matrix
   if(legoMela) legoMela.rotation.y += ((melaTarget*-1.55) - legoMela.rotation.y)*Math.min(1,dt*7);
@@ -2300,13 +2645,13 @@ function animate(){
     if(tasti['arrowdown']||tasti['s']) nuova.addScaledVector(dir,-v);
     if(tasti['arrowleft']||tasti['a']) nuova.addScaledVector(destra,-v);
     if(tasti['arrowright']||tasti['d']) nuova.addScaledVector(destra,v);
-    clampPos(nuova);
-    if(!dentroTavolo(nuova.x,nuova.z)) camera.position.copy(nuova);
-    else { const solo=camera.position.clone(); solo.x=nuova.x;
-      if(!dentroTavolo(solo.x,solo.z)) camera.position.x=nuova.x;
-      else { solo.x=camera.position.x; solo.z=nuova.z;
-        if(!dentroTavolo(solo.x,solo.z)) camera.position.z=nuova.z; } }
+    // collisioni multi-stanza: resta dentro una zona calpestabile e fuori dagli arredi; se bloccato, scivola su un asse
+    const ok=(nx,nz)=>posValida(nx,nz)&&!bloccato(nx,nz);
+    if(ok(nuova.x,nuova.z)) camera.position.copy(nuova);
+    else if(ok(nuova.x,camera.position.z)) camera.position.x=nuova.x;
+    else if(ok(camera.position.x,nuova.z)) camera.position.z=nuova.z;
     camera.position.y=1.5;
+    aggiornaAmbiente();
     // mira ai Mac
     camera.updateMatrixWorld();
     raycaster.setFromCamera({x:0,y:0},camera);
@@ -2322,11 +2667,16 @@ function animate(){
         else if(m.tipo==='lego') $('hint').textContent='Tocca la mela dell’omino — [clic] o [Invio]';
         else if(m.tipo==='macbook') $('hint').textContent='MacBook di Andrea — entra nella galassia delle parole [clic] o [Invio]';
         else if(m.tipo==='porta') $('hint').textContent='Porta del laboratorio — [clic] o [Invio]';
+        else if(m.tipo==='quiz') $('hint').textContent=m.nome+' — enigma [clic] o [Invio]';
+        else if(m.tipo==='tastiera') $('hint').textContent=m.nome+' — suona [clic] o [Invio]';
         else $('hint').textContent=(macNum===0?'Cattedra (Prof)':'Mac '+macNum)+' — [clic] o [Invio] per accedere';
       }
     }
-    // vittoria: uscito nel corridoio
-    if(PORTA_USCITA && PORTA_USCITA.aperta && camera.position.z<-4.3) vittoria();
+    // primo passaggio nel corridoio: benvenuto (niente più fine-gioco forzata: si esplora)
+    if(PORTA_USCITA && PORTA_USCITA.aperta && !G.uscito && camera.position.z<-3.6){
+      G.uscito=true;
+      splash('Sei nel corridoio! A sinistra l’AULA DI MUSICA, a destra il LABORATORIO DI SCIENZE','#8fc0ff');
+    }
   } else {
     $('hint').style.display='none'; G.mirato=null; G._miratoKey=null;
   }
@@ -2335,18 +2685,6 @@ function animate(){
     PORTA_USCITA.ang-=dt*1.7; PORTA_USCITA.cardine.rotation.y=PORTA_USCITA.ang;
   }
   renderer.render(scene,camera);
-}
-// confini di movimento (aula + eventuale passaggio nel corridoio)
-function clampPos(p){
-  const passaggio = PORTA_USCITA && PORTA_USCITA.aperta && p.x>PORTA_X-CORR_HW && p.x<PORTA_X+CORR_HW;
-  if(passaggio && p.z<-3.15){
-    p.x=Math.max(PORTA_X-CORR_HW,Math.min(PORTA_X+CORR_HW,p.x));
-    p.z=Math.max(-9.0,Math.min(2.95,p.z));
-  } else {
-    p.x=Math.max(-7.5,Math.min(7.5,p.x));
-    const zmin = passaggio ? -3.35 : -2.95;
-    p.z=Math.max(zmin,Math.min(2.95,p.z));
-  }
 }
 aggiornaHUD();
 animate();
