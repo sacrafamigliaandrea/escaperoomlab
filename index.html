@@ -186,6 +186,9 @@
   .inv-slot.has svg{stroke:var(--blu-chiaro)}
   /* ---- Visione Matrix (easter egg omino LEGO) ---- */
   #matrix{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;display:none}
+  #matrixVid{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;
+    max-width:74vw;max-height:64vh;border-radius:14px;display:none;pointer-events:none;
+    box-shadow:0 0 60px rgba(0,255,70,.35);border:1px solid rgba(0,255,70,.35)}
   #matrixTint{position:fixed;inset:0;z-index:5;pointer-events:none;display:none;
     background:radial-gradient(circle at 50% 50%,rgba(0,80,20,.10),rgba(0,40,10,.30));
     box-shadow:inset 0 0 200px rgba(0,255,60,.25)}
@@ -223,6 +226,7 @@
 </div>
 <canvas id="matrix"></canvas>
 <div id="matrixTint"></div>
+<video id="matrixVid" src="matrix.mp4" preload="auto" playsinline></video>
 <div id="mirino"></div>
 <div id="hint"></div>
 <div id="indizio" class="pann"><div class="lab">Indizio</div><div id="indizioTxt"></div></div>
@@ -1474,23 +1478,33 @@ function usaMirato(){
 }
 // ---- EASTER EGG: la mela del LEGO si apre → Ambiente segreto (Algoritmi & IA) → VISIONE MATRIX ----
 let matrixOn=false, matrixT=0, melaTarget=0, mrRAF=null, mrDrops=[];
-const MATRIX_DUR=62;   // quanto dura la Visione Matrix = durata del brano (1:02)
+const MATRIX_DUR=75;   // tetto di sicurezza: di norma l'effetto finisce quando finisce il brano
 function attivaMatrix(){
-  if(matrixOn){ matrixT=MATRIX_DUR; return; }        // riattiva/ricarica il tempo
+  if(matrixOn){ return; }
   matrixOn=true; matrixT=MATRIX_DUR; melaTarget=1;    // apre la mela
   if(legoCore) legoCore.visible=true;
   $('matrixTint').style.display='block';
-  matriximizza(true);                 // il laboratorio diventa codice (wireframe verde)
-  avviaCodeRain(); aggiornaBeam();
-  splash('Visione Matrix attivata','#39ff14');
-  suonoPower(); avviaMusicaMatrix();
+  avviaCodeRain();                    // cascata di codice a tutto schermo
+  splash('Visione Matrix attivata','#39ff14'); suonoPower();
+  avviaVideoMatrix();                 // il video (con il suo audio) al centro; a fine video si torna al lab
 }
 function disattivaMatrix(){
   matrixOn=false; melaTarget=0;
   if(legoCore) legoCore.visible=false;
   $('matrixTint').style.display='none';
-  matriximizza(false);                // ripristina il laboratorio reale
-  fermaCodeRain(); beam.visible=false; fermaMusicaMatrix();
+  fermaCodeRain(); fermaVideoMatrix(); beam.visible=false;
+}
+// il video matrix.mp4 al centro (ha già l'audio): mette in pausa il sottofondo e a fine video si spegne l'effetto
+function avviaVideoMatrix(){
+  try{ if(typeof ytPronto!=='undefined' && ytPronto) ytPlayer.pauseVideo(); }catch(e){}
+  const v=$('matrixVid'); if(!v) return;
+  v.style.display='block'; v.muted=!musicaOn;
+  try{ v.currentTime=0; }catch(e){}
+  const p=v.play(); if(p&&p.catch) p.catch(()=>{});
+}
+function fermaVideoMatrix(){
+  const v=$('matrixVid'); if(v){ try{ v.pause(); }catch(e){} v.style.display='none'; }
+  if(musicaOn){ try{ if(typeof ytPronto!=='undefined' && ytPronto) ytPlayer.playVideo(); }catch(e){} }
 }
 // il mondo "diventa codice": sostituisco tutti i materiali con un wireframe verde
 const matMatrix=new THREE.MeshBasicMaterial({color:0x39ff14, wireframe:true});
@@ -1876,7 +1890,7 @@ $('btnSalta').addEventListener('click',avviaGameplay);
 // Per cambiare brano incolla qui l'id del video (la parte dopo youtu.be/ o v=).
 const YT_MUSICA='Q3_QOVaBA98';       // musica di sottofondo
 const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffiche casuali)
-const YT_MATRIX='7fOpgd1hciY';       // musica dedicata alla Visione Matrix (parte al clic sulla mela)
+const YT_MATRIX='i_8RBP20yj8';       // musica dedicata alla Visione Matrix (parte al clic sulla mela)
 let ytPlayer=null, ytPronto=false, musicaOn=true;
 let matrixPlayer=null, matrixPronto=false;
 function onYouTubeIframeAPIReady(){
@@ -1887,8 +1901,9 @@ function onYouTubeIframeAPIReady(){
   });
   matrixPlayer=new YT.Player('ytmatrix',{
     videoId:YT_MATRIX,
-    playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1,loop:1,playlist:YT_MATRIX},
-    events:{ onReady:()=>{ matrixPronto=true; try{matrixPlayer.setVolume(45);}catch(_){} } }
+    playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1},
+    events:{ onReady:()=>{ matrixPronto=true; try{matrixPlayer.setVolume(48);}catch(_){} },
+      onStateChange:e=>{ if(e.data===YT.PlayerState.ENDED && matrixOn) disattivaMatrix(); } }  // l'effetto finisce col brano
   });
   ytPlayer=new YT.Player('yt',{
     videoId:YT_MUSICA,
@@ -1903,15 +1918,17 @@ function avviaMusica(){ if(ytPronto && musicaOn){ try{ ytPlayer.setVolume(32); y
 function toggleMusica(){
   musicaOn=!musicaOn;
   $('btnMusica').classList.toggle('off',!musicaOn);
+  const v=$('matrixVid'); if(v) v.muted=!musicaOn;       // durante la Matrix l'audio è quello del video
   if(!musicaOn){
     if(sfxPronto){ try{ sfxPlayer.pauseVideo(); }catch(e){} sfxAttivo=false; }
-    if(matrixPronto){ try{ matrixPlayer.pauseVideo(); }catch(e){} }
     if(ytPronto){ try{ ytPlayer.pauseVideo(); }catch(e){} }
   } else {
-    if(matrixOn) avviaMusicaMatrix(); else avviaMusica();   // se la Matrix è attiva, riprende la sua musica
+    if(!matrixOn) avviaMusica();                          // il sottofondo riprende solo fuori dalla Matrix
   }
 }
 $('btnMusica').addEventListener('click',toggleMusica);
+// a fine video Matrix si torna al laboratorio in automatico
+$('matrixVid').addEventListener('ended',()=>{ if(matrixOn) disattivaMatrix(); });
 $('btnVerifica').addEventListener('click',verificaRisposta);
 $('btnSugg').addEventListener('click',()=>{ $('enSugg').style.display='block'; });
 $('btnContinua').addEventListener('click',continuaDopoEnigma);
