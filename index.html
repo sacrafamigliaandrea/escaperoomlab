@@ -221,6 +221,13 @@
   #galMacHelp{position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:3;
     font-size:12.5px;color:rgba(180,205,255,.75)}
   #galMacHelp b{color:#fff}
+  #galSearch{position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:4;
+    width:min(460px,72%);padding:12px 18px;font-size:15px;border-radius:24px;text-align:center;
+    background:rgba(9,20,48,.85);border:2px solid rgba(120,160,235,.55);color:#fff;
+    box-shadow:0 0 30px rgba(40,90,200,.35);backdrop-filter:blur(4px)}
+  #galSearch::placeholder{color:rgba(180,205,255,.6)}
+  #galFlight.cerca .gm-card:not(.match){opacity:.14}
+  .gm-card.match{border-color:#9ec3ff}
   #galMacDett{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;
     max-width:520px;width:88%;text-align:center;background:rgba(9,18,40,.94);
     border:1px solid rgba(120,160,235,.35);border-radius:16px;padding:26px;
@@ -359,14 +366,15 @@
 <div class="overlay" id="galassiaMac" style="display:none">
   <canvas id="galMacBg"></canvas>
   <div id="galMacHead">La <span>galassia delle parole</span> &middot; cittadinanza digitale</div>
+  <input id="galSearch" placeholder="Scrivi la domanda o un concetto&hellip; la galassia ti porta alla parola" autocomplete="off">
   <div id="galFlight"><div id="galFlightWorld"></div></div>
-  <div id="galMacHelp">Vola con <b>&uarr; &darr;</b> o lo <b>scroll</b> &middot; <b>clic</b> sulla parola a fuoco per la spiegazione</div>
+  <div id="galMacHelp"><b>Scrivi</b> per cercare &middot; <b>&uarr; &darr;</b> o <b>scroll</b> per volare &middot; <b>clic</b> sulla parola a fuoco per la spiegazione</div>
   <div id="galMacDett" style="display:none">
     <div class="gm-term" id="gmTerm"></div>
     <div class="gm-def" id="gmDef"></div>
     <button id="gmChiudiDett">&larr; Torna alla galassia</button>
   </div>
-  <button id="btnEsciGalMac">Esci</button>
+  <button id="btnEsciGalMac">&larr; Torna al laboratorio</button>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -2060,6 +2068,33 @@ function aggiornaVolo(){
   galCards.forEach((c,i)=>c.el.classList.toggle('vicina', i===best));
 }
 function volaDi(n){ galCamZ+=n*GAL_STEP; aggiornaVolo(); }
+// RICERCA: lo studente scrive la domanda/concetto → la galassia vola alla parola più affine
+function nrm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+const GAL_STOP=new Set('il lo la i gli le un uno una di a da in con su per tra fra e o ad ed ma se che chi come dove quando perche non si ne del dello della dei degli delle al allo alla ai agli alle dal nel nella sul sulla mio mia tuo tua suo sua questo quello questa sono ha hai ho essere fare piu meno molto tutto ogni anche solo cosa quale cioe poi qui qua'.split(' '));
+function cercaGalMac(q){
+  const nq=nrm(q).trim();
+  const azzera=()=>{ $('galFlight').classList.remove('cerca'); galCards.forEach(c=>c.el.classList.remove('match')); };
+  if(!nq){ azzera(); return; }
+  const qw=[...new Set(nq.split(/[^a-z0-9]+/).filter(w=>w.length>=3 && !GAL_STOP.has(w)))];
+  if(!qw.length){ azzera(); return; }
+  let best=-1,bestSc=0;
+  galCards.forEach((c,i)=>{
+    const g=GLOSSARIO[i];
+    const tw=nrm(g.t).split(/[^a-z0-9]+/).filter(Boolean);
+    const dw=nrm(g.d).split(/[^a-z0-9]+/).filter(Boolean);
+    let sc=0;
+    qw.forEach(w=>{ const st=w.slice(0,4);                 // match per radice: gestisce plurali/coniugazioni
+      if(tw.some(x=>x.startsWith(st))) sc+=6;
+      else if(dw.some(x=>x.startsWith(st))) sc+=3;
+    });
+    if(nrm(g.t).length>=4 && nq.includes(nrm(g.t))) sc+=10;  // ha scritto proprio il termine
+    c._score=sc; if(sc>bestSc){ bestSc=sc; best=i; }
+  });
+  const soglia=Math.max(4,bestSc*0.5);
+  $('galFlight').classList.toggle('cerca', bestSc>0);
+  galCards.forEach(c=>c.el.classList.toggle('match', bestSc>0 && c._score>=soglia));
+  if(best>=0){ galCamZ=best*GAL_STEP; aggiornaVolo(); }
+}
 function mostraDettGal(g){
   $('gmTerm').textContent=g.t; $('gmDef').textContent=g.d;
   $('galFlight').classList.add('dim'); $('galMacDett').style.display='block';
@@ -2068,7 +2103,9 @@ function nascondiDettGal(){ $('galMacDett').style.display='none'; $('galFlight')
 function apriGalassiaMac(){
   G.overlay=true; if(document.pointerLockElement) document.exitPointerLock();
   costruisciGalMac(); nascondiDettGal(); galCamZ=0;
+  $('galSearch').value=''; cercaGalMac('');
   $('galassiaMac').style.display='flex'; avviaGalMacBg(); aggiornaVolo();
+  setTimeout(()=>$('galSearch').focus(),80);
 }
 function chiudiGalassiaMac(){
   $('galassiaMac').style.display='none'; fermaGalMacBg(); G.overlay=false;
@@ -2093,12 +2130,15 @@ function avviaGalMacBg(){
 }
 function fermaGalMacBg(){ if(galMacRAF) cancelAnimationFrame(galMacRAF); galMacRAF=null; }
 $('btnEsciGalMac').addEventListener('click',chiudiGalassiaMac);
+$('galSearch').addEventListener('input',e=>cercaGalMac(e.target.value));
 $('gmChiudiDett').addEventListener('click',nascondiDettGal);
 // comandi di volo: scroll e frecce (attivi solo quando la galassia è aperta e non si legge un dettaglio)
 $('galFlight').addEventListener('wheel',e=>{ e.preventDefault(); galCamZ+=Math.sign(e.deltaY)*GAL_STEP*0.5; aggiornaVolo(); },{passive:false});
 addEventListener('keydown',e=>{
   if($('galassiaMac').style.display!=='flex') return;
   if($('galMacDett').style.display==='block') return;
+  const scrivendo = document.activeElement && document.activeElement.id==='galSearch';
+  if(scrivendo && (e.key==='ArrowLeft'||e.key==='ArrowRight')) return;   // le frecce ← → muovono il cursore nel testo
   if(e.key==='ArrowDown'||e.key==='ArrowRight'){ volaDi(1); e.preventDefault(); }
   else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){ volaDi(-1); e.preventDefault(); }
 });
