@@ -240,6 +240,11 @@
     background:rgba(9,20,48,.85);border:2px solid rgba(120,160,235,.55);color:#fff;
     box-shadow:0 0 30px rgba(40,90,200,.35);backdrop-filter:blur(4px)}
   #galSearch::placeholder{color:rgba(180,205,255,.6)}
+  #galVuoto{position:absolute;top:112px;left:50%;transform:translateX(-50%);z-index:4;display:none;
+    max-width:min(460px,72%);text-align:center;font-size:13px;line-height:1.45;color:#ffd28a;
+    background:rgba(9,20,48,.7);border:1px solid rgba(255,210,138,.35);border-radius:14px;
+    padding:8px 16px;backdrop-filter:blur(3px)}
+  #galVuoto.on{display:block}
   #galFlight.cerca .gm-card:not(.match){opacity:.14}
   .gm-card.match{border-color:#9ec3ff}
   #galMacDett{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;
@@ -381,7 +386,8 @@
 <div class="overlay" id="galassiaMac" style="display:none">
   <canvas id="galMacBg"></canvas>
   <div id="galMacHead">La <span>galassia delle parole</span> &middot; cittadinanza digitale</div>
-  <input id="galSearch" placeholder="Scrivi la domanda o un concetto&hellip; la galassia ti porta alla parola" autocomplete="off">
+  <input id="galSearch" placeholder="Scrivi una parola-chiave o un concetto&hellip; la galassia ti porta al termine" autocomplete="off">
+  <div id="galVuoto"></div>
   <div id="galFlight"><div id="galFlightWorld"></div></div>
   <div id="galMacHelp"><b>Scrivi</b> per cercare &middot; <b>&uarr; &darr;</b> o <b>scroll</b> per volare &middot; <b>clic</b> sulla parola a fuoco per la spiegazione</div>
   <div id="galMacDett" style="display:none">
@@ -2115,7 +2121,6 @@ function volaVerso(targetZ){
 }
 let galCards=[], galCamZ=0, galCamMax=0;
 const GAL_STEP=240;                                   // distanza fra una parola e la successiva lungo il volo
-let galDF=new Map();                                  // frequenza di ogni radice tra le 50 voci (per pesare la ricerca)
 function costruisciGalMac(){
   if(galMacCostruita) return; galMacCostruita=true;
   const world=$('galFlightWorld');
@@ -2132,10 +2137,6 @@ function costruisciGalMac(){
     world.appendChild(el); galCards.push({el,x,y,baseZ,tw,dw,tnorm:nrm(g.t)});
   });
   galCamMax=(GLOSSARIO.length-1)*GAL_STEP;
-  // document-frequency: quante voci contengono ogni radice (a 4 lettere)
-  galDF=new Map();
-  galCards.forEach(c=>{ const stems=new Set([...c.tw,...c.dw].map(w=>w.slice(0,4)));
-    stems.forEach(st=>galDF.set(st,(galDF.get(st)||0)+1)); });
 }
 // muovo la "camera" spostando la z di OGNI card (niente traslazione gigante del mondo)
 function aggiornaVolo(){
@@ -2152,28 +2153,55 @@ function volaDi(n){ volaVerso(galCamZ+n*GAL_STEP); }
 // RICERCA: lo studente scrive la domanda/concetto → la galassia vola alla parola più affine
 function nrm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 const GAL_STOP=new Set('il lo la i gli le un uno una di a da in con su per tra fra e o ad ed ma se che chi come dove quando perche non si ne del dello della dei degli delle al allo alla ai agli alle dal nel nella sul sulla mio mia tuo tua suo sua questo quello questa sono ha hai ho essere fare piu meno molto tutto ogni anche solo cosa quale cioe poi qui qua'.split(' '));
+// due parole combaciano se sono UGUALI, oppure condividono un prefisso di almeno 5 lettere
+// (gestisce plurali/coniugazioni: password/passwords, blocco/bloccare, custode/custodisce)
+// ma NON crea collisioni fantasma come ricevere↔ricerca (prefisso comune "rice" = 4 < 5).
+function tokMatch(a,b){
+  if(a===b) return true;
+  const n=Math.min(a.length,b.length);
+  if(n<5) return false;                                          // parole corte/acronimi (vpn, dns, url): solo esatte
+  let k=0; while(k<n && a[k]===b[k]) k++;
+  return k>=5;
+}
 function cercaGalMac(q){
   const nq=nrm(q).trim();
-  const azzera=()=>{ $('galFlight').classList.remove('cerca'); galCards.forEach(c=>c.el.classList.remove('match')); };
+  const azzera=(msg)=>{ $('galFlight').classList.remove('cerca'); galCards.forEach(c=>c.el.classList.remove('match'));
+    const gv=$('galVuoto'); if(msg){ gv.textContent=msg; gv.classList.add('on'); } else gv.classList.remove('on'); };
   if(!nq){ azzera(); return; }
   const qw=[...new Set(nq.split(/[^a-z0-9]+/).filter(w=>w.length>=3 && !GAL_STOP.has(w)))];
   if(!qw.length){ azzera(); return; }
   const N=galCards.length;
-  const peso=st=>Math.log((N+1)/((galDF.get(st)||0)+1))+0.35;   // parole rare pesano di più, quelle comuni poco
-  let best=-1,bestSc=0;
-  galCards.forEach((c,i)=>{
+  // IDF per ogni parola di query: in quante voci compare (titolo o definizione). Le parole rare pesano di più.
+  const idf=qw.map(w=>{ let df=0;
+    galCards.forEach(c=>{ if(c.tw.some(x=>tokMatch(w,x))||c.dw.some(x=>tokMatch(w,x))) df++; });
+    return Math.log((N+1)/(df+1))+0.35; });
+  galCards.forEach(c=>{
     let sc=0;
-    qw.forEach(w=>{ const st=w.slice(0,4), pw=peso(st);          // match per radice: gestisce plurali/coniugazioni
-      if(c.tw.some(x=>x.startsWith(st))) sc+=6*pw;               // nel TERMINE
-      else if(c.dw.some(x=>x.startsWith(st))) sc+=2.4*pw;        // nella definizione
+    qw.forEach((w,j)=>{
+      if(c.tw.some(x=>tokMatch(w,x))) sc+=6*idf[j];              // parola nel TERMINE: peso forte
+      else if(c.dw.some(x=>tokMatch(w,x))) sc+=2.4*idf[j];       // parola nella definizione: peso medio
     });
-    if(c.tnorm===nq) sc+=25;                                     // ha scritto ESATTAMENTE la parola
-    c._score=sc; if(sc>bestSc){ bestSc=sc; best=i; }
+    if(c.tnorm===nq) sc+=25;                                     // ha scritto ESATTAMENTE il termine
+    c._score=sc;
   });
-  const soglia=Math.max(bestSc*0.45,2);
-  $('galFlight').classList.toggle('cerca', bestSc>0);
-  galCards.forEach(c=>c.el.classList.toggle('match', bestSc>0 && c._score>=soglia));
-  if(best>=0){ volaVerso(best*GAL_STEP); }
+  // classifica: migliore e secondo
+  const ord=galCards.map((c,i)=>({i,s:c._score})).sort((a,b)=>b.s-a.s);
+  const best=ord[0].i, bestSc=ord[0].s, secondSc=ord[1]?ord[1].s:0;
+  // Due condizioni per volare a un termine, altrimenti è un risultato "a caso":
+  //  1) SOGLIA assoluta: un match di titolo su parola specifica vale ~15-22, una parola comune in definizione ~2-4.
+  //  2) VANTAGGIO netto sul secondo: se due voci sono quasi pari, la query è generica (tipo una frase-domanda
+  //     la cui parola-risposta non è nel testo) → non fingiamo di sapere la risposta.
+  const SOGLIA=7;
+  const confidente = bestSc>=SOGLIA && (secondSc<SOGLIA || bestSc>=1.5*secondSc);
+  if(!confidente){
+    azzera('Scrivi una sola parola-chiave (il concetto, non l’intera domanda): la galassia ti porta al termine giusto.');
+    return;
+  }
+  $('galVuoto').classList.remove('on');
+  const soglia=Math.max(bestSc*0.5, SOGLIA);
+  $('galFlight').classList.add('cerca');
+  galCards.forEach(c=>c.el.classList.toggle('match', c._score>=soglia));
+  volaVerso(best*GAL_STEP);
 }
 function mostraDettGal(g){
   $('gmTerm').textContent=g.t; $('gmDef').textContent=g.d;
