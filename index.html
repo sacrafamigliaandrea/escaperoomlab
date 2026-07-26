@@ -1497,6 +1497,7 @@ function disattivaMatrix(){
 // il video matrix.mp4 al centro (ha già l'audio): mette in pausa il sottofondo e a fine video si spegne l'effetto
 function avviaVideoMatrix(){
   try{ if(typeof ytPronto!=='undefined' && ytPronto) ytPlayer.pauseVideo(); }catch(e){}
+  try{ if(typeof sfxPronto!=='undefined' && sfxPronto) sfxPlayer.pauseVideo(); }catch(e){} sfxAttivo=false;  // zittisce un eventuale tuono in corso
   const v=$('matrixVid'); if(!v) return;
   v.style.display='block'; v.muted=!musicaOn;
   try{ v.currentTime=0; }catch(e){}
@@ -1770,7 +1771,7 @@ function scatenaLampo(){
 // ---- SUONO del temporale: short YouTube riprodotto a raffiche casuali (non permanente) ----
 let sfxPlayer=null, sfxPronto=false, sfxAttivo=false;
 function suonoTemporale(){
-  if(!musicaOn || !sfxPronto || sfxAttivo) return;   // niente sovrapposizioni
+  if(!musicaOn || matrixOn || !sfxPronto || sfxAttivo) return;   // niente tuoni durante la Matrix (parla il video)
   try{ sfxAttivo=true; sfxPlayer.setVolume(60); sfxPlayer.seekTo(0); sfxPlayer.playVideo();
     setTimeout(()=>{ try{ sfxPlayer.pauseVideo(); }catch(_){} sfxAttivo=false; }, 6000);
   }catch(e){ sfxAttivo=false; }
