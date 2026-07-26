@@ -212,7 +212,7 @@
   #galFlight{position:absolute;inset:0;z-index:2;perspective:1300px;overflow:hidden}
   #galFlight.dim{opacity:.25;filter:blur(1.5px);pointer-events:none}
   #galFlightWorld{position:absolute;left:50%;top:47%;transform-style:preserve-3d}
-  .gm-card{position:absolute;left:0;top:0;transform-style:preserve-3d;transition:transform .3s ease-out;
+  .gm-card{position:absolute;left:0;top:0;transform-style:preserve-3d;transition:opacity .25s;
     padding:9px 17px;border-radius:14px;background:rgba(34,64,130,.82);border:1px solid rgba(150,185,245,.6);
     color:#eef4ff;font-size:16px;font-weight:700;white-space:nowrap;cursor:pointer;backface-visibility:hidden;
     box-shadow:0 0 22px rgba(70,120,230,.4)}
@@ -2039,6 +2039,24 @@ $('btnRicomincia').addEventListener('click',()=>location.reload());
 
 // ---- GALASSIA DELLE 50 PAROLE (MacBook di Andrea, schermata Claude) ----
 let galMacRAF=null, galMacStars=[], galMacCostruita=false;
+let galFlightRAF=null, galWarpBoost=0;
+// VOLO animato verso una posizione: la telecamera scivola e le stelle sfrecciano (warp)
+function volaVerso(targetZ){
+  targetZ=Math.max(0,Math.min(galCamMax,targetZ));
+  if(galFlightRAF) cancelAnimationFrame(galFlightRAF);
+  const startZ=galCamZ, dist=targetZ-startZ;
+  if(Math.abs(dist)<2){ galCamZ=targetZ; aggiornaVolo(); return; }
+  const dur=Math.min(1600, 350+Math.abs(dist)*0.55), amp=Math.min(1,Math.abs(dist)/900);
+  let t0=null;
+  function step(now){
+    if(t0===null) t0=now;
+    const p=Math.min(1,(now-t0)/dur), e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;   // easeInOut
+    galCamZ=startZ+dist*e; aggiornaVolo();
+    galWarpBoost=amp*Math.sin(p*Math.PI);                                     // picco a metà viaggio
+    if(p<1) galFlightRAF=requestAnimationFrame(step); else { galFlightRAF=null; galWarpBoost=0; }
+  }
+  galFlightRAF=requestAnimationFrame(step);
+}
 let galCards=[], galCamZ=0, galCamMax=0;
 const GAL_STEP=240;                                   // distanza fra una parola e la successiva lungo il volo
 function costruisciGalMac(){
@@ -2050,7 +2068,7 @@ function costruisciGalMac(){
     const x=Math.cos(ang)*R, y=Math.sin(ang)*R, baseZ=-i*GAL_STEP;
     el.addEventListener('click',()=>{
       if(Math.abs(baseZ+galCamZ) < GAL_STEP*0.5) mostraDettGal(g);   // a fuoco → apri; altrimenti volaci sopra
-      else { galCamZ=i*GAL_STEP; aggiornaVolo(); }
+      else { volaVerso(i*GAL_STEP); }
     });
     world.appendChild(el); galCards.push({el,x,y,baseZ});
   });
@@ -2067,7 +2085,7 @@ function aggiornaVolo(){
   });
   galCards.forEach((c,i)=>c.el.classList.toggle('vicina', i===best));
 }
-function volaDi(n){ galCamZ+=n*GAL_STEP; aggiornaVolo(); }
+function volaDi(n){ volaVerso(galCamZ+n*GAL_STEP); }
 // RICERCA: lo studente scrive la domanda/concetto → la galassia vola alla parola più affine
 function nrm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 const GAL_STOP=new Set('il lo la i gli le un uno una di a da in con su per tra fra e o ad ed ma se che chi come dove quando perche non si ne del dello della dei degli delle al allo alla ai agli alle dal nel nella sul sulla mio mia tuo tua suo sua questo quello questa sono ha hai ho essere fare piu meno molto tutto ogni anche solo cosa quale cioe poi qui qua'.split(' '));
@@ -2093,7 +2111,7 @@ function cercaGalMac(q){
   const soglia=Math.max(4,bestSc*0.5);
   $('galFlight').classList.toggle('cerca', bestSc>0);
   galCards.forEach(c=>c.el.classList.toggle('match', bestSc>0 && c._score>=soglia));
-  if(best>=0){ galCamZ=best*GAL_STEP; aggiornaVolo(); }
+  if(best>=0){ volaVerso(best*GAL_STEP); }
 }
 function mostraDettGal(g){
   $('gmTerm').textContent=g.t; $('gmDef').textContent=g.d;
@@ -2120,10 +2138,16 @@ function avviaGalMacBg(){
     const w=cv.width,h=cv.height,cx=w/2,cy=h/2;
     ctx.fillStyle='rgba(3,6,18,0.30)'; ctx.fillRect(0,0,w,h);
     warp+=(0.05-warp)*0.04;
-    for(const s of galMacStars){ s.z-=warp*0.012; if(s.z<=0.02){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1;}
+    const spd=warp + galWarpBoost*0.9;                       // durante il volo le stelle sfrecciano
+    const scie=galWarpBoost>0.05; ctx.lineCap='round';
+    for(const s of galMacStars){ const zPrec=s.z; s.z-=spd*0.012; if(s.z<=0.02){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1;}
       const k=0.6/s.z, px=cx+s.x*k*cx, py=cy+s.y*k*cy; if(px<0||px>w||py<0||py>h) continue;
-      const a=Math.min(1,1-s.z); ctx.beginPath(); ctx.fillStyle='rgba(150,190,255,'+a.toFixed(2)+')';
-      ctx.arc(px,py,Math.max(.4,(1-s.z)*2.4),0,7); ctx.fill(); }
+      const a=Math.min(1,1-s.z), col='rgba(150,190,255,'+a.toFixed(2)+')';
+      if(scie){                                              // scia radiale = viaggio tra le stelle
+        const k2=0.6/Math.min(1,zPrec+galWarpBoost*0.05), qx=cx+s.x*k2*cx, qy=cy+s.y*k2*cy;
+        ctx.strokeStyle=col; ctx.lineWidth=Math.max(.7,(1-s.z)*2.2); ctx.beginPath(); ctx.moveTo(qx,qy); ctx.lineTo(px,py); ctx.stroke();
+      } else { ctx.beginPath(); ctx.fillStyle=col; ctx.arc(px,py,Math.max(.4,(1-s.z)*2.4),0,7); ctx.fill(); }
+    }
     galMacRAF=requestAnimationFrame(frame);
   }
   frame();
@@ -2133,7 +2157,7 @@ $('btnEsciGalMac').addEventListener('click',chiudiGalassiaMac);
 $('galSearch').addEventListener('input',e=>cercaGalMac(e.target.value));
 $('gmChiudiDett').addEventListener('click',nascondiDettGal);
 // comandi di volo: scroll e frecce (attivi solo quando la galassia è aperta e non si legge un dettaglio)
-$('galFlight').addEventListener('wheel',e=>{ e.preventDefault(); galCamZ+=Math.sign(e.deltaY)*GAL_STEP*0.5; aggiornaVolo(); },{passive:false});
+$('galFlight').addEventListener('wheel',e=>{ e.preventDefault(); volaVerso(galCamZ+Math.sign(e.deltaY)*GAL_STEP); },{passive:false});
 addEventListener('keydown',e=>{
   if($('galassiaMac').style.display!=='flex') return;
   if($('galMacDett').style.display==='block') return;
