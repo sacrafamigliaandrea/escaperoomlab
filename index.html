@@ -176,6 +176,20 @@
   .decoy-txt{text-align:center;font-size:15px;line-height:1.55;opacity:.95;margin:0 auto;max-width:400px}
   #btnDecoyEsci{background:#8a6a12;box-shadow:0 8px 30px rgba(200,150,20,.35)}
   #btnDecoyEsci:hover{background:#a07d16}
+  /* ---- decodificatore del cifrario ---- */
+  #enCifrario{margin:8px 0 12px}
+  .cf-titolo{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blu-chiaro);text-align:center;margin-bottom:6px}
+  .cf-codice{text-align:center;margin-bottom:12px}
+  .cf-lettera{display:inline-block;min-width:28px;padding:6px 0;margin:0 2px;border-radius:6px;
+    background:rgba(90,145,235,.35);border:1px solid rgba(255,255,255,.35);color:#fff;font-weight:800;font-size:19px;letter-spacing:1px}
+  .cf-tab{display:grid;grid-template-columns:repeat(26,1fr);gap:1px;max-width:100%}
+  .cf-col{display:flex;flex-direction:column;align-items:center;border-radius:3px;padding:2px 0;line-height:1.15}
+  .cf-col b{font-size:10px;color:#93a9c8;font-weight:700}
+  .cf-col i{font-size:11px;color:#cfe0ff;font-style:normal;font-weight:800}
+  .cf-col.cf-on{background:rgba(90,145,235,.55);box-shadow:0 0 0 1px rgba(255,255,255,.45)}
+  .cf-col.cf-on b,.cf-col.cf-on i{color:#fff}
+  .cf-aiuto{font-size:11.5px;color:rgba(255,255,255,.8);text-align:center;margin-top:9px;line-height:1.45}
+  .cf-manca{font-size:13px;color:#ffd28a;text-align:center;margin-top:8px;line-height:1.45}
   /* ---- inventario oggetti 3D ---- */
   #inventario{position:fixed;top:56px;left:16px;z-index:11;display:flex;flex-direction:column;gap:7px}
   .inv-slot{display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;
@@ -306,6 +320,7 @@
     <div class="en-tema" id="enTema"></div>
     <div id="enForm">
       <p id="enTesto"></p>
+      <div id="enCifrario" style="display:none"></div>
       <div style="text-align:center"><input id="enInput" maxlength="40" placeholder="Scrivi la parola-chiave&hellip;" autocomplete="off"></div>
       <div class="en-riga">
         <button id="btnVerifica">Verifica</button>
@@ -453,32 +468,51 @@ function texLegno(){
   const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
 }
 // ---------- texture: schermo iMac col portale viola ----------
+// schermo degli iMac studenti: acerio.app attuale (portale verde "Web App Didattiche")
 function texSchermoViola(){
   const c=mkCanvas(512,360), g=c.getContext('2d');
   g.fillStyle='#0d0d12'; g.fillRect(0,0,512,360);            // cornice nera
   g.fillStyle='#2a2a33'; g.fillRect(18,16,476,26);            // barra browser
   g.fillStyle='#555'; for(let i=0;i<3;i++){ g.beginPath(); g.arc(32+i*14,29,4,0,7); g.fill(); }
   g.fillStyle='#3c3c46'; rRect(g,120,20,270,18,9); g.fill();
-  const grad=g.createLinearGradient(18,42,494,120);
-  grad.addColorStop(0,'#7b3fd4'); grad.addColorStop(.55,'#a25ce0'); grad.addColorStop(1,'#d67bd0');
-  g.fillStyle=grad; g.fillRect(18,42,476,66);                 // header viola
-  g.fillStyle='#fff'; g.font='bold 17px Arial'; g.fillText('Portale Risorse Digitali',36,72);
-  g.font='10px Arial'; g.fillStyle='rgba(255,255,255,.85)';
-  g.fillText('Andrea Cerioli · Animatore Digitale — Sacra Famiglia',36,90);
-  g.fillStyle='#eef0fa'; g.fillRect(18,108,476,222);          // corpo chiaro
-  rRect(g,30,116,452,22,11); g.fillStyle='#fff'; g.fill();    // barra ricerca
-  g.fillStyle='#9aa'; g.font='10px Arial'; g.fillText('Cerca una risorsa…',44,130);
-  for(let col=0;col<3;col++){                                 // tre colonne di card
-    const x=30+col*156;
-    rRect(g,x,146,146,176,8); g.fillStyle='#fff'; g.fill();
-    g.fillStyle=['#7b3fd4','#1B6D3F','#2c5aa0'][col]; g.fillRect(x,146,146,20);
-    g.fillStyle='#fff'; g.font='bold 9px Arial';
-    g.fillText(['Cittadinanza Digitale','Lab. Scrittura','Informatica & Tech'][col],x+8,159);
-    for(let r=0;r<7;r++){
-      g.fillStyle='#334'; g.fillRect(x+8,176+r*20,6,6);
-      g.fillStyle='#99a'; g.fillRect(x+20,174+r*20,110,4); g.fillRect(x+20,181+r*20,80,3);
-    }
-  }
+  g.fillStyle='#c9cdd6'; g.font='11px Arial'; g.fillText('acerio.app',132,34);
+  // header VERDE (versione attuale)
+  const grad=g.createLinearGradient(18,42,494,152);
+  grad.addColorStop(0,'#63a07b'); grad.addColorStop(.55,'#3d7d63'); grad.addColorStop(1,'#275d51');
+  g.fillStyle=grad; g.fillRect(18,42,476,110);
+  // logo bianco della scuola
+  g.fillStyle='#fff'; rRect(g,30,54,62,62,12); g.fill();
+  g.fillStyle='#1B6D3F'; g.font='bold 13px Arial'; g.textAlign='center'; g.fillText('scuola',61,74);
+  ['greenNido','Infanzia','Primaria','Secondaria'].forEach((t,i)=>{ g.fillStyle='#274d78'; rRect(g,40,78+i*7,42,5,2); g.fill();
+    g.fillStyle='#fff'; g.font='5px Arial'; g.fillText(t,61,82.5+i*7); });
+  g.fillStyle='#1B6D3F'; g.font='5px Arial'; g.fillText('sacrafamiglia.edu.it',61,112);
+  g.textAlign='left';
+  // titolo
+  g.fillStyle='rgba(255,255,255,.85)'; g.font='bold 10px Arial'; g.fillText('P O R T A L E',108,64);
+  g.fillStyle='#fff'; g.font='bold 24px Arial'; g.fillText('Web App Didattiche',106,90);
+  g.font='11px Arial'; g.fillStyle='rgba(255,255,255,.92)'; g.fillText('Andrea Cerioli · Animatore Digitale',108,108);
+  // statistiche
+  const stats=[['161','web app'],['20','riservata'],['6','genitori'],['26 lug','aggiorn.']];
+  stats.forEach((s,i)=>{ const x=112+i*94;
+    g.fillStyle='rgba(255,255,255,.95)'; g.font='bold 16px Arial'; g.fillText(s[0],x,140);
+    g.fillStyle='rgba(255,255,255,.7)'; g.font='7px Arial'; g.fillText(s[1],x,148); });
+  // corpo chiaro con pill categorie
+  g.fillStyle='#eef1f8'; g.fillRect(18,152,476,178);
+  const cats=[['Tutte',true],['Cittadinanza',false],['Scrittura',false],['Biblioteca',false],['Informatica',false]];
+  let cx=32; g.font='bold 10px Arial';
+  cats.forEach(cat=>{ const w=g.measureText(cat[0]).width+22;
+    g.fillStyle=cat[1]?'#1B6D3F':'#fff'; rRect(g,cx,166,w,22,11); g.fill();
+    g.fillStyle=cat[1]?'#fff':'#2c4a3a'; g.fillText(cat[0],cx+11,181); cx+=w+8; });
+  // card risorsa in evidenza
+  g.fillStyle='#fff'; rRect(g,32,200,448,120,10); g.fill();
+  g.fillStyle='#1B6D3F'; rRect(g,32,200,448,6,3); g.fill();
+  g.fillStyle='#e6f0ea'; g.beginPath(); g.arc(56,232,13,0,7); g.fill();
+  g.fillStyle='#1a3a2a'; g.font='bold 14px Arial'; g.fillText('Cittadinanza Digitale',80,230);
+  g.fillStyle='#dcebe2'; rRect(g,80,238,66,16,8); g.fill(); g.fillStyle='#2c6b45'; g.font='bold 9px Arial'; g.fillText('18 risorse',88,249);
+  for(let r=0;r<3;r++){ const y=272+r*16;
+    g.fillStyle='#eef4f0'; g.beginPath(); g.arc(60,y,8,0,7); g.fill();
+    g.fillStyle='#2c6b45'; g.font='bold 8px Arial'; g.textAlign='center'; g.fillText(''+(r+1),60,y+3); g.textAlign='left';
+    g.fillStyle='#2a3b33'; g.fillRect(78,y-5,150,5); g.fillStyle='#9fb3a8'; g.fillRect(78,y+2,230,3); }
   return tex(c);
 }
 // ---------- texture: schermo eroe col portale verde (fedele a portale.png) ----------
@@ -1728,16 +1762,28 @@ function apriDecoy(mac){
   }));
   splash('Pericolo!','#f5b301');
 }
+// decodificatore visivo del cifrario: mostra il codice e la tabella CIFRATO→VERA
+function costruisciCifrario(e){
+  const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const dec=ch=>A[(A.indexOf(ch)-e.shift+26)%26];
+  const usate=new Set(e.codice.split(''));
+  let cod=''; for(const ch of e.codice) cod+='<span class="cf-lettera">'+ch+'</span>';
+  let tab=''; for(const ch of A) tab+='<div class="cf-col'+(usate.has(ch)?' cf-on':'')+'"><b>'+ch+'</b><i>'+dec(ch)+'</i></div>';
+  return '<div class="cf-titolo">Il tuo Cifrario 3D · decodifica</div><div class="cf-codice">'+cod+'</div>'+
+    '<div class="cf-tab">'+tab+'</div>'+
+    '<div class="cf-aiuto">Per ogni lettera del <b>codice</b>, cercala nella riga in alto (in evidenza) e scrivi la lettera <b>sotto</b>: è la parola-chiave.</div>';
+}
 function apriEnigma(e){
   G.overlay=true;
   if(document.pointerLockElement) document.exitPointerLock();
   if(e.cifrato){
-    let t=e.testo+'   ▸ Codice: '+e.codice;
-    t += G.inv.cifrario ? ('   ▸ Cifrario 3D: sposta ogni lettera indietro di '+e.shift+' posizioni.')
-                        : ('   ▸ Ti serve il CIFRARIO stampato in 3D (bancone della stampante).');
-    $('enTesto').textContent=t;
+    $('enTesto').textContent=e.testo;
+    $('enCifrario').style.display='block';
+    $('enCifrario').innerHTML = G.inv.cifrario ? costruisciCifrario(e)
+      : '<div class="cf-titolo">Codice: <b>'+e.codice+'</b></div><div class="cf-manca">Messaggio cifrato: prendi il <b>CIFRARIO</b> stampato in 3D sul bancone della stampante, poi torna qui.</div>';
   } else {
     $('enTesto').textContent=e.testo;
+    $('enCifrario').style.display='none';
   }
   $('enInput').value=''; $('enFeedback').textContent='';
   $('enEsito').style.display='none'; $('enForm').style.display='block';
@@ -1971,8 +2017,17 @@ $('btnSalta').addEventListener('click',avviaGameplay);
 const YT_MUSICA='Q3_QOVaBA98';       // musica di sottofondo
 const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffiche casuali)
 const YT_MATRIX='i_8RBP20yj8';       // musica dedicata alla Visione Matrix (parte al clic sulla mela)
-let ytPlayer=null, ytPronto=false, musicaOn=true;
+let ytPlayer=null, ytPronto=false, musicaOn=true, musicaAvviata=false;
 let matrixPlayer=null, matrixPronto=false;
+// Rete di sicurezza autoplay: se al clic "Inizia" l'API YT non era ancora pronta,
+// il retry di onReady cade fuori da un gesto utente e il browser blocca il play.
+// Qui riprovo ad ogni gesto (clic/tasto) finché il sottofondo non parte davvero.
+function sbloccaMusicaAlGesto(){
+  if(musicaAvviata || !musicaOn || matrixOn) return;
+  if(ytPronto){ try{ ytPlayer.setVolume(32); ytPlayer.playVideo(); }catch(e){} }
+}
+['pointerdown','keydown','touchstart'].forEach(ev=>
+  document.addEventListener(ev,sbloccaMusicaAlGesto,{passive:true}));
 function onYouTubeIframeAPIReady(){
   sfxPlayer=new YT.Player('ytsfx',{
     videoId:YT_TEMPORALE,
@@ -1990,7 +2045,8 @@ function onYouTubeIframeAPIReady(){
     playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1,loop:1,playlist:YT_MUSICA},
     events:{
       onReady:()=>{ ytPronto=true; if(G.intro||G.gioco) avviaMusica(); },
-      onStateChange:e=>{ if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(_){} } }
+      onStateChange:e=>{ if(e.data===YT.PlayerState.PLAYING) musicaAvviata=true;
+        if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(_){} } }
     }
   });
 }
@@ -2059,6 +2115,7 @@ function volaVerso(targetZ){
 }
 let galCards=[], galCamZ=0, galCamMax=0;
 const GAL_STEP=240;                                   // distanza fra una parola e la successiva lungo il volo
+let galDF=new Map();                                  // frequenza di ogni radice tra le 50 voci (per pesare la ricerca)
 function costruisciGalMac(){
   if(galMacCostruita) return; galMacCostruita=true;
   const world=$('galFlightWorld');
@@ -2066,13 +2123,19 @@ function costruisciGalMac(){
     const el=document.createElement('button'); el.className='gm-card'; el.textContent=g.t;
     const ang=i*0.7, R=78;                            // corridoio a spirale stretta, in ordine alfabetico
     const x=Math.cos(ang)*R, y=Math.sin(ang)*R, baseZ=-i*GAL_STEP;
+    const tw=nrm(g.t).split(/[^a-z0-9]+/).filter(Boolean);
+    const dw=nrm(g.d).split(/[^a-z0-9]+/).filter(Boolean);
     el.addEventListener('click',()=>{
       if(Math.abs(baseZ+galCamZ) < GAL_STEP*0.5) mostraDettGal(g);   // a fuoco → apri; altrimenti volaci sopra
       else { volaVerso(i*GAL_STEP); }
     });
-    world.appendChild(el); galCards.push({el,x,y,baseZ});
+    world.appendChild(el); galCards.push({el,x,y,baseZ,tw,dw,tnorm:nrm(g.t)});
   });
   galCamMax=(GLOSSARIO.length-1)*GAL_STEP;
+  // document-frequency: quante voci contengono ogni radice (a 4 lettere)
+  galDF=new Map();
+  galCards.forEach(c=>{ const stems=new Set([...c.tw,...c.dw].map(w=>w.slice(0,4)));
+    stems.forEach(st=>galDF.set(st,(galDF.get(st)||0)+1)); });
 }
 // muovo la "camera" spostando la z di OGNI card (niente traslazione gigante del mondo)
 function aggiornaVolo(){
@@ -2095,20 +2158,19 @@ function cercaGalMac(q){
   if(!nq){ azzera(); return; }
   const qw=[...new Set(nq.split(/[^a-z0-9]+/).filter(w=>w.length>=3 && !GAL_STOP.has(w)))];
   if(!qw.length){ azzera(); return; }
+  const N=galCards.length;
+  const peso=st=>Math.log((N+1)/((galDF.get(st)||0)+1))+0.35;   // parole rare pesano di più, quelle comuni poco
   let best=-1,bestSc=0;
   galCards.forEach((c,i)=>{
-    const g=GLOSSARIO[i];
-    const tw=nrm(g.t).split(/[^a-z0-9]+/).filter(Boolean);
-    const dw=nrm(g.d).split(/[^a-z0-9]+/).filter(Boolean);
     let sc=0;
-    qw.forEach(w=>{ const st=w.slice(0,4);                 // match per radice: gestisce plurali/coniugazioni
-      if(tw.some(x=>x.startsWith(st))) sc+=6;
-      else if(dw.some(x=>x.startsWith(st))) sc+=3;
+    qw.forEach(w=>{ const st=w.slice(0,4), pw=peso(st);          // match per radice: gestisce plurali/coniugazioni
+      if(c.tw.some(x=>x.startsWith(st))) sc+=6*pw;               // nel TERMINE
+      else if(c.dw.some(x=>x.startsWith(st))) sc+=2.4*pw;        // nella definizione
     });
-    if(nrm(g.t).length>=4 && nq.includes(nrm(g.t))) sc+=10;  // ha scritto proprio il termine
+    if(c.tnorm===nq) sc+=25;                                     // ha scritto ESATTAMENTE la parola
     c._score=sc; if(sc>bestSc){ bestSc=sc; best=i; }
   });
-  const soglia=Math.max(4,bestSc*0.5);
+  const soglia=Math.max(bestSc*0.45,2);
   $('galFlight').classList.toggle('cerca', bestSc>0);
   galCards.forEach(c=>c.el.classList.toggle('match', bestSc>0 && c._score>=soglia));
   if(best>=0){ volaVerso(best*GAL_STEP); }
