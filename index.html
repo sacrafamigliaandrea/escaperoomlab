@@ -165,7 +165,7 @@
     display:flex;align-items:center;gap:7px;backdrop-filter:blur(6px)}
   #btnMusica.off{opacity:.55}
   #btnMusica svg{width:14px;height:14px;fill:#fff}
-  #yt,#ytsfx{position:fixed;left:-9999px;top:-9999px;width:200px;height:120px;opacity:0;pointer-events:none}
+  #yt,#ytsfx,#ytmatrix{position:fixed;left:-9999px;top:-9999px;width:200px;height:120px;opacity:0;pointer-events:none}
   /* ---- schermate-trappola (ambra) ---- */
   #enigma.pericolo{background:radial-gradient(circle at 50% 45%,#2a1e05,#0a0702 72%)}
   #enigma.pericolo #enBox{box-shadow:0 0 60px rgba(230,165,25,.42);border-color:rgba(240,190,80,.45)}
@@ -184,6 +184,12 @@
   .inv-slot svg{width:16px;height:16px;fill:none;stroke:#7d8aa0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .inv-slot.has{color:#fff;opacity:1;border-color:var(--blu-chiaro);background:rgba(18,62,144,.5)}
   .inv-slot.has svg{stroke:var(--blu-chiaro)}
+  /* ---- Visione Matrix (easter egg omino LEGO) ---- */
+  #matrix{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;display:none}
+  #matrixTint{position:fixed;inset:0;z-index:5;pointer-events:none;display:none;
+    background:radial-gradient(circle at 50% 50%,rgba(0,80,20,.10),rgba(0,40,10,.30));
+    box-shadow:inset 0 0 200px rgba(0,255,60,.25)}
+  #matrix~#matrixTint{}
   /* ---- logo sacrafamiglia.education ---- */
   .wm{font-size:20px;letter-spacing:-.3px;color:#fff;line-height:1;white-space:nowrap}
   .wm-r{font-weight:400}.wm-b{font-weight:700}.wm-i{font-weight:700;font-style:italic}
@@ -205,6 +211,8 @@
   <div class="inv-slot" id="invCifrario"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/></svg>Cifrario</div>
   <div class="inv-slot" id="invChiave"><svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4.2"/><path d="M12.2 12H21M18 12v3.5M21 12v2.6"/></svg>Chiave</div>
 </div>
+<canvas id="matrix"></canvas>
+<div id="matrixTint"></div>
 <div id="mirino"></div>
 <div id="hint"></div>
 <div id="indizio" class="pann"><div class="lab">Indizio</div><div id="indizioTxt"></div></div>
@@ -220,6 +228,7 @@
 <button id="btnSalta" style="display:none">Salta introduzione &rsaquo;</button>
 <div id="yt"></div>
 <div id="ytsfx"></div>
+<div id="ytmatrix"></div>
 
 <div class="overlay" id="consegna">
   <div class="box">
@@ -232,7 +241,10 @@
        per sbloccare la serratura e uscire nel corridoio.</p>
     <p>Ogni enigma chiede una <b>parola-chiave</b>. Se &egrave; giusta ricevi l&rsquo;<b>indizio</b> per
        il Mac successivo: a volte un numero da calcolare, a volte una posizione nell&rsquo;aula.</p>
-    <p><b>Comincia dalla cattedra del professore</b>, l&rsquo;iMac 27&Prime; in testa ai tavoli, nel varco centrale.</p>
+    <p><b>Parti dal TUO computer.</b> Scrivi qui il numero della tua postazione: il primo enigma &egrave; l&igrave;.
+       L&rsquo;ultimo enigma sar&agrave; sulla <b>cattedra del prof. Andrea</b>, e apre la porta.</p>
+    <input id="macStud" type="number" min="1" max="28" placeholder="Il numero del tuo Mac (1&ndash;28)" autocomplete="off">
+    <p style="font-size:12px;opacity:.6;margin-top:4px">Se lo lasci vuoto, la partenza &egrave; casuale.</p>
     <button id="btnInizia">Inizia la fuga</button>
   </div>
 </div>
@@ -817,6 +829,7 @@ const matTV=new THREE.MeshBasicMaterial({map:texQuadro()});
   pg.position.set(-4.3,2.05,3.31); pg.rotation.y=Math.PI; scene.add(pg);
 }
 // ---------- omino LEGO con mela Apple (angolo di fondo lato finestre) ----------
+let legoGrp=null, legoMela=null, legoCore=null;   // easter egg: la mela si apre → Visione Matrix
 {
   const lego=new THREE.Group();
   const mk=(w,h,d,col,x,y,z)=>{
@@ -835,6 +848,14 @@ const matTV=new THREE.MeshBasicMaterial({map:texQuadro()});
   const logo=new THREE.Mesh(new THREE.PlaneGeometry(.22,.22),
     new THREE.MeshBasicMaterial({map:tex(lc),transparent:true}));
   logo.position.set(0,1.14,.176); lego.add(logo);
+  // "core" segreto dietro la mela: schermo verde di codice (Algoritmi & IA)
+  const cc=mkCanvas(64,64), cg=cc.getContext('2d');
+  cg.fillStyle='#02160a'; cg.fillRect(0,0,64,64);
+  cg.font='11px monospace'; cg.fillStyle='#39ff14';
+  for(let i=0;i<44;i++) cg.fillText(Math.random()<.5?'0':'1', (i*11)%60, 8+((i*13)%56));
+  legoCore=new THREE.Mesh(new THREE.PlaneGeometry(.2,.2),
+    new THREE.MeshBasicMaterial({map:tex(cc)}));
+  legoCore.position.set(0,1.14,.170); legoCore.visible=false; lego.add(legoCore);
   mk(.16,.42,.2,0xd83a2a,-.38,1.2,0);        // braccia rosse
   mk(.16,.42,.2,0xd83a2a,.38,1.2,0);
   mk(.14,.16,.18,0x33608f,-.4,.94,.04);      // mani blu
@@ -842,7 +863,7 @@ const matTV=new THREE.MeshBasicMaterial({map:texQuadro()});
   mk(.34,.34,.3,0xf5c518,0,1.62,0);          // testa gialla
   mk(.18,.1,.18,0xf5c518,0,1.84,0);          // stud
   lego.position.set(-7.3,0,2.55); lego.rotation.y=2.35;
-  scene.add(lego);
+  scene.add(lego); legoGrp=lego; legoMela=logo;
 }
 // ---------- costruttore iMac ----------
 const geoCache={};
@@ -1172,48 +1193,106 @@ const G={ gioco:false, tappa:0, mirato:null, overlay:false, finita:false,
 const PORTA_X=-0.5;                    // la porta della fuga
 const CORR_HW=0.65;                    // semi-larghezza del passaggio/corridoio
 
-// ---- I 12 ENIGMI (mac 0 = cattedra del professore) ----
-// .trova = indizio che porta A QUESTO Mac · .chiavi = parole accettate · .sugg = aiuto
-const ENIGMI=[
- { mac:0,  tema:'Password',              trova:'La tua postazione: la cattedra, l’iMac grande in testa ai tavoli (nel varco centrale).',
-   testo:'Per entrare nel tuo profilo digiti una “parola d’ordine” segreta. Come si chiama, in una parola?',
-   chiavi:['password','parola chiave','parolachiave'], sugg:'Ogni account ne ha una segreta: se qualcuno la scopre, entra al posto tuo.' },
- { mac:10, tema:'Netiquette',            trova:'Conta le lettere di PASSWORD (sono 8) e aggiungi 2.',
-   testo:'Scrivere TUTTO MAIUSCOLO online è come urlare, ed è maleducazione. L’insieme delle buone maniere in rete si chiama (net + etiquette)…?',
-   chiavi:['netiquette'], sugg:'Le buone maniere dell’educazione, ma applicate alla rete.' },
- { mac:15, tema:'Privacy',               trova:'Lato finestre (nord), tavolo OVEST — quello del bancone stampante: l’ultimo posto all’estremità, vicino alla parete.',
-   testo:'Nome, cognome, indirizzo, foto e numero di telefono sono i tuoi dati … : non vanno dati a sconosciuti online.',
-   chiavi:['personali','dati personali'], sugg:'Le informazioni che dicono chi sei: tue soltanto, non da regalare a sconosciuti.' },
- { mac:21, tema:'Phishing',              trova:'Il triplo di 7.',
-   testo:'Arriva un messaggio: “Hai vinto un telefono! Clicca e scrivi la tua password”. È un’esca per rubarti i dati. Questo inganno si chiama (suona come “fishing”)…?',
-   chiavi:['phishing'], sugg:'Funziona come la pesca: si lancia un’esca e si aspetta che qualcuno abbocchi.' },
- { mac:14, tema:'Fake news',             trova:'Lato porte (sud), tavolo OVEST (bancone stampante): il posto all’estremità, vicino alla parete.',
-   testo:'Leggi una notizia clamorosa. Prima di condividerla, cosa devi fare per capire se è vera? (controllare più fonti attendibili)',
-   chiavi:['verificare','verifica','controllare','controllo'], sugg:'Prima di fidarti, confronti quello che leggi con altre fonti serie.' },
- { mac:24, tema:'Cyberbullismo',         trova:'Cinque per cinque, meno uno.',
-   testo:'Prendere in giro, minacciare o umiliare qualcuno con messaggi e post ripetuti si chiama cyber…?',
-   chiavi:['bullismo','cyberbullismo'], sugg:'È il comportamento del bullo di classe, ma spostato online e ripetuto.' },
- { mac:2,  tema:'Impronta digitale',     trova:'Lato porte (sud), tavolo EST — quello della lavagna: il secondo posto partendo dalla parete est.',
-   testo:'Lo schermo mostra solo un codice cifrato. Decifralo: la parola nascosta è un termine di cittadinanza digitale (la traccia che lasci online).',
-   cifrato:true, codice:'LPSURQWD', shift:3,
-   chiavi:['impronta'], sugg:'Serve il CIFRARIO stampato in 3D (sul bancone). Poi sposta ogni lettera indietro di 3.' },
- { mac:12, tema:'Diritto d’autore',       trova:'Le ore di un giorno diviso due.',
-   testo:'Una canzone, un’immagine o un video hanno un autore: non puoi copiarli e spacciarli per tuoi. Sono protetti dal diritto d’…?',
-   chiavi:['autore','copyright'], sugg:'Chi crea un’opera ha un diritto su di essa: non puoi spacciarla per tua.' },
- { mac:22, tema:'Verifica in due passaggi', trova:'Lato finestre (nord), tavolo EST (lavagna): il primo posto verso il centro dell’aula.',
-   testo:'Oltre alla password, molti siti chiedono anche un codice che arriva sul telefono. È la verifica in due …?',
-   chiavi:['fattori','passaggi','due fattori'], sugg:'Non basta una sola prova per entrare: te ne servono due diverse.' },
- { mac:6,  tema:'Acquisti sicuri',       trova:'Il doppio di tre.',
-   testo:'Prima di comprare su un sito controlli che l’indirizzo inizi con https e che ci sia il simbolo di un piccolo … chiuso (segno di sicurezza).',
-   chiavi:['lucchetto'], sugg:'Nella barra dell’indirizzo compare un piccolo simbolo che significa «protetto».' },
- { mac:18, tema:'Uso consapevole',       trova:'Lato finestre (nord), tavolo OVEST (bancone stampante): il quarto posto partendo dal centro.',
-   testo:'Stare troppe ore attaccati allo schermo fa male. Tra vita online e vita reale bisogna trovare il giusto …?',
-   chiavi:['equilibrio'], sugg:'Né sempre attaccato allo schermo né mai: serve la giusta via di mezzo.' },
- { mac:5,  tema:'Cittadinanza digitale', trova:'Le dita di una mano.',
-   testo:'Chi in rete rispetta le regole, le persone e la verità è un buon cittadino …? (è l’ultima serratura!)',
-   chiavi:['digitale','responsabile'], sugg:'In rete ti comporti come un buon cittadino, con diritti e doveri.' }
+// ---- POOL di domande di cittadinanza digitale (più di 12): ogni partita ne pesca 12 ----
+// La prima chiave di ogni domanda è la parola-chiave "primaria" (usata anche per l'enigma cifrato).
+const POOL=[
+ {tema:'Password',        testo:'Per entrare nel tuo profilo digiti una “parola d’ordine” segreta. Come si chiama, in una parola?', chiavi:['password','parola chiave'], sugg:'Ogni account ne ha una segreta: se qualcuno la scopre, entra al posto tuo.'},
+ {tema:'Netiquette',      testo:'Scrivere TUTTO MAIUSCOLO online è come urlare. L’insieme delle buone maniere in rete si chiama (net + etiquette)…?', chiavi:['netiquette'], sugg:'Le buone maniere dell’educazione, applicate alla rete.'},
+ {tema:'Privacy',         testo:'Nome, cognome, indirizzo, foto e numero di telefono sono i tuoi dati … : non vanno dati a sconosciuti.', chiavi:['personali','dati personali'], sugg:'Le informazioni che dicono chi sei: tue soltanto.'},
+ {tema:'Phishing',        testo:'“Hai vinto un telefono! Clicca e scrivi la tua password”: è un’esca per rubarti i dati. Questo inganno si chiama (come “fishing”)…?', chiavi:['phishing'], sugg:'Funziona come la pesca: un’esca e si aspetta che qualcuno abbocchi.'},
+ {tema:'Fake news',       testo:'Prima di condividere una notizia clamorosa, cosa devi fare per capire se è vera? (controllare più fonti attendibili)', chiavi:['verificare','verifica','controllare'], sugg:'Confronti quello che leggi con altre fonti serie.'},
+ {tema:'Cyberbullismo',   testo:'Prendere in giro, minacciare o umiliare qualcuno con messaggi e post ripetuti si chiama cyber…?', chiavi:['bullismo','cyberbullismo'], sugg:'È il bullo di classe, ma spostato online e ripetuto.'},
+ {tema:'Impronta digitale',testo:'Ogni foto, commento o like che pubblichi lascia una traccia che resta nel tempo: la tua … digitale.', chiavi:['impronta'], sugg:'Come sulla neve o sulla sabbia: dove passi lasci un segno.'},
+ {tema:'Diritto d’autore', testo:'Una canzone, un’immagine o un video hanno un autore: non puoi spacciarli per tuoi. Sono protetti dal diritto d’…?', chiavi:['autore','copyright'], sugg:'Chi crea un’opera ha un diritto su di essa.'},
+ {tema:'Verifica in due passaggi', testo:'Oltre alla password, molti siti chiedono un codice che arriva sul telefono. È la verifica in due …?', chiavi:['fattori','passaggi','due fattori'], sugg:'Non basta una sola prova: te ne servono due diverse.'},
+ {tema:'Acquisti sicuri', testo:'Prima di comprare su un sito controlli che l’indirizzo inizi con https e che ci sia il simbolo di un piccolo … chiuso.', chiavi:['lucchetto'], sugg:'Un simbolo che significa «protetto», come su una porta.'},
+ {tema:'Uso consapevole', testo:'Stare troppe ore attaccati allo schermo fa male. Tra vita online e vita reale serve il giusto …?', chiavi:['equilibrio'], sugg:'Né sempre attaccato né mai: la giusta via di mezzo.'},
+ {tema:'Cittadinanza digitale', testo:'Chi in rete rispetta le regole, le persone e la verità è un buon cittadino …?', chiavi:['digitale','responsabile'], sugg:'In rete come nella vita: con diritti e doveri.'},
+ {tema:'Logout',          testo:'Quando finisci di usare un account su un computer condiviso, per uscire in sicurezza devi fare il …?', chiavi:['logout','disconnessione'], sugg:'È il contrario di “login”.'},
+ {tema:'Virus',           testo:'Un programma dannoso che si intrufola nel computer e lo fa funzionare male è un …?', chiavi:['virus','malware'], sugg:'Anche il corpo umano ne prende, quando ci si ammala.'},
+ {tema:'Backup',          testo:'Per non perdere foto e documenti se il computer si rompe, conviene tenerne una copia di sicurezza, detta …?', chiavi:['backup','copia di sicurezza'], sugg:'In inglese: back-up. Una copia da tenere da parte.'},
+ {tema:'Spam',            testo:'La casella di posta si riempie di messaggi pubblicitari indesiderati: come si chiamano?', chiavi:['spam','posta indesiderata'], sugg:'Una parola breve di 4 lettere, in inglese.'},
+ {tema:'Fonte',           testo:'Per fidarti di un’informazione devi sapere da dove proviene, cioè la sua …?', chiavi:['fonte'], sugg:'L’origine dell’acqua… e anche di una notizia.'},
+ {tema:'Cronologia',      testo:'L’elenco dei siti che hai visitato con il browser si chiama …?', chiavi:['cronologia'], sugg:'La “storia” della tua navigazione.'},
+ {tema:'Troll',           testo:'Nei commenti online, chi provoca e offende apposta per far arrabbiare gli altri è un …?', chiavi:['troll'], sugg:'Nelle fiabe vive sotto i ponti.'},
+ {tema:'Rispetto',        testo:'Alla base della convivenza in rete, come nella vita reale, c’è il … verso gli altri.', chiavi:['rispetto'], sugg:'Trattare gli altri come vorresti essere trattato tu.'},
+ {tema:'Antivirus',       testo:'Il programma che protegge il computer trovando e bloccando i virus si chiama …?', chiavi:['antivirus'], sugg:'Anti + virus.'},
+ {tema:'Aggiornamento',   testo:'Per rendere un’app più sicura e correggere i problemi, ogni tanto va fatto l’…?', chiavi:['aggiornamento','update'], sugg:'La rende più “nuova”: in inglese, update.'},
+ {tema:'Adescamento',     testo:'Online un adulto sconosciuto finge di essere tuo coetaneo per conquistare la tua fiducia e ingannarti: questo pericolo si chiama …?', chiavi:['adescamento','grooming'], sugg:'“Agganciare” qualcuno con l’inganno. Se succede, parlane subito con un adulto.'},
+ {tema:'Segnalare',       testo:'Se vedi online un contenuto offensivo o pericoloso, per avvisare la piattaforma che lo controlli devi …?', chiavi:['segnalare','segnalazione','report'], sugg:'C’è un pulsante apposta per avvisare i gestori.'},
+ {tema:'Bloccare',        testo:'Se una persona online continua a infastidirti, per non ricevere più i suoi messaggi puoi …?', chiavi:['bloccare','blocco','bloccarlo'], sugg:'Il contrario di “sbloccare”.'},
+ {tema:'Prova / screenshot', testo:'Se subisci offese online, per avere una prova da mostrare a un adulto conviene fare una foto dello schermo, cioè uno …?', chiavi:['screenshot','schermata'], sugg:'Una “foto” di quello che c’è sullo schermo.'},
+ {tema:'Chiedere il permesso', testo:'Prima di pubblicare online la foto di un compagno devi sempre chiedere il suo …?', chiavi:['permesso','consenso'], sugg:'Devi avere il suo “ok”.'},
+ {tema:'Truffa online',   testo:'Un finto sito o messaggio che ti promette un affare falso per rubarti soldi o dati è una …?', chiavi:['truffa'], sugg:'Ti fanno credere una cosa falsa per derubarti.'},
+ {tema:'Bufala',          testo:'Una notizia falsa costruita apposta per ingannare le persone, in italiano si chiama anche …?', chiavi:['bufala'], sugg:'È anche un animale… ma qui è una notizia inventata.'},
+ {tema:'Dipendenza',      testo:'Non riuscire più a staccarsi da videogiochi, social o telefono è il segnale di una …?', chiavi:['dipendenza'], sugg:'Come per altre cattive abitudini: non ne puoi fare a meno.'},
+ {tema:'Geolocalizzazione', testo:'Molte app sanno dove ti trovi grazie al GPS: questa funzione, da disattivare quando non serve, si chiama …?', chiavi:['geolocalizzazione','posizione'], sugg:'Geo = terra; individuare il luogo dove sei.'},
+ {tema:'Cookie',          testo:'I siti salvano sul tuo dispositivo piccoli file per ricordarsi di te: si chiamano (come i biscotti, in inglese) …?', chiavi:['cookie'], sugg:'In inglese sono i biscotti.'},
+ {tema:'Cloud',           testo:'I file salvati non nel computer ma su server lontani, raggiungibili via internet, si dice che stanno “nella nuvola”, cioè nel …?', chiavi:['cloud'], sugg:'In inglese vuol dire “nuvola”.'},
+ {tema:'Download',        testo:'Portare un file da internet sul tuo dispositivo si dice farne il …?', chiavi:['download','scaricamento'], sugg:'Il contrario di “upload” (caricare).'},
+ {tema:'Algoritmo',       testo:'La sequenza precisa di passi che un computer segue per svolgere un compito o decidere cosa mostrarti si chiama …?', chiavi:['algoritmo'], sugg:'È come una “ricetta” di istruzioni per il computer.'},
+ {tema:'Intelligenza artificiale', testo:'I programmi che imitano il ragionamento umano, come gli assistenti e i chatbot, usano l’intelligenza …?', chiavi:['artificiale'], sugg:'Non è naturale, è costruita dall’uomo (IA).'},
+ {tema:'Motore di ricerca', testo:'Uno strumento come Google, che cerca pagine e informazioni nel web, si chiama motore di …?', chiavi:['ricerca'], sugg:'Serve proprio a cercare nel web.'},
+ {tema:'Termini e condizioni', testo:'Prima di iscriverti a un’app dovresti leggere, anche se sono lunghi e noiosi, i …?', chiavi:['termini','condizioni'], sugg:'“…e condizioni”: spesso si accettano senza leggerli.'},
+ {tema:'Tracciamento',    testo:'Seguire i tuoi spostamenti da un sito all’altro per costruire un profilo di te si chiama …?', chiavi:['tracciamento','tracking'], sugg:'Come seguire le orme di qualcuno tra i siti.'},
+ {tema:'Pubblicità mirata', testo:'Quando vedi annunci proprio sui prodotti che avevi cercato, è pubblicità costruita su misura per te, cioè …?', chiavi:['profilata','mirata','personalizzata'], sugg:'Fatta su misura a partire dai tuoi dati.'},
+ {tema:'Dark web',        testo:'La parte nascosta di internet, non raggiungibile dai normali motori di ricerca e spesso usata per attività illegali, si chiama … web?', chiavi:['dark'], sugg:'In inglese vuol dire “scuro”.'},
+ {tema:'VPN',             testo:'Lo strumento (sigla di 3 lettere) che nasconde il tuo indirizzo e protegge la connessione è la …?', chiavi:['vpn'], sugg:'Rete privata virtuale: tre lettere.'},
+ {tema:'Navigazione in incognito', testo:'La modalità del browser che non salva la cronologia sul dispositivo si chiama navigazione in …?', chiavi:['incognito'], sugg:'Come un travestimento: passi senza lasciare traccia locale.'},
+ {tema:'Gestore di password', testo:'Lo strumento che crea e custodisce password diverse e complesse per ogni sito è un … di password?', chiavi:['gestore','manager'], sugg:'Le “gestisce” lui al posto tuo, così non le dimentichi.'},
+ {tema:'Deepfake',        testo:'Un video falso creato con l’IA, in cui una persona sembra dire o fare cose mai avvenute, si chiama …?', chiavi:['deepfake'], sugg:'Deep (profondo) + fake (falso).'}
 ];
-const N_TAPPE=ENIGMI.length;
+const N_TAPPE=12;
+let ENIGMI=[];
+
+// ---- generatore di partita casuale (domande + percorso + indizi) ----
+function mescola(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function cesare(parola,shift){ return parola.toUpperCase().replace(/[A-Z]/g,c=>String.fromCharCode((c.charCodeAt(0)-65+shift)%26+65)); }
+const ORD=['primo','secondo','terzo','quarto','quinto','sesto','settimo'];
+function clueNumero(n){
+  const r=['il numero dopo il '+(n-1), 'il numero prima del '+(n+1), 'la metà di '+(n*2)];
+  if(n%2===0) r.push('il doppio di '+(n/2));
+  if(n%3===0) r.push('il triplo di '+(n/3));
+  const q=Math.sqrt(n); if(Number.isInteger(q)) r.push('il quadrato di '+q);
+  return 'Calcola e vai a quel Mac: ' + r[Math.floor(Math.random()*r.length)] + '.';
+}
+function cluePosizione(n){
+  const m=MAC_REG.find(x=>x.num===n); if(!m) return 'Vai al Mac '+n+'.';
+  const nord=m.z>0, ovest=m.x>0;
+  const lato = nord?'Lato finestre (nord)':'Lato porte (sud)';
+  const tavolo = ovest?'tavolo OVEST (bancone stampante)':'tavolo EST (lavagna)';
+  const fila=MAC_REG.filter(x=>x.num>0 && (x.z>0)===nord && (x.x>0)===ovest).sort((a,b)=>Math.abs(a.x)-Math.abs(b.x));
+  const idx=fila.findIndex(x=>x.num===n);
+  let pos;
+  if(idx===0) pos='il primo posto verso il centro dell’aula';
+  else if(idx===fila.length-1) pos='l’ultimo posto all’estremità, vicino alla parete';
+  else pos='il '+ORD[idx]+' posto partendo dal centro';
+  return lato+', '+tavolo+': '+pos+'.';
+}
+function clueMac(n){ return Math.random()<0.5 ? clueNumero(n) : cluePosizione(n); }
+// tappa 1 = iMac DELLO STUDENTE (uno dei 28, la sua postazione); tappa finale = CATTEDRA del prof. Andrea (apre la porta)
+function costruisciPartita(macStudente){
+  const start=(macStudente>=1 && macStudente<=28) ? macStudente : (1+Math.floor(Math.random()*28));
+  G.macStart=start;
+  const domande=mescola(POOL).slice(0,N_TAPPE);
+  const altri=[]; for(let i=1;i<=28;i++) if(i!==start) altri.push(i);
+  const mezzo=mescola(altri).slice(0,N_TAPPE-2);              // 10 Mac intermedi casuali
+  const macs=[start].concat(mezzo).concat([0]);              // studente → 10 casuali → cattedra (0)
+  const idxCif=2+Math.floor(Math.random()*8);                 // tappa cifrata: fra la 3ª e la 10ª (mai prima/ultima)
+  const shift=3+Math.floor(Math.random()*5);                  // shift Cesare 3..7
+  ENIGMI=domande.map((d,i)=>{
+    const e={ mac:macs[i], tema:d.tema, testo:d.testo, chiavi:d.chiavi, sugg:d.sugg };
+    if(i===0)                    e.trova='La TUA postazione: il tuo computer, il Mac numero '+start+'.';
+    else if(i===N_TAPPE-1)       e.trova='La CATTEDRA del prof. Andrea: l’iMac grande in testa ai tavoli, nel varco centrale.';
+    else                         e.trova=clueMac(e.mac);
+    if(i===idxCif){
+      e.cifrato=true; e.shift=shift; e.codice=cesare(d.chiavi[0],shift);
+      e.testo='Lo schermo mostra solo un codice cifrato. Decifralo per ottenere la parola-chiave (un termine di cittadinanza digitale).';
+      e.sugg='Serve il CIFRARIO stampato in 3D (sul bancone). Poi sposta ogni lettera indietro di '+shift+'.';
+    }
+    return e;
+  });
+}
 
 // ---- collisioni tavoli (footprint dei due tavoloni) ----
 function dentroTavolo(x,z){
@@ -1292,7 +1371,14 @@ const PICKUPS=[]; let portaProxy=null;
   portaProxy=new THREE.Mesh(new THREE.BoxGeometry(1.1,2.0,.5),new THREE.MeshBasicMaterial({visible:false}));
   portaProxy.position.set(PORTA_X,1.1,-3.15); portaProxy.userData={tipo:'porta'}; scene.add(portaProxy);
 }
-const TARGETS=[...PROXIES,...PICKUPS,portaProxy];
+// proxy dell'omino LEGO (easter egg Visione Matrix)
+const legoProxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2,.9),new THREE.MeshBasicMaterial({visible:false}));
+legoProxy.position.set(-7.3,1.05,2.55); legoProxy.userData={tipo:'lego'}; scene.add(legoProxy);
+// fascio verde che rivela il Mac-bersaglio durante la Visione Matrix
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,3.6,10),
+  new THREE.MeshBasicMaterial({color:0x39ff14,transparent:true,opacity:.5,depthTest:false}));
+beam.renderOrder=999; beam.visible=false; scene.add(beam);
+const TARGETS=[...PROXIES,...PICKUPS,portaProxy,legoProxy];
 function raccogli(tipo,mesh){
   if(!tipo||G.inv[tipo]) return;
   G.inv[tipo]=true; if(mesh) mesh.visible=false;
@@ -1309,8 +1395,71 @@ function usaMirato(){
   const m=G.mirato; if(!m) return;
   if(m.tipo==='pickup') raccogli(m.pickup,m.mesh);
   else if(m.tipo==='porta') usaPorta();
+  else if(m.tipo==='lego') attivaMatrix();
   else if(m.macNum!=null) accediMac(m.macNum);
 }
+// ---- EASTER EGG: la mela del LEGO si apre → Ambiente segreto (Algoritmi & IA) → VISIONE MATRIX ----
+let matrixOn=false, matrixT=0, melaTarget=0, mrRAF=null, mrDrops=[];
+const MATRIX_DUR=18;
+function attivaMatrix(){
+  if(matrixOn){ matrixT=MATRIX_DUR; return; }        // riattiva/ricarica il tempo
+  matrixOn=true; matrixT=MATRIX_DUR; melaTarget=1;    // apre la mela
+  if(legoCore) legoCore.visible=true;
+  $('matrixTint').style.display='block';
+  avviaCodeRain(); aggiornaBeam();
+  splash('Visione Matrix attivata','#39ff14');
+  suonoPower(); avviaMusicaMatrix();
+}
+function disattivaMatrix(){
+  matrixOn=false; melaTarget=0;
+  if(legoCore) legoCore.visible=false;
+  $('matrixTint').style.display='none';
+  fermaCodeRain(); beam.visible=false; fermaMusicaMatrix();
+}
+// musica dedicata alla Visione Matrix: mette in pausa la musica di sottofondo e la riprende alla fine
+function avviaMusicaMatrix(){
+  if(!musicaOn) return;
+  try{ if(typeof ytPronto!=='undefined' && ytPronto) ytPlayer.pauseVideo(); }catch(e){}
+  try{ if(typeof matrixPronto!=='undefined' && matrixPronto){ matrixPlayer.setVolume(45); matrixPlayer.seekTo(0); matrixPlayer.playVideo(); } }catch(e){}
+}
+function fermaMusicaMatrix(){
+  try{ if(typeof matrixPronto!=='undefined' && matrixPronto) matrixPlayer.pauseVideo(); }catch(e){}
+  if(musicaOn){ try{ if(typeof ytPronto!=='undefined' && ytPronto) ytPlayer.playVideo(); }catch(e){} }
+}
+function aggiornaBeam(){
+  if(!matrixOn || !G.gioco || G.tappa<1){ beam.visible=false; return; }
+  const t=ENIGMI[G.tappa-1]; const m=MAC_REG.find(x=>x.num===t.mac);
+  if(!m){ beam.visible=false; return; }
+  beam.position.set(m.x, 1.8, m.z); beam.visible=true;
+}
+function suonoPower(){
+  if(!musicaOn) return;
+  try{ const c=(window.__ax=window.__ax||new (window.AudioContext||window.webkitAudioContext)());
+    if(c.state==='suspended') c.resume();
+    const o=c.createOscillator(), g=c.createGain(); o.type='sawtooth';
+    o.frequency.setValueAtTime(180,c.currentTime); o.frequency.exponentialRampToValueAtTime(900,c.currentTime+.45);
+    g.gain.setValueAtTime(.0001,c.currentTime); g.gain.linearRampToValueAtTime(.12,c.currentTime+.05);
+    g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.6);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.65);
+  }catch(e){}
+}
+// pioggia di codice verde in stile Matrix
+function avviaCodeRain(){
+  const cv=$('matrix'); if(!cv) return; const ctx=cv.getContext('2d');
+  cv.style.display='block'; cv.width=innerWidth; cv.height=innerHeight;
+  const col=Math.floor(cv.width/16); mrDrops=new Array(col).fill(0).map(()=>Math.random()*cv.height);
+  function frame(){
+    ctx.fillStyle='rgba(2,10,4,0.10)'; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#39ff14'; ctx.font='15px monospace';
+    for(let i=0;i<mrDrops.length;i++){
+      ctx.fillText(Math.random()<.5?'0':'1', i*16, mrDrops[i]);
+      mrDrops[i] = mrDrops[i]>cv.height && Math.random()>.975 ? 0 : mrDrops[i]+16;
+    }
+    mrRAF=requestAnimationFrame(frame);
+  }
+  frame();
+}
+function fermaCodeRain(){ if(mrRAF) cancelAnimationFrame(mrRAF); mrRAF=null; const cv=$('matrix'); if(cv){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); cv.style.display='none'; } }
 function aggiornaInventario(){
   $('invCifrario').classList.toggle('has',G.inv.cifrario);
   $('invChiave').classList.toggle('has',G.inv.chiave);
@@ -1576,6 +1725,8 @@ const INTRO_LOOK=new THREE.Vector3(-2.35,1.15,0.15);   // guarda la cattedra att
 // ---- avvio / vittoria ----
 function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al termine
   $('consegna').style.display='none';
+  const nMac=parseInt(($('macStud')&&$('macStud').value)||'',10);
+  costruisciPartita(nMac);      // parte dal Mac dello studente (o casuale); domande e percorso sempre diversi
   G.intro=true; G.introT=0; G.gioco=false; G.finita=false; G.tappa=0;
   $('btnSalta').style.display='block';
   avviaMusica();                   // il clic su "Inizia" sblocca l'autoplay della musica
@@ -1591,7 +1742,7 @@ function avviaGameplay(){
 }
 function vittoria(){
   if(G.finita) return;
-  G.finita=true; G.gioco=false;
+  G.finita=true; G.gioco=false; disattivaMatrix();
   if(document.pointerLockElement) document.exitPointerLock();
   $('vittoria').style.display='flex';
 }
@@ -1629,12 +1780,19 @@ $('btnSalta').addEventListener('click',avviaGameplay);
 // Per cambiare brano incolla qui l'id del video (la parte dopo youtu.be/ o v=).
 const YT_MUSICA='Q3_QOVaBA98';       // musica di sottofondo
 const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffiche casuali)
+const YT_MATRIX='q1ZiQ6I6gf8';       // musica dedicata alla Visione Matrix
 let ytPlayer=null, ytPronto=false, musicaOn=true;
+let matrixPlayer=null, matrixPronto=false;
 function onYouTubeIframeAPIReady(){
   sfxPlayer=new YT.Player('ytsfx',{
     videoId:YT_TEMPORALE,
     playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1},
     events:{ onReady:()=>{ sfxPronto=true; try{sfxPlayer.setVolume(60);}catch(_){} } }
+  });
+  matrixPlayer=new YT.Player('ytmatrix',{
+    videoId:YT_MATRIX,
+    playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1,loop:1,playlist:YT_MATRIX},
+    events:{ onReady:()=>{ matrixPronto=true; try{matrixPlayer.setVolume(45);}catch(_){} } }
   });
   ytPlayer=new YT.Player('yt',{
     videoId:YT_MUSICA,
@@ -1649,9 +1807,13 @@ function avviaMusica(){ if(ytPronto && musicaOn){ try{ ytPlayer.setVolume(32); y
 function toggleMusica(){
   musicaOn=!musicaOn;
   $('btnMusica').classList.toggle('off',!musicaOn);
-  if(!musicaOn && sfxPronto){ try{ sfxPlayer.pauseVideo(); }catch(e){} sfxAttivo=false; }  // spegne anche il temporale
-  if(!ytPronto) return;
-  if(musicaOn) avviaMusica(); else { try{ ytPlayer.pauseVideo(); }catch(e){} }
+  if(!musicaOn){
+    if(sfxPronto){ try{ sfxPlayer.pauseVideo(); }catch(e){} sfxAttivo=false; }
+    if(matrixPronto){ try{ matrixPlayer.pauseVideo(); }catch(e){} }
+    if(ytPronto){ try{ ytPlayer.pauseVideo(); }catch(e){} }
+  } else {
+    if(matrixOn) avviaMusicaMatrix(); else avviaMusica();   // se la Matrix è attiva, riprende la sua musica
+  }
 }
 $('btnMusica').addEventListener('click',toggleMusica);
 $('btnVerifica').addEventListener('click',verificaRisposta);
@@ -1675,6 +1837,9 @@ function animate(){
   const fk=NEON_BASE*(0.82+0.12*Math.sin(clock.elapsedTime*8.3)) - (Math.random()<0.02?NEON_BASE*0.5:0);
   neon2.intensity=Math.max(0,fk); neon1.intensity=Math.max(0,NEON_BASE*(0.9+0.08*Math.sin(clock.elapsedTime*5.1)));
   aggiornaTemporale(dt);
+  // easter egg LEGO: la mela si apre/chiude, e conto alla rovescia della Visione Matrix
+  if(legoMela) legoMela.rotation.y += ((melaTarget*-1.55) - legoMela.rotation.y)*Math.min(1,dt*7);
+  if(matrixOn){ matrixT-=dt; aggiornaBeam(); if(matrixT<=0) disattivaMatrix(); }
   // VOLO PANORAMICO iniziale: orbita l'aula, poi atterra alla postazione di partenza
   if(G.intro){
     G.introT=Math.min(1,G.introT+dt/INTRO_DUR);
@@ -1722,6 +1887,7 @@ function animate(){
       if(!m){ $('hint').style.display='none'; }
       else { $('hint').style.display='block';
         if(m.tipo==='pickup') $('hint').textContent='Prendi '+(m.pickup==='cifrario'?'il Cifrario 3D':'la Chiave 3D')+' — [clic] o [Invio]';
+        else if(m.tipo==='lego') $('hint').textContent='Tocca la mela dell’omino — [clic] o [Invio]';
         else if(m.tipo==='porta') $('hint').textContent='Porta del laboratorio — [clic] o [Invio]';
         else $('hint').textContent=(macNum===0?'Cattedra (Prof)':'Mac '+macNum)+' — [clic] o [Invio] per accedere';
       }
