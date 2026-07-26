@@ -154,11 +154,36 @@
   #enBox{position:relative;z-index:2;box-shadow:0 0 60px rgba(40,90,200,.35)}
   .dive-hint{text-align:center;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;
     color:rgba(140,180,255,.7);margin-bottom:6px}
-  #btnSalta{position:fixed;bottom:16px;right:18px;z-index:12;
+  #btnSalta{position:fixed;top:16px;right:16px;z-index:12;
     background:var(--panel);color:#fff;border:1px solid rgba(255,255,255,.18);
     border-radius:10px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;
     backdrop-filter:blur(6px)}
   #btnSalta:hover{background:var(--blu);border-color:var(--blu)}
+  #btnMusica{position:fixed;bottom:16px;right:18px;z-index:12;
+    background:var(--panel);color:#fff;border:1px solid rgba(255,255,255,.18);
+    border-radius:10px;padding:9px 14px;font-size:12.5px;cursor:pointer;
+    display:flex;align-items:center;gap:7px;backdrop-filter:blur(6px)}
+  #btnMusica.off{opacity:.55}
+  #btnMusica svg{width:14px;height:14px;fill:#fff}
+  #yt,#ytsfx{position:fixed;left:-9999px;top:-9999px;width:200px;height:120px;opacity:0;pointer-events:none}
+  /* ---- schermate-trappola (ambra) ---- */
+  #enigma.pericolo{background:radial-gradient(circle at 50% 45%,#2a1e05,#0a0702 72%)}
+  #enigma.pericolo #enBox{box-shadow:0 0 60px rgba(230,165,25,.42);border-color:rgba(240,190,80,.45)}
+  #enigma.pericolo .dive-hint{color:rgba(245,190,90,.8)}
+  .decoy-ico{display:flex;justify-content:center;margin-bottom:8px}
+  .decoy-ico svg{width:54px;height:54px;stroke:#f5b301;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .decoy-tit{text-align:center;font-size:19px;font-weight:800;letter-spacing:1.5px;color:#f5b301;margin-bottom:9px}
+  .decoy-txt{text-align:center;font-size:15px;line-height:1.55;opacity:.95;margin:0 auto;max-width:400px}
+  #btnDecoyEsci{background:#8a6a12;box-shadow:0 8px 30px rgba(200,150,20,.35)}
+  #btnDecoyEsci:hover{background:#a07d16}
+  /* ---- inventario oggetti 3D ---- */
+  #inventario{position:fixed;top:56px;left:16px;z-index:11;display:flex;flex-direction:column;gap:7px}
+  .inv-slot{display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;
+    background:rgba(9,18,40,.72);border:1px solid rgba(255,255,255,.12);
+    font-size:12px;font-weight:600;color:#7d8aa0;opacity:.65}
+  .inv-slot svg{width:16px;height:16px;fill:none;stroke:#7d8aa0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .inv-slot.has{color:#fff;opacity:1;border-color:var(--blu-chiaro);background:rgba(18,62,144,.5)}
+  .inv-slot.has svg{stroke:var(--blu-chiaro)}
   /* ---- logo sacrafamiglia.education ---- */
   .wm{font-size:20px;letter-spacing:-.3px;color:#fff;line-height:1;white-space:nowrap}
   .wm-r{font-weight:400}.wm-b{font-weight:700}.wm-i{font-weight:700;font-style:italic}
@@ -176,6 +201,10 @@
   <span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
 </div>
 <div id="hud" class="pann"><div id="hudTappa"></div><div id="hudTema"></div></div>
+<div id="inventario">
+  <div class="inv-slot" id="invCifrario"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/></svg>Cifrario</div>
+  <div class="inv-slot" id="invChiave"><svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4.2"/><path d="M12.2 12H21M18 12v3.5M21 12v2.6"/></svg>Chiave</div>
+</div>
 <div id="mirino"></div>
 <div id="hint"></div>
 <div id="indizio" class="pann"><div class="lab">Indizio</div><div id="indizioTxt"></div></div>
@@ -187,7 +216,10 @@
   <div><b>Risolvi l&rsquo;enigma</b> per avere l&rsquo;indizio del Mac successivo</div>
 </div>
 <button id="btnInfo" title="Come si gioca">i</button>
+<button id="btnMusica" title="Musica on/off"><svg viewBox="0 0 16 16"><path d="M6 2v8.2a2.5 2.5 0 1 0 1.5 2.3V5.5l6-1.5v5.2a2.5 2.5 0 1 0 1.5 2.3V2z"/></svg><span>Musica</span></button>
 <button id="btnSalta" style="display:none">Salta introduzione &rsaquo;</button>
+<div id="yt"></div>
+<div id="ytsfx"></div>
 
 <div class="overlay" id="consegna">
   <div class="box">
@@ -222,6 +254,12 @@
       <div id="enSugg"></div>
     </div>
     <div id="enEsito" style="display:none"></div>
+    <div id="enDecoy" style="display:none">
+      <div class="decoy-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 22 20H2z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.4" r=".4"/></svg></div>
+      <div class="decoy-tit" id="deTitolo"></div>
+      <p class="decoy-txt" id="deTesto"></p>
+      <div class="en-riga"><button id="btnDecoyEsci">Esci dal computer</button></div>
+    </div>
     <div class="en-riga"><button id="btnContinua" style="display:none">Continua</button></div>
   </div>
 </div>
@@ -250,12 +288,14 @@
          Se &egrave; corretta ricevi l&rsquo;<b>indizio</b> per il Mac successivo.</p>
       <p><b>Indizio.</b> A volte &egrave; un numero da calcolare (quello &egrave; il Mac), a volte descrive la
          posizione nell&rsquo;aula: fila <b>nord</b> (finestre) o <b>sud</b> (porte), tavolo <b>est</b> o <b>ovest</b>.</p>
-      <p><b>Fuga.</b> Dopo il 12&deg; enigma la porta centrale si apre: raggiungila ed esci nel corridoio.</p>
+      <p><b>Oggetti stampati in 3D.</b> Sul <b>bancone della stampante</b> ci sono due pezzi da raccogliere: il <b>Cifrario</b> (serve per un enigma con messaggio cifrato) e la <b>Chiave</b> (serve per aprire la porta finale). Avvicinati e fai clic per prenderli; li vedi nell'inventario in alto a sinistra.</p>
+      <p><b>Fuga.</b> Dopo il 12&deg; enigma la serratura &egrave; pronta: prendi la <b>chiave 3D</b> dal bancone e usala sulla porta per uscire nel corridoio.</p>
     </div>
     <button id="btnChiudiRegole">Ho capito!</button>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 'use strict';
 /* ============================================================
@@ -593,18 +633,19 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputEncoding=THREE.sRGBEncoding;        // colori fedeli alle foto
 renderer.toneMapping=THREE.ACESFilmicToneMapping;  // resa cinematografica morbida
-renderer.toneMappingExposure=1.12;
+renderer.toneMappingExposure=0.55;                 // esposizione bassa: atmosfera cupa da escape room
 renderer.shadowMap.enabled=true;                   // ombre reali morbide
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
-const BG_LAB=new THREE.Color(0xdfe8ee), BG_POR=new THREE.Color(0x04150d);
+const BG_LAB=new THREE.Color(0x141a26), BG_POR=new THREE.Color(0x04150d);   // aula cupa da escape room
 scene.background=BG_LAB.clone();
+scene.fog=new THREE.Fog(0x141a26,5,28);                                     // nebbia per profondità cupa
 // FOV ampio: da vicino, alzando la parabola, il canestro resta nell'inquadratura
 const camera=new THREE.PerspectiveCamera(82,innerWidth/innerHeight,.05,600);
 
 // luci
-scene.add(new THREE.AmbientLight(0xffffff,.55));
-const sole=new THREE.DirectionalLight(0xfff2dd,.95); sole.position.set(4,9,11); scene.add(sole);
+scene.add(new THREE.AmbientLight(0x8ea0ba,.22));                 // ambiente basso e freddo (escape room)
+const sole=new THREE.DirectionalLight(0xbcc8de,.30); sole.position.set(4,9,11); scene.add(sole);
 sole.castShadow=true;                              // il sole dalle finestre proietta le ombre
 sole.shadow.mapSize.set(2048,2048);
 sole.shadow.camera.left=-14; sole.shadow.camera.right=14;
@@ -612,9 +653,11 @@ sole.shadow.camera.top=14;  sole.shadow.camera.bottom=-14;
 sole.shadow.camera.near=1; sole.shadow.camera.far=45;
 sole.shadow.camera.updateProjectionMatrix();
 sole.shadow.bias=-0.0006;  sole.shadow.radius=4;
-const neon1=new THREE.PointLight(0xffffff,.30,20); neon1.position.set(-8,2.7,0); scene.add(neon1);
-const neon2=new THREE.PointLight(0xffffff,.30,20); neon2.position.set(0,2.7,0); scene.add(neon2);
-const neon3=new THREE.PointLight(0xffffff,.30,20); neon3.position.set(8,2.7,0); scene.add(neon3);
+const neon1=new THREE.PointLight(0xbfd0e6,.16,18); neon1.position.set(-8,2.7,0); scene.add(neon1);
+const neon2=new THREE.PointLight(0xbfd0e6,.16,18); neon2.position.set(0,2.7,0); scene.add(neon2);
+const neon3=new THREE.PointLight(0xbfd0e6,.16,18); neon3.position.set(8,2.7,0); scene.add(neon3);
+const NEON_BASE=.16;   // luci al neon smorzate; sfarfallano nel loop per atmosfera
+const luceLampo=new THREE.PointLight(0xbcd0ff,0,32); luceLampo.position.set(0,2.6,4.6); scene.add(luceLampo);  // fuori dalle finestre
 
 // ---------- stanza (16 × 6.7 m, misure reali) ----------
 // parete porte z=-3.35: bianca con sezione arancione verso il fondo
@@ -667,10 +710,14 @@ const matLegno=new THREE.MeshStandardMaterial({map:legnoTex,roughness:.55});
     }
   }
 }
+// ---------- TEMPORALE fuori dalle finestre: cielo scuro, pioggia, lampi ----------
+const stormCv=mkCanvas(256,256), stormCtx=stormCv.getContext('2d');
+const stormTex=tex(stormCv);
+const stormDrops=[]; for(let i=0;i<95;i++) stormDrops.push({x:Math.random()*256,y:Math.random()*256,l:6+Math.random()*11,s:4.5+Math.random()*5});
 // ---------- finestre + radiatori + bacheca verde (parete z=+3.35) ----------
-// cinque finestre doppie alla francese + una piccola verso il fondo
+// cinque finestre doppie alla francese + una piccola verso il fondo (con temporale)
 {
-  const finTex=texFinestra();
+  const finTex=stormTex;
   for(const x of [6.4,3.4,0.4,-2.6,-5.6]){
     const cornice=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.75,.1),
       new THREE.MeshStandardMaterial({color:0x2e2e33,roughness:.5}));
@@ -1119,7 +1166,8 @@ const tasti={};
 const canvasEl=document.getElementById('scena');
 const clock=new THREE.Clock();
 const raycaster=new THREE.Raycaster();
-const G={ gioco:false, tappa:0, macMirato:null, overlay:false, finita:false };
+const G={ gioco:false, tappa:0, mirato:null, overlay:false, finita:false,
+          inv:{cifrario:false, chiave:false}, serraturaPronta:false };
 
 const PORTA_X=-0.5;                    // la porta della fuga
 const CORR_HW=0.65;                    // semi-larghezza del passaggio/corridoio
@@ -1129,40 +1177,41 @@ const CORR_HW=0.65;                    // semi-larghezza del passaggio/corridoio
 const ENIGMI=[
  { mac:0,  tema:'Password',              trova:'La tua postazione: la cattedra, l’iMac grande in testa ai tavoli (nel varco centrale).',
    testo:'Per entrare nel tuo profilo digiti una “parola d’ordine” segreta. Come si chiama, in una parola?',
-   chiavi:['password','parola chiave','parolachiave'], sugg:'In inglese inizia con pass…' },
+   chiavi:['password','parola chiave','parolachiave'], sugg:'Ogni account ne ha una segreta: se qualcuno la scopre, entra al posto tuo.' },
  { mac:10, tema:'Netiquette',            trova:'Conta le lettere di PASSWORD (sono 8) e aggiungi 2.',
    testo:'Scrivere TUTTO MAIUSCOLO online è come urlare, ed è maleducazione. L’insieme delle buone maniere in rete si chiama (net + etiquette)…?',
-   chiavi:['netiquette'], sugg:'Unisci “net” e “etichetta” all’inglese: net…' },
+   chiavi:['netiquette'], sugg:'Le buone maniere dell’educazione, ma applicate alla rete.' },
  { mac:15, tema:'Privacy',               trova:'Lato finestre (nord), tavolo OVEST — quello del bancone stampante: l’ultimo posto all’estremità, vicino alla parete.',
    testo:'Nome, cognome, indirizzo, foto e numero di telefono sono i tuoi dati … : non vanno dati a sconosciuti online.',
-   chiavi:['personali','dati personali'], sugg:'Dati che riguardano te come persona: dati p…' },
+   chiavi:['personali','dati personali'], sugg:'Le informazioni che dicono chi sei: tue soltanto, non da regalare a sconosciuti.' },
  { mac:21, tema:'Phishing',              trova:'Il triplo di 7.',
    testo:'Arriva un messaggio: “Hai vinto un telefono! Clicca e scrivi la tua password”. È un’esca per rubarti i dati. Questo inganno si chiama (suona come “fishing”)…?',
-   chiavi:['phishing'], sugg:'Come “pescare” in inglese, ma si scrive con PH.' },
+   chiavi:['phishing'], sugg:'Funziona come la pesca: si lancia un’esca e si aspetta che qualcuno abbocchi.' },
  { mac:14, tema:'Fake news',             trova:'Lato porte (sud), tavolo OVEST (bancone stampante): il posto all’estremità, vicino alla parete.',
    testo:'Leggi una notizia clamorosa. Prima di condividerla, cosa devi fare per capire se è vera? (controllare più fonti attendibili)',
-   chiavi:['verificare','verifica','controllare','controllo'], sugg:'V… le fonti prima di condividere.' },
+   chiavi:['verificare','verifica','controllare','controllo'], sugg:'Prima di fidarti, confronti quello che leggi con altre fonti serie.' },
  { mac:24, tema:'Cyberbullismo',         trova:'Cinque per cinque, meno uno.',
    testo:'Prendere in giro, minacciare o umiliare qualcuno con messaggi e post ripetuti si chiama cyber…?',
-   chiavi:['bullismo','cyberbullismo'], sugg:'Cyber + b… (come il bullo in classe).' },
+   chiavi:['bullismo','cyberbullismo'], sugg:'È il comportamento del bullo di classe, ma spostato online e ripetuto.' },
  { mac:2,  tema:'Impronta digitale',     trova:'Lato porte (sud), tavolo EST — quello della lavagna: il secondo posto partendo dalla parete est.',
-   testo:'Ogni foto, commento o like che pubblichi lascia una traccia che resta nel tempo: la tua … digitale.',
-   chiavi:['impronta'], sugg:'Come l’impronta del piede sulla sabbia, ma… digitale.' },
+   testo:'Lo schermo mostra solo un codice cifrato. Decifralo: la parola nascosta è un termine di cittadinanza digitale (la traccia che lasci online).',
+   cifrato:true, codice:'LPSURQWD', shift:3,
+   chiavi:['impronta'], sugg:'Serve il CIFRARIO stampato in 3D (sul bancone). Poi sposta ogni lettera indietro di 3.' },
  { mac:12, tema:'Diritto d’autore',       trova:'Le ore di un giorno diviso due.',
    testo:'Una canzone, un’immagine o un video hanno un autore: non puoi copiarli e spacciarli per tuoi. Sono protetti dal diritto d’…?',
-   chiavi:['autore','copyright'], sugg:'Diritto d’a…' },
+   chiavi:['autore','copyright'], sugg:'Chi crea un’opera ha un diritto su di essa: non puoi spacciarla per tua.' },
  { mac:22, tema:'Verifica in due passaggi', trova:'Lato finestre (nord), tavolo EST (lavagna): il primo posto verso il centro dell’aula.',
    testo:'Oltre alla password, molti siti chiedono anche un codice che arriva sul telefono. È la verifica in due …?',
-   chiavi:['fattori','passaggi','due fattori'], sugg:'Due f… (oppure due passaggi).' },
+   chiavi:['fattori','passaggi','due fattori'], sugg:'Non basta una sola prova per entrare: te ne servono due diverse.' },
  { mac:6,  tema:'Acquisti sicuri',       trova:'Il doppio di tre.',
    testo:'Prima di comprare su un sito controlli che l’indirizzo inizi con https e che ci sia il simbolo di un piccolo … chiuso (segno di sicurezza).',
-   chiavi:['lucchetto'], sugg:'Il simbolo che “chiude”, come su una porta: il l…' },
+   chiavi:['lucchetto'], sugg:'Nella barra dell’indirizzo compare un piccolo simbolo che significa «protetto».' },
  { mac:18, tema:'Uso consapevole',       trova:'Lato finestre (nord), tavolo OVEST (bancone stampante): il quarto posto partendo dal centro.',
    testo:'Stare troppe ore attaccati allo schermo fa male. Tra vita online e vita reale bisogna trovare il giusto …?',
-   chiavi:['equilibrio'], sugg:'Come sulla bilancia o in bici: e…' },
+   chiavi:['equilibrio'], sugg:'Né sempre attaccato allo schermo né mai: serve la giusta via di mezzo.' },
  { mac:5,  tema:'Cittadinanza digitale', trova:'Le dita di una mano.',
    testo:'Chi in rete rispetta le regole, le persone e la verità è un buon cittadino …? (è l’ultima serratura!)',
-   chiavi:['digitale','responsabile'], sugg:'Cittadino d… (della rete).' }
+   chiavi:['digitale','responsabile'], sugg:'In rete ti comporti come un buon cittadino, con diritti e doveri.' }
 ];
 const N_TAPPE=ENIGMI.length;
 
@@ -1214,6 +1263,58 @@ function evidenziaMac(num){
     if(spr.material.map.image!==tx){ spr.material.map=new THREE.CanvasTexture(tx); spr.material.map.needsUpdate=true; }
   });
 }
+// ---- OGGETTI STAMPATI IN 3D sul bancone: CIFRARIO + CHIAVE (raccoglibili) + porta ----
+const PICKUPS=[]; let portaProxy=null;
+{
+  // CIFRARIO: disco "decoder" che brilla appena
+  const cif=new THREE.Group();
+  const disco=new THREE.Mesh(new THREE.CylinderGeometry(.085,.085,.02,20),
+    new THREE.MeshStandardMaterial({color:0x2a6fd6,emissive:0x1f4f9e,emissiveIntensity:.6,roughness:.4}));
+  disco.rotation.x=Math.PI/2; cif.add(disco);
+  cif.add(new THREE.Mesh(new THREE.TorusGeometry(.085,.014,10,24),
+    new THREE.MeshStandardMaterial({color:0xdfe6f2,emissive:0x8fb0e6,emissiveIntensity:.4,metalness:.5,roughness:.4})));
+  cif.position.set(4.35,1.0,-2.84); scene.add(cif);
+  // CHIAVE stampata
+  const key=new THREE.Group();
+  const matKey=new THREE.MeshStandardMaterial({color:0xe8c341,emissive:0x8a6a12,emissiveIntensity:.55,metalness:.4,roughness:.4});
+  const gambo=new THREE.Mesh(new THREE.BoxGeometry(.18,.024,.024),matKey); gambo.position.x=.05; key.add(gambo);
+  const occhio=new THREE.Mesh(new THREE.TorusGeometry(.045,.016,10,20),matKey); occhio.position.x=-.055; occhio.rotation.y=Math.PI/2; key.add(occhio);
+  for(let i=0;i<2;i++){ const d=new THREE.Mesh(new THREE.BoxGeometry(.02,.045,.024),matKey); d.position.set(.11+i*.03,-.032,0); key.add(d); }
+  key.position.set(5.65,1.0,-2.84); key.rotation.y=.3; scene.add(key);
+  // proxy di raccolta (invisibili)
+  function proxyPick(tipo,mesh,x){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(.42,.42,.42),new THREE.MeshBasicMaterial({visible:false}));
+    b.position.set(x,1.0,-2.84); b.userData={tipo:'pickup',pickup:tipo,mesh}; scene.add(b); PICKUPS.push(b);
+  }
+  proxyPick('cifrario',cif,4.35); proxyPick('chiave',key,5.65);
+  const luceBanc=new THREE.PointLight(0x9fc0ff,.55,4.2); luceBanc.position.set(5,1.55,-2.35); scene.add(luceBanc);
+  // PROXY della porta della fuga (per usarla con la chiave)
+  portaProxy=new THREE.Mesh(new THREE.BoxGeometry(1.1,2.0,.5),new THREE.MeshBasicMaterial({visible:false}));
+  portaProxy.position.set(PORTA_X,1.1,-3.15); portaProxy.userData={tipo:'porta'}; scene.add(portaProxy);
+}
+const TARGETS=[...PROXIES,...PICKUPS,portaProxy];
+function raccogli(tipo,mesh){
+  if(!tipo||G.inv[tipo]) return;
+  G.inv[tipo]=true; if(mesh) mesh.visible=false;
+  PICKUPS.forEach(p=>{ if(p.userData.pickup===tipo) p.visible=false; });   // non più mirabile
+  splash('Hai preso: '+(tipo==='cifrario'?'il Cifrario 3D':'la Chiave 3D'),'#8fc0ff');
+  aggiornaInventario();
+}
+function usaPorta(){
+  if(!G.serraturaPronta){ splash('La serratura non è ancora pronta','#ffd28a'); return; }
+  if(!G.inv.chiave){ splash('Serve la chiave stampata in 3D (bancone)','#ffd28a'); return; }
+  apriPorta();
+}
+function usaMirato(){
+  const m=G.mirato; if(!m) return;
+  if(m.tipo==='pickup') raccogli(m.pickup,m.mesh);
+  else if(m.tipo==='porta') usaPorta();
+  else if(m.macNum!=null) accediMac(m.macNum);
+}
+function aggiornaInventario(){
+  $('invCifrario').classList.toggle('has',G.inv.cifrario);
+  $('invChiave').classList.toggle('has',G.inv.chiave);
+}
 
 // ---- CORRIDOIO oltre la porta della fuga (z < -3.35) ----
 {
@@ -1243,7 +1344,7 @@ function evidenziaMac(num){
 function aggiornaHUD(){
   $('hudTappa').textContent = G.tappa>0 ? ('Enigma '+G.tappa+' / '+N_TAPPE) : '';
   const e = G.tappa>0 ? ENIGMI[G.tappa-1] : null;
-  $('hudTema').textContent = e ? e.tema : '';
+  $('hudTema').textContent = '';                 // niente tema: rivelerebbe la parola-chiave
   $('indizioTxt').textContent = e ? e.trova : '';
   $('indizio').style.display = e ? 'block' : 'none';
 }
@@ -1266,25 +1367,65 @@ function accediMac(num){
   if(!G.gioco || G.overlay || G.finita) return;
   const cur=ENIGMI[G.tappa-1];
   if(num===cur.mac) apriEnigma(cur);
-  else macSbagliato();
+  else apriDecoy(num);
 }
-function macSbagliato(){
-  splash('Non è questo il computer','#ffd28a');
-  $('indizioTxt').style.color='#ffd28a';
-  setTimeout(()=>{ $('indizioTxt').style.color=''; },1400);
+// ---- schermate-TRAPPOLA sui Mac fuori percorso: pericoli, allarmi, vicoli ciechi ----
+// (in ambra, mai rosso; ognuna è anche un micro-promemoria di cittadinanza digitale)
+const DECOY=[
+ {tit:'ACCESSO NEGATO', txt:'Computer protetto da password. Non è questa la strada: torna all’ultimo indizio.'},
+ {tit:'VICOLO CIECO',   txt:'Qui la pista si interrompe. Rileggi il suggerimento e cerca il Mac giusto.'},
+ {tit:'POP-UP SOSPETTO',txt:'«Hai vinto un premio! Clicca qui!» — non cascarci mai. Chiudi e vai altrove.'},
+ {tit:'FILE CORROTTO',  txt:'Il file è danneggiato: nessun indizio qui dentro.'},
+ {tit:'RETE ASSENTE',   txt:'Connessione persa. Da questo computer non si prosegue.'},
+ {tit:'ALLEGATO INFETTO',txt:'Un allegato sconosciuto ha bloccato il Mac. Non aprire mai file di cui non ti fidi!'},
+ {tit:'SESSIONE APERTA',txt:'Qualcuno ha lasciato l’account aperto: ricorda sempre di fare logout! Ma l’indizio non è qui.'},
+ {tit:'CARTELLA VUOTA', txt:'Nessun indizio in questa cartella. Controlla meglio l’ultimo suggerimento.'},
+ {tit:'PROFILO FALSO',  txt:'Un profilo finto prova a ingannarti. Non fidarti degli sconosciuti online. Vicolo cieco.'},
+ {tit:'SISTEMA BLOCCATO',txt:'Schermata di blocco: questo non è il computer giusto.'}
+];
+function apriDecoy(mac){
+  G.overlay=true;
+  if(document.pointerLockElement) document.exitPointerLock();
+  const d=DECOY[((mac%DECOY.length)+DECOY.length)%DECOY.length];
+  $('enForm').style.display='none'; $('enEsito').style.display='none';
+  $('btnContinua').style.display='none'; $('enTema').style.display='none';
+  document.querySelector('#enBox .dive-hint').textContent='Accesso a un computer…';
+  $('deTitolo').textContent=d.tit; $('deTesto').textContent=d.txt;
+  $('enDecoy').style.display='block';
+  $('enigma').classList.add('pericolo');
+  $('enigma').style.display='flex';
+  avviaGalassia(true); $('cardsFaint').innerHTML='';
+  const box=$('enBox');
+  box.style.transition='none'; box.style.transform='scale(.16)'; box.style.opacity='0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.style.transition='transform .5s cubic-bezier(.2,.85,.25,1),opacity .5s';
+    box.style.transform='scale(1)'; box.style.opacity='1';
+  }));
+  splash('Pericolo!','#f5b301');
 }
 function apriEnigma(e){
   G.overlay=true;
   if(document.pointerLockElement) document.exitPointerLock();
-  $('enTema').textContent=e.tema;
-  $('enTesto').textContent=e.testo;
+  if(e.cifrato){
+    let t=e.testo+'   ▸ Codice: '+e.codice;
+    t += G.inv.cifrario ? ('   ▸ Cifrario 3D: sposta ogni lettera indietro di '+e.shift+' posizioni.')
+                        : ('   ▸ Ti serve il CIFRARIO stampato in 3D (bancone della stampante).');
+    $('enTesto').textContent=t;
+  } else {
+    $('enTesto').textContent=e.testo;
+  }
   $('enInput').value=''; $('enFeedback').textContent='';
   $('enSugg').style.display='none'; $('enSugg').textContent='Suggerimento: '+e.sugg;
   $('enEsito').style.display='none'; $('enForm').style.display='block';
   $('btnContinua').style.display='none';
+  // ripristina dallo stato "trappola" a "enigma"
+  $('enigma').classList.remove('pericolo');
+  $('enDecoy').style.display='none'; $('enTema').style.display='';
+  document.querySelector('#enBox .dive-hint').textContent='Sei entrato nel Mac…';
+  $('enTema').textContent='Enigma '+G.tappa+' / '+N_TAPPE;   // niente tema: rivelerebbe la parola
   $('enigma').style.display='flex';
   // TUFFO nel Mac → mini-galassia: la card della domanda è quella a fuoco
-  avviaGalassia(); popolaCardsFaint(e.tema);
+  avviaGalassia(false); popolaCardsFaint(e.tema);
   const box=$('enBox');
   box.style.transition='none'; box.style.transform='scale(.16)'; box.style.opacity='0';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -1295,28 +1436,31 @@ function apriEnigma(e){
 }
 function chiudiEnigma(){
   $('enigma').style.display='none'; G.overlay=false;
+  $('enigma').classList.remove('pericolo');
   fermaGalassia();
   if(G.gioco && !G.finita) canvasEl.requestPointerLock();
 }
 // ---- mini-galassia dietro la card dell'enigma ----
 let galAnim=null, galStars=[];
-function avviaGalassia(){
+function avviaGalassia(pericolo){
   const cv=$('galassia'); if(!cv) return;
   const ctx=cv.getContext('2d');
   const dim=()=>{ cv.width=innerWidth; cv.height=innerHeight; };
   dim();
+  const colStelle = pericolo ? '245,182,30' : '150,190,255';   // ambra se pericolo, azzurro se enigma
+  const colFondo  = pericolo ? 'rgba(12,8,2,0.32)' : 'rgba(2,6,15,0.32)';
   galStars=[]; for(let i=0;i<230;i++) galStars.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()});
   let warp=1.0;
   function frame(){
     const w=cv.width,h=cv.height,cx=w/2,cy=h/2;
-    ctx.fillStyle='rgba(2,6,15,0.32)'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=colFondo; ctx.fillRect(0,0,w,h);
     warp += (0.05-warp)*0.035;                 // parte veloce (tuffo), poi deriva lenta
     for(const s of galStars){
       s.z-=warp*0.013; if(s.z<=0.02){ s.x=Math.random()*2-1; s.y=Math.random()*2-1; s.z=1; }
       const k=0.6/s.z, px=cx+s.x*k*cx, py=cy+s.y*k*cy;
       if(px<0||px>w||py<0||py>h) continue;
       const a=Math.min(1,1-s.z), r=Math.max(.4,(1-s.z)*2.6);
-      ctx.beginPath(); ctx.fillStyle='rgba(150,190,255,'+a.toFixed(2)+')'; ctx.arc(px,py,r,0,7); ctx.fill();
+      ctx.beginPath(); ctx.fillStyle='rgba('+colStelle+','+a.toFixed(2)+')'; ctx.arc(px,py,r,0,7); ctx.fill();
     }
     galAnim=requestAnimationFrame(frame);
   }
@@ -1334,8 +1478,50 @@ function popolaCardsFaint(temaCorrente){
     cont.appendChild(d);
   });
 }
+// ---- TEMPORALE: disegno cielo+pioggia sulle finestre, lampi e tuoni ----
+let stormLuce=0, prossimoLampo=3.5;
+function disegnaTemporale(flash){
+  const g=stormCtx;
+  const grad=g.createLinearGradient(0,0,0,256);
+  grad.addColorStop(0,'#0d131f'); grad.addColorStop(.55,'#18202f'); grad.addColorStop(1,'#252c3a');
+  g.fillStyle=grad; g.fillRect(0,0,256,256);
+  g.globalAlpha=.55;                                   // nuvole scure
+  for(let i=0;i<6;i++){ g.fillStyle=i%2?'#0c1119':'#212a3a';
+    g.beginPath(); g.ellipse((i*47)%300-20, 34+((i*53)%80), 58,24,0,0,7); g.fill(); }
+  g.globalAlpha=1;
+  g.strokeStyle='rgba(200,214,236,.5)'; g.lineWidth=1.4; // pioggia
+  for(const d of stormDrops){ g.beginPath(); g.moveTo(d.x,d.y); g.lineTo(d.x-2.2,d.y+d.l); g.stroke(); }
+  if(flash>0){ g.fillStyle='rgba(222,232,255,'+flash.toFixed(2)+')'; g.fillRect(0,0,256,256); }
+  stormTex.needsUpdate=true;
+}
+function aggiornaTemporale(dt){
+  for(const d of stormDrops){ d.y+=d.s; if(d.y>256){ d.y=-d.l; d.x=Math.random()*256; } }
+  prossimoLampo-=dt;
+  if(prossimoLampo<=0){ scatenaLampo(); prossimoLampo=6+Math.random()*11; }
+  stormLuce=Math.max(0,stormLuce-dt*3.4);
+  luceLampo.intensity=stormLuce*2.6;
+  disegnaTemporale(Math.min(0.9,stormLuce));
+}
+function scatenaLampo(){
+  stormLuce=1;
+  setTimeout(()=>{ stormLuce=Math.max(stormLuce,.8); },80+Math.random()*90);   // doppio guizzo
+  // suono del temporale (short YouTube) SOLO ogni tanto, non a ogni lampo
+  if(Math.random()<0.5) setTimeout(suonoTemporale, 300+Math.random()*1200);
+}
+// ---- SUONO del temporale: short YouTube riprodotto a raffiche casuali (non permanente) ----
+let sfxPlayer=null, sfxPronto=false, sfxAttivo=false;
+function suonoTemporale(){
+  if(!musicaOn || !sfxPronto || sfxAttivo) return;   // niente sovrapposizioni
+  try{ sfxAttivo=true; sfxPlayer.setVolume(60); sfxPlayer.seekTo(0); sfxPlayer.playVideo();
+    setTimeout(()=>{ try{ sfxPlayer.pauseVideo(); }catch(_){} sfxAttivo=false; }, 6000);
+  }catch(e){ sfxAttivo=false; }
+}
 function verificaRisposta(){
   const e=ENIGMI[G.tappa-1];
+  if(e.cifrato && !G.inv.cifrario){
+    $('enFeedback').textContent='Messaggio cifrato: prendi prima il CIFRARIO 3D dal bancone della stampante.';
+    return;
+  }
   if(rispostaOk($('enInput').value,e.chiavi)){
     $('enForm').style.display='none';
     if(G.tappa<N_TAPPE){
@@ -1343,8 +1529,8 @@ function verificaRisposta(){
       $('enEsito').innerHTML='<h3 style="color:#8fc0ff;margin-bottom:8px">Esatto!</h3>'+
         '<p>Prossimo indizio:</p><p class="clue">'+prox.trova+'</p>';
     } else {
-      $('enEsito').innerHTML='<h3 style="color:#8fc0ff;margin-bottom:8px">Ultima serratura sbloccata!</h3>'+
-        '<p>La porta del laboratorio si apre. Raggiungila ed esci nel corridoio!</p>';
+      $('enEsito').innerHTML='<h3 style="color:#8fc0ff;margin-bottom:8px">Ultima serratura pronta!</h3>'+
+        '<p>Ora prendi la <b>chiave stampata in 3D</b> dal bancone della stampante e usala sulla porta per uscire.</p>';
     }
     $('enEsito').style.display='block';
     $('btnContinua').style.display='inline-block';
@@ -1358,7 +1544,13 @@ function continuaDopoEnigma(){
   if(G.avanzaAllaChiusura){
     G.avanzaAllaChiusura=false;
     if(G.tappa<N_TAPPE){ G.tappa++; aggiornaHUD(); splash('Enigma risolto!','#8fc0ff'); }
-    else { apriPorta(); }
+    else {                                   // enigmi finiti: serratura pronta, ma serve la chiave 3D
+      G.serraturaPronta=true;
+      $('hudTappa').textContent='Enigmi risolti'; $('hudTema').textContent='';
+      $('indizio').style.display='block';
+      $('indizioTxt').textContent='Serratura pronta! Prendi la CHIAVE 3D dal bancone e usala sulla porta.';
+      splash('Serratura pronta!','#8fc0ff');
+    }
   }
   chiudiEnigma();
 }
@@ -1386,6 +1578,7 @@ function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al 
   $('consegna').style.display='none';
   G.intro=true; G.introT=0; G.gioco=false; G.finita=false; G.tappa=0;
   $('btnSalta').style.display='block';
+  avviaMusica();                   // il clic su "Inizia" sblocca l'autoplay della musica
   aggiornaHUD();
 }
 function avviaGameplay(){
@@ -1393,7 +1586,7 @@ function avviaGameplay(){
   G.gioco=true; G.tappa=1; G.finita=false;
   camera.position.copy(INTRO_LAND); yaw=Math.PI/2; pitch=0;
   camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
-  aggiornaHUD();
+  aggiornaHUD(); aggiornaInventario();
   canvasEl.requestPointerLock();
 }
 function vittoria(){
@@ -1408,9 +1601,10 @@ addEventListener('keydown',e=>{
   tasti[e.key.toLowerCase()]=true;
   if(G.gioco && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
   if(e.key==='Enter'){
-    if(G.overlay && $('enEsito').style.display==='block'){ continuaDopoEnigma(); }
+    if(G.overlay && $('enDecoy').style.display==='block'){ chiudiEnigma(); }
+    else if(G.overlay && $('enEsito').style.display==='block'){ continuaDopoEnigma(); }
     else if(G.overlay){ verificaRisposta(); }
-    else if(G.gioco && document.pointerLockElement===canvasEl && G.macMirato!=null){ accediMac(G.macMirato); }
+    else if(G.gioco && document.pointerLockElement===canvasEl && G.mirato){ usaMirato(); }
   }
   if(e.key==='Escape' && G.overlay){ chiudiEnigma(); }
 });
@@ -1418,7 +1612,7 @@ addEventListener('keyup',e=>{ tasti[e.key.toLowerCase()]=false; });
 canvasEl.addEventListener('click',()=>{
   if(G.overlay || G.finita || !G.gioco) return;
   if(document.pointerLockElement!==canvasEl){ canvasEl.requestPointerLock(); return; }
-  if(G.macMirato!=null) accediMac(G.macMirato);
+  usaMirato();
 });
 addEventListener('mousemove',e=>{
   if(document.pointerLockElement===canvasEl){
@@ -1430,9 +1624,40 @@ addEventListener('mousemove',e=>{
 // pulsanti overlay
 $('btnInizia').addEventListener('click',iniziaGioco);
 $('btnSalta').addEventListener('click',avviaGameplay);
+
+// ---- MUSICA di sottofondo (YouTube IFrame API) ----
+// Per cambiare brano incolla qui l'id del video (la parte dopo youtu.be/ o v=).
+const YT_MUSICA='Q3_QOVaBA98';       // musica di sottofondo
+const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffiche casuali)
+let ytPlayer=null, ytPronto=false, musicaOn=true;
+function onYouTubeIframeAPIReady(){
+  sfxPlayer=new YT.Player('ytsfx',{
+    videoId:YT_TEMPORALE,
+    playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1},
+    events:{ onReady:()=>{ sfxPronto=true; try{sfxPlayer.setVolume(60);}catch(_){} } }
+  });
+  ytPlayer=new YT.Player('yt',{
+    videoId:YT_MUSICA,
+    playerVars:{autoplay:0,controls:0,rel:0,playsinline:1,enablejsapi:1,loop:1,playlist:YT_MUSICA},
+    events:{
+      onReady:()=>{ ytPronto=true; if(G.intro||G.gioco) avviaMusica(); },
+      onStateChange:e=>{ if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(_){} } }
+    }
+  });
+}
+function avviaMusica(){ if(ytPronto && musicaOn){ try{ ytPlayer.setVolume(32); ytPlayer.playVideo(); }catch(e){} } }
+function toggleMusica(){
+  musicaOn=!musicaOn;
+  $('btnMusica').classList.toggle('off',!musicaOn);
+  if(!musicaOn && sfxPronto){ try{ sfxPlayer.pauseVideo(); }catch(e){} sfxAttivo=false; }  // spegne anche il temporale
+  if(!ytPronto) return;
+  if(musicaOn) avviaMusica(); else { try{ ytPlayer.pauseVideo(); }catch(e){} }
+}
+$('btnMusica').addEventListener('click',toggleMusica);
 $('btnVerifica').addEventListener('click',verificaRisposta);
 $('btnSugg').addEventListener('click',()=>{ $('enSugg').style.display='block'; });
 $('btnContinua').addEventListener('click',continuaDopoEnigma);
+$('btnDecoyEsci').addEventListener('click',chiudiEnigma);
 $('btnRicomincia').addEventListener('click',()=>location.reload());
 // info / regole
 (function(){
@@ -1446,6 +1671,10 @@ $('btnRicomincia').addEventListener('click',()=>location.reload());
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05);
+  // atmosfera: neon che sfarfalla appena + temporale fuori dalle finestre
+  const fk=NEON_BASE*(0.82+0.12*Math.sin(clock.elapsedTime*8.3)) - (Math.random()<0.02?NEON_BASE*0.5:0);
+  neon2.intensity=Math.max(0,fk); neon1.intensity=Math.max(0,NEON_BASE*(0.9+0.08*Math.sin(clock.elapsedTime*5.1)));
+  aggiornaTemporale(dt);
   // VOLO PANORAMICO iniziale: orbita l'aula, poi atterra alla postazione di partenza
   if(G.intro){
     G.introT=Math.min(1,G.introT+dt/INTRO_DUR);
@@ -1484,16 +1713,23 @@ function animate(){
     // mira ai Mac
     camera.updateMatrixWorld();
     raycaster.setFromCamera({x:0,y:0},camera);
-    const hit=raycaster.intersectObjects(PROXIES,false)[0];
-    const num=(hit && hit.distance<2.6)?hit.object.userData.macNum:null;
-    if(num!==G.macMirato){ G.macMirato=num; evidenziaMac(num);
-      $('hint').style.display=(num!=null)?'block':'none';
-      if(num!=null) $('hint').textContent=(num===0?'Cattedra (Prof)':'Mac '+num)+' — [clic] o [Invio] per accedere';
+    const hit=raycaster.intersectObjects(TARGETS,false)[0];
+    const m=(hit && hit.distance<2.6)?hit.object.userData:null;
+    const macNum=(m&&m.macNum!=null)?m.macNum:null;
+    const chiave=m?((m.tipo||'mac')+':'+(m.macNum!=null?m.macNum:m.pickup||'porta')):null;
+    if(chiave!==G._miratoKey){
+      G._miratoKey=chiave; G.mirato=m; evidenziaMac(macNum);
+      if(!m){ $('hint').style.display='none'; }
+      else { $('hint').style.display='block';
+        if(m.tipo==='pickup') $('hint').textContent='Prendi '+(m.pickup==='cifrario'?'il Cifrario 3D':'la Chiave 3D')+' — [clic] o [Invio]';
+        else if(m.tipo==='porta') $('hint').textContent='Porta del laboratorio — [clic] o [Invio]';
+        else $('hint').textContent=(macNum===0?'Cattedra (Prof)':'Mac '+macNum)+' — [clic] o [Invio] per accedere';
+      }
     }
     // vittoria: uscito nel corridoio
     if(PORTA_USCITA && PORTA_USCITA.aperta && camera.position.z<-4.3) vittoria();
   } else {
-    $('hint').style.display='none';
+    $('hint').style.display='none'; G.mirato=null; G._miratoKey=null;
   }
   // animazione apertura porta
   if(PORTA_USCITA && PORTA_USCITA.aperta && PORTA_USCITA.ang>-1.35){
