@@ -2132,7 +2132,7 @@ function chiudiGalassiaMac(){
 function avviaGalMacBg(){
   const cv=$('galMacBg'); if(!cv) return; const ctx=cv.getContext('2d');
   cv.width=innerWidth; cv.height=innerHeight;
-  galMacStars=[]; for(let i=0;i<200;i++) galMacStars.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()});
+  galMacStars=[]; for(let i=0;i<520;i++) galMacStars.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()});
   let warp=1;
   function frame(){
     const w=cv.width,h=cv.height,cx=w/2,cy=h/2;
@@ -2141,10 +2141,10 @@ function avviaGalMacBg(){
     const spd=warp + galWarpBoost*0.9;                       // durante il volo le stelle sfrecciano
     const scie=galWarpBoost>0.05; ctx.lineCap='round';
     for(const s of galMacStars){ const zPrec=s.z; s.z-=spd*0.012; if(s.z<=0.02){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1;}
-      const k=0.6/s.z, px=cx+s.x*k*cx, py=cy+s.y*k*cy; if(px<0||px>w||py<0||py>h) continue;
+      const k=0.9/s.z, px=cx+s.x*k*cx, py=cy+s.y*k*cy; if(px<-40||px>w+40||py<-40||py>h+40) continue;
       const a=Math.min(1,1-s.z), col='rgba(150,190,255,'+a.toFixed(2)+')';
       if(scie){                                              // scia radiale = viaggio tra le stelle
-        const k2=0.6/Math.min(1,zPrec+galWarpBoost*0.05), qx=cx+s.x*k2*cx, qy=cy+s.y*k2*cy;
+        const k2=0.9/Math.min(1,zPrec+galWarpBoost*0.05), qx=cx+s.x*k2*cx, qy=cy+s.y*k2*cy;
         ctx.strokeStyle=col; ctx.lineWidth=Math.max(.7,(1-s.z)*2.2); ctx.beginPath(); ctx.moveTo(qx,qy); ctx.lineTo(px,py); ctx.stroke();
       } else { ctx.beginPath(); ctx.fillStyle=col; ctx.arc(px,py,Math.max(.4,(1-s.z)*2.4),0,7); ctx.fill(); }
     }
