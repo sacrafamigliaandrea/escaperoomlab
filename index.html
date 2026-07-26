@@ -1804,11 +1804,11 @@ function aggiornaInventario(){
 const ZONE=[
   {x0:-7.6,x1:7.6, z0:-2.95,z1:3.05},                    // LAB informatica
   {x0:-1.15,x1:0.15,z0:-3.55,z1:-2.85, gate:true},       // varco porta di fuga
-  {x0:-8.7,x1:8.7, z0:-5.70,z1:-3.35, gate:true},        // CORRIDOIO
-  {x0:-4.65,x1:-3.35,z0:-6.15,z1:-5.55, gate:true, aula:'musica'},   // varco porta MUSICA
-  {x0:-8.7,x1:-1.35,z0:-11.65,z1:-5.75, gate:true, dentro:'musica'}, // AULA DI MUSICA
-  {x0:3.35,x1:4.65, z0:-6.15,z1:-5.55, gate:true, aula:'scienze'},   // varco porta SCIENZE
-  {x0:1.35,x1:8.7,  z0:-11.65,z1:-5.75, gate:true, dentro:'scienze'},// LAB DI SCIENZE
+  {x0:-8.7,x1:8.7, z0:-5.75,z1:-3.35, gate:true},        // CORRIDOIO (si ferma al muro z=-6)
+  {x0:-4.6,x1:-3.4, z0:-6.2,z1:-5.7, gate:true, aula:'musica'},      // varco porta MUSICA (unico passaggio, stacco 40cm)
+  {x0:-8.7,x1:-1.35,z0:-11.65,z1:-6.15, gate:true, dentro:'musica'}, // AULA DI MUSICA (parte oltre il muro)
+  {x0:3.4,x1:4.6,  z0:-6.2,z1:-5.7, gate:true, aula:'scienze'},      // varco porta SCIENZE
+  {x0:1.35,x1:8.7,  z0:-11.65,z1:-6.15, gate:true, dentro:'scienze'},// LAB DI SCIENZE
 ];
 // stato ESCAPE ROOM delle due aule: appena entri la porta si sigilla, e si riapre solo a enigmi risolti
 const AULA={ musica:{sigillo:false, risolta:false, porta:null}, scienze:{sigillo:false, risolta:false, porta:null} };
@@ -1822,12 +1822,7 @@ function posValida(x,z){
   return false;
 }
 function stanzaDentro(x,z){ for(const r of ZONE){ if(r.dentro && x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1) return r.dentro; } return null; }
-function bloccato(x,z){
-  // porta d'aula chiusa = barriera spessa sul varco (evita di "attraversarla" a passi grandi)
-  if(AULA.musica.sigillo  && x>-4.7 && x<-3.3 && z>-5.74 && z<-5.45) return true;
-  if(AULA.scienze.sigillo && x> 3.3 && x< 4.7 && z>-5.74 && z<-5.45) return true;
-  return dentroTavolo(x,z) || OSTACOLI.some(r=>x>r.x0&&x<r.x1&&z>r.z0&&z<r.z1);
-}
+function bloccato(x,z){ return dentroTavolo(x,z) || OSTACOLI.some(r=>x>r.x0&&x<r.x1&&z>r.z0&&z<r.z1); }
 // quiz tematici delle due aule (oggetti da mirare)
 // --- Enigmi del LABORATORIO DI SCIENZE (programma di scuola secondaria di I grado) ---
 const QUIZ_SCHELETRO ={tema:'Lo scheletro', testo:'Nella coscia si trova l’osso più lungo e robusto del corpo umano. Come si chiama?',
@@ -2013,20 +2008,61 @@ function liberaAula(st){
     ragnatela(-1.17,2.55,-11.4,-Math.PI/2,0.85); ragnatela(-8.83,2.5,-6.6,Math.PI/2,0.8);
   }
 
-  // ================= LABORATORIO DI SCIENZE — FREDDO E ASETTICO (x[1..9], z[-12..-6]) =================
-  const matPavLab=new THREE.MeshStandardMaterial({color:0xeef2f5,roughness:.35,metalness:.05});   // pavimento lucido freddo
-  const matMuroLab=new THREE.MeshStandardMaterial({color:0xdfe7ec,roughness:.85,side:THREE.DoubleSide});
-  const matSoffLab=new THREE.MeshStandardMaterial({color:0xf3f7fa,roughness:.9});
+  // ================= LABORATORIO DI SCIENZE — CASTELLO DI FRANKENSTEIN JUNIOR (x[1..9], z[-12..-6]) =================
+  // pavimento a piastrelle a SCACCHIERA bianco/nero (gotico); pareti in pietra, soffitto scuro
+  const texScacchi=(()=>{ const c=mkCanvas(256,256),g=c.getContext('2d'); const n=4,s=256/n;
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++){ g.fillStyle=(i+j)%2?'#17161a':'#b8b2a6'; g.fillRect(i*s,j*s,s,s); }
+    g.strokeStyle='rgba(0,0,0,.25)'; g.lineWidth=2; for(let i=0;i<=n;i++){ g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,256);g.stroke(); g.beginPath();g.moveTo(0,i*s);g.lineTo(256,i*s);g.stroke(); }
+    const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,4); return t; })();
+  const matPavLab=new THREE.MeshStandardMaterial({map:texScacchi,roughness:.5,metalness:.05});
+  const matPietraS=new THREE.MeshStandardMaterial({map:texPietra(3,1.5),roughness:.98,side:THREE.DoubleSide});
+  const matSoffS=new THREE.MeshStandardMaterial({color:0x14120f,roughness:1});
+  const legnoScuro=new THREE.MeshStandardMaterial({color:0x2f2216,roughness:.7});
+  const metallo=new THREE.MeshStandardMaterial({color:0x40454c,metalness:.6,roughness:.45});
+  const ottone=new THREE.MeshStandardMaterial({color:0xc19a3e,metalness:.75,roughness:.35});
   mkPav(8,6,matPavLab,5,-9);
-  { const so=new THREE.Mesh(new THREE.PlaneGeometry(8,6),matSoffLab); so.rotation.x=Math.PI/2; so.position.set(5,3.0,-9); scene.add(so); }
-  mkMX(6,9,-9,matMuroLab); mkMX(6,1,-9,matMuroLab); mkMZ(8,5,-12,matMuroLab);
-  luce(5,2.6,-9,.5,13,0xdff0ff);
-  // NEON al soffitto: tubi che sfarfallano (registrati per l'effetto guasto)
-  const neon=(x,z)=>{ const tubo=new THREE.Mesh(new THREE.BoxGeometry(2.0,.06,.16),
-      new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xdff0ff,emissiveIntensity:1})); tubo.position.set(x,2.93,z); scene.add(tubo);
-    const l=new THREE.PointLight(0xdff0ff,.8,9); l.position.set(x,2.8,z); scene.add(l);
-    neonLuci.push({l,tubo,base:.85}); };
-  neon(4,-7.5); neon(6,-10.5); neon(3.2,-10.8);
+  { const so=new THREE.Mesh(new THREE.PlaneGeometry(8,6),matSoffS); so.rotation.x=Math.PI/2; so.position.set(5,3.0,-9); scene.add(so); }
+  mkMX(6,9,-9,matPietraS); mkMX(6,1,-9,matPietraS); mkMZ(8,5,-12,matPietraS);
+  luce(5,2.5,-9,.32,12,0x8fb4e6);                     // luce fioca e fredda
+  // LUCI ELETTRICHE che sfarfallano (bagliori azzurri, registrate per il flicker)
+  const elettro=(x,y,z,i)=>{ const l=new THREE.PointLight(0x9fd0ff,i||.6,10); l.position.set(x,y,z); scene.add(l); neonLuci.push({l,base:i||.55}); return l; };
+  elettro(5,2.7,-8,.5); elettro(3,2.7,-11,.45);
+  // BOBINE DI TESLA con toroide, sfera luminosa e scariche verso l'alto
+  const bobina=(x,z)=>{ const base=new THREE.Mesh(new THREE.BoxGeometry(.5,.2,.5),legnoScuro); base.position.set(x,.1,z); scene.add(base);
+    const col=new THREE.Mesh(new THREE.CylinderGeometry(.12,.15,1.5,16),new THREE.MeshStandardMaterial({color:0x9c6b2f,metalness:.5,roughness:.5})); col.position.set(x,.95,z); scene.add(col);
+    const toro=new THREE.Mesh(new THREE.TorusGeometry(.24,.075,12,24),ottone); toro.position.set(x,1.75,z); toro.rotation.x=Math.PI/2; scene.add(toro);
+    const sfera=new THREE.Mesh(new THREE.SphereGeometry(.11,18,16),new THREE.MeshStandardMaterial({color:0xdfeaff,emissive:0x7ab8ff,emissiveIntensity:1})); sfera.position.set(x,1.9,z); sfera.material.toneMapped=false; scene.add(sfera);
+    const l=new THREE.PointLight(0x8fc0ff,.9,7); l.position.set(x,1.95,z); scene.add(l); neonLuci.push({l,base:.75,glow:sfera});
+    for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const arc=new THREE.Mesh(new THREE.CylinderGeometry(.006,.002,.45,4),new THREE.MeshBasicMaterial({color:0xbfe0ff})); arc.material.toneMapped=false;
+      arc.position.set(x+Math.cos(a)*.13,2.12,z+Math.sin(a)*.13); arc.rotation.z=Math.cos(a)*.6; arc.rotation.x=Math.sin(a)*.6; scene.add(arc); }
+    OSTACOLI.push({x0:x-.32,x1:x+.32,z0:z-.32,z1:z+.32}); };
+  bobina(2.1,-6.6); bobina(8.4,-6.7);
+  // QUADRO ELETTRICO con grandi LEVE a coltello e quadranti (parete di sinistra)
+  { const g=new THREE.Group();
+    const pann=new THREE.Mesh(new THREE.BoxGeometry(.14,1.7,1.9),legnoScuro); pann.position.set(0,1.3,0); g.add(pann);
+    for(let i=0;i<4;i++){ const zz=-.6+i*.4;
+      const zoc=new THREE.Mesh(new THREE.BoxGeometry(.06,.14,.12),metallo); zoc.position.set(.1,1.55,zz); g.add(zoc);
+      const leva=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.3,8),new THREE.MeshStandardMaterial({color:0xb8b2a0,metalness:.6})); leva.position.set(.18,1.62,zz); leva.rotation.z=(i%2?-.7:.7); g.add(leva);
+      const pomo=new THREE.Mesh(new THREE.SphereGeometry(.035,10,10),new THREE.MeshStandardMaterial({color:0xa8321f})); pomo.position.set(.18+(i%2?-.12:.12),1.62+.12,zz); g.add(pomo); }
+    for(let i=0;i<3;i++){ const q=new THREE.Mesh(new THREE.CircleGeometry(.11,20),new THREE.MeshStandardMaterial({color:0xe6d6a8,emissive:0x4a3a10,emissiveIntensity:.3})); q.position.set(.08,.95,-.5+i*.5); q.rotation.y=Math.PI/2; g.add(q);
+      const ago=new THREE.Mesh(new THREE.BoxGeometry(.012,.09,.006),new THREE.MeshStandardMaterial({color:0x1a1a1a})); ago.position.set(.085,.95,-.5+i*.5); ago.rotation.x=i*.7; g.add(ago); }
+    g.position.set(1.12,0,-9); scene.add(g); OSTACOLI.push({x0:1.1,x1:1.7,z0:-10.1,z1:-7.9}); }
+  // SFERA AL PLASMA su una colonna
+  { const x=3.2,z=-6.5; const col=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,.85,12),legnoScuro); col.position.set(x,.42,z); scene.add(col);
+    const globo=new THREE.Mesh(new THREE.SphereGeometry(.19,20,16),new THREE.MeshStandardMaterial({color:0x9f7ad0,transparent:true,opacity:.28,emissive:0x7a3ac0,emissiveIntensity:.5})); globo.position.set(x,1.05,z); globo.material.toneMapped=false; scene.add(globo);
+    const core=new THREE.Mesh(new THREE.SphereGeometry(.04,10,10),new THREE.MeshBasicMaterial({color:0xffb0ff})); core.material.toneMapped=false; core.position.set(x,1.05,z); scene.add(core);
+    for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; const fil=new THREE.Mesh(new THREE.CylinderGeometry(.004,.001,.17,4),new THREE.MeshBasicMaterial({color:0xd07af0})); fil.material.toneMapped=false;
+      fil.position.set(x+Math.cos(a)*.09,1.05+Math.sin(a*1.7)*.04,z+Math.sin(a)*.09); fil.rotation.z=Math.PI/2-a; scene.add(fil); }
+    const l=new THREE.PointLight(0xb07ae0,.5,4); l.position.set(x,1.05,z); scene.add(l); neonLuci.push({l,base:.4,glow:core});
+    OSTACOLI.push({x0:x-.28,x1:x+.28,z0:z-.28,z1:z+.28}); }
+  // JACOB'S LADDER (scala di scariche) alla parete di fondo
+  { const x=6.2,z=-11.8; for(const sx of [-.09,.09]){ const asta=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1.0,6),metallo); asta.position.set(x+sx,1.4,z); asta.rotation.z=sx>0?-.12:.12; scene.add(asta); }
+    for(let i=0;i<4;i++){ const arc=new THREE.Mesh(new THREE.TorusGeometry(.05+i*.02,.006,6,12,Math.PI),new THREE.MeshBasicMaterial({color:0xbfe0ff})); arc.material.toneMapped=false;
+      arc.position.set(x,1.05+i*.22,z); arc.rotation.x=Math.PI/2; scene.add(arc); }
+    const l=new THREE.PointLight(0x9fd0ff,.4,4); l.position.set(x,1.6,z); scene.add(l); neonLuci.push({l,base:.35}); }
+  // CAVI che pendono dal soffitto
+  for(const [cx,cz] of [[4,-7.5],[6.4,-9],[3.4,-10]]){ const cavo=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,1.2,6),new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.8}));
+    cavo.position.set(cx,2.4,cz); cavo.rotation.z=.12; scene.add(cavo); }
   // SCHELETRO su piedistallo (parete di fondo, a sinistra)
   { const osso=new THREE.MeshStandardMaterial({color:0xeae4d2,roughness:.7});
     const gx=2.3, gz=-11.2;
@@ -2046,26 +2082,35 @@ function liberaAula(st){
     OSTACOLI.push({x0:gx-.4,x1:gx+.4,z0:gz-.45,z1:gz+.45});
     const proxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2.0,.9),new THREE.MeshBasicMaterial({visible:false}));
     proxy.position.set(gx,1.1,gz); proxy.userData={tipo:'quiz',quiz:QUIZ_SCHELETRO,nome:'Lo scheletro'}; scene.add(proxy); TARGETS.push(proxy); }
-  // MODELLINO DEL CORPO UMANO con organi (respiratorio, digerente, circolatorio) — parete di fondo, a destra
-  { const gx=7.5, gz=-11.2;
-    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.1,18),new THREE.MeshStandardMaterial({color:0x2b3138,metalness:.4,roughness:.5})); ped.position.set(gx,.05,gz); scene.add(ped);
-    const matVetro=new THREE.MeshStandardMaterial({color:0xbfe0ef,transparent:true,opacity:.22,roughness:.15});
-    const torso=new THREE.Mesh(new THREE.CylinderGeometry(.2,.26,.7,16),matVetro); torso.position.set(gx,1.22,gz); scene.add(torso);
-    const spalla=new THREE.Mesh(new THREE.SphereGeometry(.2,14,12),matVetro); spalla.position.set(gx,1.55,gz); spalla.scale.set(1,.7,.8); scene.add(spalla);
-    const testa=new THREE.Mesh(new THREE.SphereGeometry(.15,16,16),new THREE.MeshStandardMaterial({color:0xbfe0ef,transparent:true,opacity:.22})); testa.position.set(gx,1.78,gz); scene.add(testa);
-    // respiratorio: trachea + due polmoni
-    const trachea=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.22,8),new THREE.MeshStandardMaterial({color:0xe6b8c2})); trachea.position.set(gx,1.5,gz); scene.add(trachea);
-    for(const s of [-1,1]){ const pol=new THREE.Mesh(new THREE.SphereGeometry(.1,14,14),new THREE.MeshStandardMaterial({color:0xf2a6b0,roughness:.6}));
-      pol.position.set(gx+s*.11,1.34,gz); pol.scale.set(.8,1.25,.7); scene.add(pol); }
-    // circolatorio: cuore
-    const cuore=new THREE.Mesh(new THREE.SphereGeometry(.07,14,14),new THREE.MeshStandardMaterial({color:0xc0392b,emissive:0x5a0f0a,emissiveIntensity:.25,roughness:.5})); cuore.position.set(gx-.03,1.28,gz+.06); cuore.scale.set(1,1.2,1); scene.add(cuore);
-    // digerente: stomaco + intestino
-    const stomaco=new THREE.Mesh(new THREE.SphereGeometry(.09,14,14),new THREE.MeshStandardMaterial({color:0xd98a5a,roughness:.6})); stomaco.position.set(gx-.06,1.08,gz); stomaco.scale.set(1,.85,.7); scene.add(stomaco);
-    const intest=new THREE.Mesh(new THREE.TorusKnotGeometry(.08,.028,60,8,2,3),new THREE.MeshStandardMaterial({color:0xe0a06a,roughness:.6})); intest.position.set(gx,.9,gz); intest.scale.set(1,.8,.6); scene.add(intest);
-    luce(gx,1.8,gz+.8,.4,3,0xeaf4ff);
-    OSTACOLI.push({x0:gx-.4,x1:gx+.4,z0:gz-.4,z1:gz+.4});
-    const proxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2.0,.9),new THREE.MeshBasicMaterial({visible:false}));
-    proxy.position.set(gx,1.1,gz); proxy.userData={tipo:'quiz',quiz:QUIZ_CORPO,nome:'Il corpo umano'}; scene.add(proxy); TARGETS.push(proxy); }
+  // LA CREATURA sul TAVOLO OPERATORIO inclinato (con organi = enigma del corpo umano)
+  { const cx=7.4, cz=-10.4;
+    // gambe e telaio del lettino
+    for(const dx of [-.4,.4])for(const dz of [-.9,.9]){ const g=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.9,8),metallo); g.position.set(cx+dx,.45,cz+dz); scene.add(g); }
+    // piano inclinato (testa in alto) + creatura, in un gruppo ruotato
+    const g=new THREE.Group(); g.position.set(cx,.9,cz); g.rotation.x=-0.38; scene.add(g);
+    const lastra=new THREE.Mesh(new THREE.BoxGeometry(.95,.08,2.3),new THREE.MeshStandardMaterial({color:0x3a2a1c,roughness:.6})); g.add(lastra);
+    const pelle=new THREE.MeshStandardMaterial({color:0x93a578,roughness:.75});   // carnagione verdastra da creatura
+    const testa=new THREE.Mesh(new THREE.BoxGeometry(.34,.3,.32),pelle); testa.position.set(0,.16,.92); g.add(testa);
+    const fronte=new THREE.Mesh(new THREE.BoxGeometry(.35,.1,.33),pelle); fronte.position.set(0,.3,.9); g.add(fronte);   // fronte piatta
+    for(const sx of [-.2,.2]){ const bull=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.12,10),metallo); bull.position.set(sx,.05,.78); bull.rotation.z=Math.PI/2; g.add(bull); }  // bulloni al collo
+    const torso=new THREE.Mesh(new THREE.BoxGeometry(.5,.22,.9),pelle); torso.position.set(0,.13,.2); g.add(torso);
+    for(const sx of [-1,1]){ const braccio=new THREE.Mesh(new THREE.CylinderGeometry(.07,.06,.8,8),pelle); braccio.position.set(sx*.36,.1,.2); braccio.rotation.z=Math.PI/2*sx*.08+Math.PI/2; g.add(braccio);
+      const gamba=new THREE.Mesh(new THREE.CylinderGeometry(.09,.07,.85,8),pelle); gamba.position.set(sx*.14,.12,-.55); g.add(gamba); }
+    // TORACE APERTO con organi (respiratorio, circolatorio, digerente)
+    const cavita=new THREE.Mesh(new THREE.BoxGeometry(.34,.04,.5),new THREE.MeshStandardMaterial({color:0x5a2a2a,roughness:.6})); cavita.position.set(0,.24,.28); g.add(cavita);
+    for(const s of [-1,1]){ const pol=new THREE.Mesh(new THREE.SphereGeometry(.09,14,14),new THREE.MeshStandardMaterial({color:0xf2a6b0,roughness:.6})); pol.position.set(s*.09,.27,.36); pol.scale.set(.8,.7,1.1); g.add(pol); }
+    const cuore=new THREE.Mesh(new THREE.SphereGeometry(.07,14,14),new THREE.MeshStandardMaterial({color:0xc0392b,emissive:0x6a1410,emissiveIntensity:.4,roughness:.5})); cuore.position.set(0,.29,.26); cuore.scale.set(1,1.2,1); g.add(cuore);
+    const stomaco=new THREE.Mesh(new THREE.SphereGeometry(.08,14,14),new THREE.MeshStandardMaterial({color:0xd98a5a,roughness:.6})); stomaco.position.set(-.05,.27,.1); stomaco.scale.set(1,.8,.7); g.add(stomaco);
+    const intest=new THREE.Mesh(new THREE.TorusKnotGeometry(.07,.025,50,8,2,3),new THREE.MeshStandardMaterial({color:0xe0a06a,roughness:.6})); intest.position.set(0,.26,-.05); intest.scale.set(1,.5,.8); g.add(intest);
+    // cinghie di contenzione
+    for(const zz of [.4,-.1,-.6]){ const ci=new THREE.Mesh(new THREE.BoxGeometry(.56,.03,.09),new THREE.MeshStandardMaterial({color:0x2a1a10})); ci.position.set(0,.2,zz); g.add(ci); }
+    // elettrodo sopra la testa con scarica
+    const el=new THREE.Mesh(new THREE.ConeGeometry(.05,.2,10),metallo); el.position.set(cx,2.2,cz-.7); scene.add(el);
+    const scar=new THREE.Mesh(new THREE.CylinderGeometry(.005,.02,.5,4),new THREE.MeshBasicMaterial({color:0xbfe0ff})); scar.material.toneMapped=false; scar.position.set(cx,1.85,cz-.55); scene.add(scar);
+    const lc=new THREE.PointLight(0x9fd0ff,.6,5); lc.position.set(cx,1.9,cz-.5); scene.add(lc); neonLuci.push({l:lc,base:.5});
+    OSTACOLI.push({x0:cx-.65,x1:cx+.65,z0:cz-1.15,z1:cz+1.15});
+    const proxy=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.4,2.4),new THREE.MeshBasicMaterial({visible:false}));
+    proxy.position.set(cx,1.1,cz); proxy.userData={tipo:'quiz',quiz:QUIZ_CORPO,nome:'La creatura'}; scene.add(proxy); TARGETS.push(proxy); }
   // PLASTICO DEL SISTEMA SOLARE su tavolo centrale
   { const tx=5, tz=-9;
     const top=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,.07,32),new THREE.MeshStandardMaterial({color:0x2b3138,roughness:.5})); top.position.set(tx,.78,tz); scene.add(top);
@@ -2083,8 +2128,8 @@ function liberaAula(st){
     proxy.position.set(tx,1.0,tz); proxy.userData={tipo:'quiz',quiz:QUIZ_SOLARE,nome:'Il plastico del Sistema Solare'}; scene.add(proxy); TARGETS.push(proxy); }
   // BANCONE con MICROSCOPIO e VETRINI (parete destra)
   { const bx=8.2, bz=-7.6;
-    const base=new THREE.Mesh(new THREE.BoxGeometry(.8,.9,2.4),new THREE.MeshStandardMaterial({color:0xeef2f5,roughness:.6})); base.position.set(bx,.45,bz); scene.add(base);
-    const top=new THREE.Mesh(new THREE.BoxGeometry(.82,.06,2.5),new THREE.MeshStandardMaterial({color:0x30363d,roughness:.4})); top.position.set(bx,.92,bz); scene.add(top);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(.8,.9,2.4),new THREE.MeshStandardMaterial({color:0x2f2216,roughness:.7})); base.position.set(bx,.45,bz); scene.add(base);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(.82,.06,2.5),new THREE.MeshStandardMaterial({color:0x241a10,roughness:.6})); top.position.set(bx,.92,bz); scene.add(top);
     const mBody=new THREE.MeshStandardMaterial({color:0x30363d,metalness:.5,roughness:.4});
     const mBase=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.05,18),mBody); mBase.position.set(bx,.98,bz-.2); scene.add(mBase);
     const braccio=new THREE.Mesh(new THREE.BoxGeometry(.05,.32,.05),mBody); braccio.position.set(bx+.07,1.16,bz-.2); braccio.rotation.z=.18; scene.add(braccio);
@@ -2098,69 +2143,49 @@ function liberaAula(st){
     OSTACOLI.push({x0:bx-.5,x1:bx+.5,z0:bz-1.25,z1:bz+1.25});
     const proxy=new THREE.Mesh(new THREE.BoxGeometry(.7,1.0,1.0),new THREE.MeshBasicMaterial({visible:false}));
     proxy.position.set(bx-.2,1.1,bz-.2); proxy.userData={tipo:'quiz',quiz:QUIZ_MICRO,nome:'Il microscopio'}; scene.add(proxy); TARGETS.push(proxy); }
-  // ---- ARREDI del laboratorio: banconi, vetreria, DNA, mappamondo, poster, sicurezza ----
-  { const acciaio=new THREE.MeshStandardMaterial({color:0xc4ccd2,metalness:.5,roughness:.4});
-    const pianoScuro=new THREE.MeshStandardMaterial({color:0x30363d,roughness:.4});
-    const bianco=new THREE.MeshStandardMaterial({color:0xeef2f5,roughness:.6});
-    // bancone a L lungo la parete di sinistra (x~1.35) con vetreria
-    { const top=new THREE.Mesh(new THREE.BoxGeometry(.8,.06,4.2),pianoScuro); top.position.set(1.75,.92,-9); scene.add(top);
-      const base=new THREE.Mesh(new THREE.BoxGeometry(.78,.9,4.2),bianco); base.position.set(1.75,.45,-9); scene.add(base);
-      // rack di provette colorate
-      const rackCol=[0xef6a8a,0x6ad0a0,0x6aa8ef,0xf0c85a,0xb98aef];
-      const rack=new THREE.Mesh(new THREE.BoxGeometry(.5,.08,.14),new THREE.MeshStandardMaterial({color:0x20242a})); rack.position.set(1.8,.99,-10.4); scene.add(rack);
-      rackCol.forEach((c,i)=>{ const pr=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.16,10),new THREE.MeshStandardMaterial({color:0xbfe6ff,transparent:true,opacity:.4}));
-        pr.position.set(1.66+i*.07,1.06,-10.4); scene.add(pr);
-        const lq=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,.08,10),new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.8})); lq.position.set(1.66+i*.07,1.02,-10.4); scene.add(lq); });
-      // beute e becher
-      for(let i=0;i<3;i++){ const be=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.14,14),new THREE.MeshStandardMaterial({color:0xbfe6ff,transparent:true,opacity:.35})); be.position.set(1.75,1.03,-9+ (i-1)*.55); scene.add(be); }
-      // becco Bunsen con fiammella
-      const bun=new THREE.Mesh(new THREE.CylinderGeometry(.03,.06,.16,12),acciaio); bun.position.set(1.8,1.03,-7.6); scene.add(bun);
-      const fbun=new THREE.Mesh(new THREE.ConeGeometry(.03,.12,10),new THREE.MeshBasicMaterial({color:0x5aa0ff})); fbun.material.toneMapped=false; fbun.position.set(1.8,1.18,-7.6); scene.add(fbun);
-      const lb=new THREE.PointLight(0x6ab0ff,.35,2.5); lb.position.set(1.8,1.2,-7.6); scene.add(lb); torceLuci.push({l:lb,fiamma:fbun,base:.35});
-      OSTACOLI.push({x0:1.3,x1:2.2,z0:-11.1,z1:-6.9}); }
-    // scaffale con bottiglie di reagenti (parete di fondo, sopra)
-    { const sc=new THREE.Mesh(new THREE.BoxGeometry(2.2,.05,.3),bianco); sc.position.set(3.2,1.9,-11.85); scene.add(sc);
-      const cols=[0x8fd67a,0xef8aa0,0x7ab6e6,0xe0c060,0xb98aef,0xef6a8a];
-      cols.forEach((c,i)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.22,10),new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.8})); b.position.set(2.3+i*.32,2.03,-11.82); scene.add(b);
-        const t=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.05,8),acciaio); t.position.set(2.3+i*.32,2.16,-11.82); scene.add(t); }); }
-    // MODELLO DNA a doppia elica su piedistallo
-    { const bx=2.6, bz=-7.0; const ped=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,.06,16),pianoScuro); ped.position.set(bx,.03,bz); scene.add(bx===0?ped:ped);
-      const asse=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,1.3,6),acciaio); asse.position.set(bx,.72,bz); scene.add(asse);
-      for(let i=0;i<14;i++){ const t=i/13, ang=t*Math.PI*4, y=.15+t*1.15, r=.13;
-        const a=new THREE.Mesh(new THREE.SphereGeometry(.035,10,10),new THREE.MeshStandardMaterial({color:0x5aa9e6})); a.position.set(bx+Math.cos(ang)*r,y,bz+Math.sin(ang)*r); scene.add(a);
-        const b=new THREE.Mesh(new THREE.SphereGeometry(.035,10,10),new THREE.MeshStandardMaterial({color:0xe67a8a})); b.position.set(bx-Math.cos(ang)*r,y,bz-Math.sin(ang)*r); scene.add(b);
-        const bar=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,r*2,4),new THREE.MeshStandardMaterial({color:0xcfd8de})); bar.position.set(bx,y,bz); bar.rotation.z=Math.PI/2; bar.rotation.y=-ang; scene.add(bar); }
-      OSTACOLI.push({x0:bx-.28,x1:bx+.28,z0:bz-.28,z1:bz+.28}); }
-    // MAPPAMONDO su supporto
-    { const bx=8.3, bz=-10.6; const ped=new THREE.Mesh(new THREE.CylinderGeometry(.1,.14,.5,12),pianoScuro); ped.position.set(bx,.25,bz); scene.add(ped);
-      const c=mkCanvas(128,64),g=c.getContext('2d'); g.fillStyle='#2a6cc0'; g.fillRect(0,0,128,64);
-      g.fillStyle='#4a9a54'; for(let i=0;i<8;i++) g.beginPath(),g.ellipse((i*37)%128,20+((i*23)%30),14,9,0,0,7),g.fill();
-      const globo=new THREE.Mesh(new THREE.SphereGeometry(.2,20,16),new THREE.MeshStandardMaterial({map:tex(c),roughness:.6})); globo.position.set(bx,.7,bz); globo.rotation.z=.4; scene.add(globo);
-      OSTACOLI.push({x0:bx-.28,x1:bx+.28,z0:bz-.28,z1:bz+.28}); }
-    // BILANCIA elettronica sul bancone destro
-    { const b=new THREE.Mesh(new THREE.BoxGeometry(.28,.08,.22),acciaio); b.position.set(8.2,.99,-9); scene.add(b);
-      const p=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.02,16),new THREE.MeshStandardMaterial({color:0xcfd8de,metalness:.6})); p.position.set(8.2,1.04,-9); scene.add(p);
-      const d=new THREE.Mesh(new THREE.PlaneGeometry(.16,.05),new THREE.MeshStandardMaterial({color:0x0a1a10,emissive:0x1f7a3a,emissiveIntensity:.6})); d.position.set(8.2,1.0,-8.88); d.rotation.x=-.5; scene.add(d); }
-    // POSTER scientifici alle pareti
-    const poster=(disegna,w,h,x,y,z,ry)=>{ const c=mkCanvas(200,240),g=c.getContext('2d'); g.fillStyle='#0e2230'; g.fillRect(0,0,200,240); disegna(g);
-      const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex(c),roughness:.6})); m.position.set(x,y,z); if(ry)m.rotation.y=ry; scene.add(m); };
-    poster(g=>{ g.fillStyle='#fff'; g.font='bold 15px Arial'; g.textAlign='center'; g.fillText('CICLO DELL’ACQUA',100,26);
-      g.strokeStyle='#7ec8ff'; g.lineWidth=2; g.beginPath(); g.arc(100,140,60,0,7); g.stroke();
-      g.fillStyle='#f2c14e'; g.beginPath(); g.arc(150,70,16,0,7); g.fill();
-      g.fillStyle='#9fd0e0'; g.font='11px Arial'; g.fillText('evapora · condensa · piove',100,220); }, 1.2,1.44, 8.95,1.7,-8, -Math.PI/2);
-    poster(g=>{ g.fillStyle='#fff'; g.font='bold 15px Arial'; g.textAlign='center'; g.fillText('FASI LUNARI',100,26);
-      for(let i=0;i<8;i++){ const cx=30+(i%4)*47, cy=90+((i/4)|0)*70; g.fillStyle='#e8ecf0'; g.beginPath(); g.arc(cx,cy,18,0,7); g.fill();
-        g.fillStyle='#0e2230'; g.beginPath(); g.arc(cx-9+i*2.4,cy,18,0,7); g.fill(); } }, 1.2,1.44, 1.05,1.7,-10, Math.PI/2);
-    // ESTINTORE + cartello sicurezza (parete di fondo)
-    { const est=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.42,14),new THREE.MeshStandardMaterial({color:0xc0392b,roughness:.5})); est.position.set(6.6,.55,-11.8); scene.add(est);
-      const ug=new THREE.Mesh(new THREE.BoxGeometry(.03,.12,.03),pianoScuro); ug.position.set(6.6,.82,-11.75); scene.add(ug);
-      const c=mkCanvas(64,64),g=c.getContext('2d'); g.fillStyle='#2f8a5b'; g.fillRect(0,0,64,64); g.fillStyle='#fff'; g.font='bold 34px Arial'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('✚',32,34);
-      const cart=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:tex(c)})); cart.position.set(6.6,1.4,-11.86); scene.add(cart); }
-    // 2 SGABELLI da laboratorio
-    const sgabello=(x,z)=>{ const s=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.04,16),pianoScuro); s.position.set(x,.55,z); scene.add(s);
-      const g=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.55,10),acciaio); g.position.set(x,.27,z); scene.add(g);
-      OSTACOLI.push({x0:x-.2,x1:x+.2,z0:z-.2,z1:z+.2}); };
-    sgabello(3.0,-9.9); sgabello(6.6,-8.2);
+  // ---- ARREDI DA LABORATORIO GOTICO: alambicchi, libri, candelabri, teschi, baule, globo ----
+  { const vetroL=(c)=>new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.55,roughness:.15,emissive:c,emissiveIntensity:.12});
+    // candelabro con fiamma (registrato nel flicker delle torce)
+    const candelabro=(x,z)=>{ const st=new THREE.Mesh(new THREE.CylinderGeometry(.025,.05,.9,8),ottone); st.position.set(x,.75,z); scene.add(st);
+      const pi=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.03,10),ottone); pi.position.set(x,.02,z); scene.add(pi);
+      const fi=new THREE.Mesh(new THREE.ConeGeometry(.028,.1,8),new THREE.MeshBasicMaterial({color:0xffc040})); fi.material.toneMapped=false; fi.position.set(x,1.28,z); scene.add(fi);
+      const l=new THREE.PointLight(0xffb648,.45,4); l.position.set(x,1.3,z); scene.add(l); torceLuci.push({l,fiamma:fi,base:.45}); };
+    candelabro(4.4,-6.5); candelabro(6.6,-6.4);
+    // BANCONE ALCHEMICO (legno scuro) con alambicchi e ampolle borbottanti (parete sinistra)
+    { const base=new THREE.Mesh(new THREE.BoxGeometry(.75,.9,2.6),legnoScuro); base.position.set(1.7,.45,-7.6); scene.add(base);
+      const top=new THREE.Mesh(new THREE.BoxGeometry(.8,.06,2.7),new THREE.MeshStandardMaterial({color:0x241a10,roughness:.6})); top.position.set(1.7,.92,-7.6); scene.add(top);
+      // alambicco: pallone di vetro + collo
+      const pall=new THREE.Mesh(new THREE.SphereGeometry(.12,16,14),vetroL(0x8fd67a)); pall.position.set(1.7,1.08,-8.4); scene.add(pall);
+      const collo=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.2,10),vetroL(0xbfe6ff)); collo.position.set(1.7,1.28,-8.4); collo.rotation.z=.5; scene.add(collo);
+      // ampolle di colori diversi
+      const cc=[0xef6a8a,0x6aa8ef,0xf0c85a,0xb98aef];
+      cc.forEach((c,i)=>{ const amp=new THREE.Mesh(new THREE.CylinderGeometry(.05,.06,.18,12),vetroL(c)); amp.position.set(1.7,1.05,-7.5+i*.4); scene.add(amp); });
+      const l=new THREE.PointLight(0x8fd67a,.3,2.5); l.position.set(1.7,1.15,-8.4); scene.add(l); neonLuci.push({l,base:.28});
+      OSTACOLI.push({x0:1.25,x1:2.15,z0:-9.0,z1:-6.2}); }
+    // SCAFFALE con libri antichi e barattoli-campione (parete di fondo)
+    { const mens=new THREE.Mesh(new THREE.BoxGeometry(2.0,.05,.3),legnoScuro); for(const y of [1.35,1.85]){ const m=mens.clone(); m.position.set(4.0,y,-11.82); scene.add(m); }
+      const dorsi=[0x6b2b2b,0x2b3b6b,0x3b5b2b,0x6b5b2b,0x4b2b5b];
+      for(let r=0;r<2;r++)for(let i=0;i<7;i++){ const lib=new THREE.Mesh(new THREE.BoxGeometry(.07+Math.abs(Math.sin(i*2))*0.02,.26,.2),new THREE.MeshStandardMaterial({color:dorsi[(i+r)%5],roughness:.7}));
+        lib.position.set(3.2+i*.11,(r?1.5:1.0)+.13,-11.82); lib.rotation.z=(i===5?.15:0); scene.add(lib); }
+      // barattoli con "campioni"
+      for(let i=0;i<3;i++){ const bar=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.16,12),vetroL([0x9ad07a,0xd0a07a,0x7aa0d0][i])); bar.position.set(4.45+i*.18,1.93,-11.8); scene.add(bar); } }
+    // TESCHIO su una mensola
+    { const cranio=new THREE.Mesh(new THREE.SphereGeometry(.09,14,12),new THREE.MeshStandardMaterial({color:0xdcd6c4,roughness:.7})); cranio.position.set(5.6,1.42,-11.8); cranio.scale.set(1,1.05,1.1); scene.add(cranio);
+      const mand=new THREE.Mesh(new THREE.BoxGeometry(.11,.05,.09),new THREE.MeshStandardMaterial({color:0xdcd6c4})); mand.position.set(5.6,1.34,-11.77); scene.add(mand);
+      const mens=new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.22),legnoScuro); mens.position.set(5.6,1.3,-11.83); scene.add(mens); }
+    // GLOBO CELESTE d'ottone su treppiede
+    { const bx=5.5, bz=-6.5; for(let i=0;i<3;i++){ const a=i/3*Math.PI*2; const g=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.7,6),legnoScuro); g.position.set(bx+Math.cos(a)*.14,.35,bz+Math.sin(a)*.14); g.rotation.x=Math.cos(a)*.2; g.rotation.z=Math.sin(a)*.2; scene.add(g); }
+      const anello=new THREE.Mesh(new THREE.TorusGeometry(.2,.014,8,28),ottone); anello.position.set(bx,.85,bz); anello.rotation.x=.4; scene.add(anello);
+      const c=mkCanvas(128,64),g=c.getContext('2d'); g.fillStyle='#1a2440'; g.fillRect(0,0,128,64); g.fillStyle='#d8c07a'; for(let i=0;i<40;i++) g.fillRect(Math.random()*128,Math.random()*64,1.5,1.5);
+      const globo=new THREE.Mesh(new THREE.SphereGeometry(.18,20,16),new THREE.MeshStandardMaterial({map:tex(c),roughness:.5,metalness:.2})); globo.position.set(bx,.85,bz); scene.add(globo);
+      OSTACOLI.push({x0:bx-.3,x1:bx+.3,z0:bz-.3,z1:bz+.3}); }
+    // BAULE nell'angolo
+    { const x=8.4,z=-11.5; const b=new THREE.Mesh(new THREE.BoxGeometry(.8,.45,.5),legnoScuro); b.position.set(x,.22,z); scene.add(b);
+      const cop=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,.8,12,1,false,0,Math.PI),new THREE.MeshStandardMaterial({color:0x3a2b1a,roughness:.7})); cop.rotation.z=Math.PI/2; cop.position.set(x,.45,z); scene.add(cop);
+      for(const sx of [-.3,.3]){ const f=new THREE.Mesh(new THREE.BoxGeometry(.03,.7,.52),metallo); f.position.set(x+sx,.32,z); scene.add(f); }
+      OSTACOLI.push({x0:x-.45,x1:x+.45,z0:z-.35,z1:z+.35}); }
+    // RAGNATELE agli angoli
+    ragnatela(8.83,2.55,-11.75,-Math.PI/2,1.0); ragnatela(1.17,2.5,-6.4,Math.PI/2,0.85);
   }
 }
 
@@ -2490,7 +2515,7 @@ let ytPlayer=null, ytPronto=false, musicaOn=true, musicaAvviata=false;
 let matrixPlayer=null, matrixPronto=false;
 // Brani dedicati alle due aule: entrando cambia il sottofondo; nel lab/corridoio torna quello base.
 const YT_MUS_MUSICA='hWaNoK3gN6M';    // aula di musica
-const YT_MUS_SCIENZE='FBNm157S6ak';   // laboratorio di scienze
+const YT_MUS_SCIENZE='FbHX3fQ2jmg';   // laboratorio di scienze (Frankenstein Junior)
 let branoCorrente=YT_MUSICA;
 function ambienteBrano(){
   const p=camera.position;
@@ -2533,7 +2558,10 @@ function onYouTubeIframeAPIReady(){
     events:{
       onReady:()=>{ ytPronto=true; if(G.intro||G.gioco) avviaMusica(); },
       onStateChange:e=>{ if(e.data===YT.PlayerState.PLAYING) musicaAvviata=true;
-        if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(_){} } }
+        if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(_){} } },
+      // se un brano non è incorporabile (errore 101/150) o non disponibile, ripiega sul sottofondo base
+      onError:e=>{ if(branoCorrente!==YT_MUSICA){ branoCorrente=YT_MUSICA;
+        try{ ytPlayer.loadVideoById(YT_MUSICA); if(musicaOn&&(G.intro||G.gioco)) ytPlayer.playVideo(); else ytPlayer.pauseVideo(); }catch(_){} } }
     }
   });
 }
@@ -2773,7 +2801,7 @@ function animate(){
     t.l.intensity=Math.max(0,f); if(t.fiamma) t.fiamma.scale.set(1,0.82+0.32*Math.sin(clock.elapsedTime*17+t.l.position.z),1); }
   // neon del laboratorio (Scienze): sfarfallio "guasto" con spegnimenti bruschi
   for(const n of neonLuci){ let f=n.base; if(Math.random()<0.06) f*=0.12; else f*=0.92+0.08*Math.sin(clock.elapsedTime*30+n.l.position.z);
-    n.l.intensity=f; if(n.tubo) n.tubo.material.emissiveIntensity=f*1.1; }
+    n.l.intensity=f; const gm=n.tubo||n.glow; if(gm) gm.material.emissiveIntensity=f*1.2; }
   aggiornaTemporale(dt);
   // easter egg LEGO: la mela si apre/chiude, e conto alla rovescia della Visione Matrix
   if(legoMela) legoMela.rotation.y += ((melaTarget*-1.55) - legoMela.rotation.y)*Math.min(1,dt*7);
