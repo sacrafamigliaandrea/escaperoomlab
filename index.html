@@ -203,6 +203,34 @@
   #glosLista{max-height:52vh}
   #glosLista p{font-size:13.5px;line-height:1.5;margin:0 0 10px}
   #glosLista b{color:var(--blu-chiaro)}
+  /* ---- galassia delle 50 parole (MacBook di Andrea) ---- */
+  #galassiaMac{background:radial-gradient(circle at 50% 45%,#0a1330,#02040e 72%)}
+  #galMacBg{position:absolute;inset:0;z-index:0}
+  #galMacHead{position:absolute;top:16px;left:0;right:0;text-align:center;z-index:2;
+    font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(160,195,255,.8)}
+  #galMacHead span{color:#fff;font-weight:700}
+  #galFlight{position:absolute;inset:0;z-index:2;perspective:1300px;overflow:hidden}
+  #galFlight.dim{opacity:.25;filter:blur(1.5px);pointer-events:none}
+  #galFlightWorld{position:absolute;left:50%;top:47%;transform-style:preserve-3d}
+  .gm-card{position:absolute;left:0;top:0;transform-style:preserve-3d;transition:transform .3s ease-out;
+    padding:9px 17px;border-radius:14px;background:rgba(34,64,130,.82);border:1px solid rgba(150,185,245,.6);
+    color:#eef4ff;font-size:16px;font-weight:700;white-space:nowrap;cursor:pointer;backface-visibility:hidden;
+    box-shadow:0 0 22px rgba(70,120,230,.4)}
+  .gm-card.vicina{background:rgba(90,145,235,.97);border-color:#fff;color:#fff;font-size:19px;
+    box-shadow:0 0 40px rgba(130,180,255,.9)}
+  #galMacHelp{position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:3;
+    font-size:12.5px;color:rgba(180,205,255,.75)}
+  #galMacHelp b{color:#fff}
+  #galMacDett{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;
+    max-width:520px;width:88%;text-align:center;background:rgba(9,18,40,.94);
+    border:1px solid rgba(120,160,235,.35);border-radius:16px;padding:26px;
+    box-shadow:0 0 60px rgba(40,90,200,.45)}
+  #galMacDett .gm-term{font-size:24px;font-weight:800;color:var(--blu-chiaro);margin-bottom:10px}
+  #galMacDett .gm-def{font-size:16px;line-height:1.55;color:#fff}
+  #gmChiudiDett{margin-top:18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+    color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer}
+  #btnEsciGalMac{position:fixed;top:16px;right:16px;z-index:5;background:var(--panel);color:#fff;
+    border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer}
   /* ---- copertina + mappa dei 28 Mac (schermata iniziale) ---- */
   #consegna .box{max-width:860px}
   .cover{display:block;width:100%;height:auto;border-radius:14px;
@@ -274,10 +302,8 @@
       <div style="text-align:center"><input id="enInput" maxlength="40" placeholder="Scrivi la parola-chiave&hellip;" autocomplete="off"></div>
       <div class="en-riga">
         <button id="btnVerifica">Verifica</button>
-        <button id="btnSugg">Suggerimento</button>
       </div>
       <div id="enFeedback"></div>
-      <div id="enSugg"></div>
     </div>
     <div id="enEsito" style="display:none"></div>
     <div id="enDecoy" style="display:none">
@@ -310,8 +336,8 @@
       <p><b>Muoversi.</b> <b>Clic</b> per bloccare il mouse e guardarti intorno &middot; <b>frecce</b> per camminare.</p>
       <p><b>Accedere a un Mac.</b> Avvicinati finch&eacute; compare il suo numero e premi <b>Invio</b> o fai <b>clic</b>.
          Ogni Mac ha un <b>cartellino azzurro</b> col numero sopra lo schermo; la cattedra del prof &egrave; segnata <b>PROF</b>.</p>
-      <p><b>Enigma.</b> Scrivi la <b>parola-chiave</b> giusta. Se sbagli, riprova o usa il <b>Suggerimento</b>.
-         Se &egrave; corretta ricevi l&rsquo;<b>indizio</b> per il Mac successivo.</p>
+      <p><b>Enigma.</b> Scrivi la <b>parola-chiave</b> giusta. Se sbagli, va&rsquo; a studiare le parole nel
+         <b>MacBook del prof. Andrea</b> (a capotavola) e poi riprova. Se &egrave; corretta ricevi l&rsquo;<b>indizio</b> per il Mac successivo.</p>
       <p><b>Indizio.</b> A volte &egrave; un numero da calcolare (quello &egrave; il Mac), a volte descrive la
          posizione nell&rsquo;aula: fila <b>nord</b> (finestre) o <b>sud</b> (porte), tavolo <b>est</b> o <b>ovest</b>.</p>
       <p><b>Oggetti stampati in 3D.</b> Sul <b>bancone della stampante</b> ci sono due pezzi da raccogliere: il <b>Cifrario</b> (serve per un enigma con messaggio cifrato) e la <b>Chiave</b> (serve per aprire la porta finale). Avvicinati e fai clic per prenderli; li vedi nell'inventario in alto a sinistra.</p>
@@ -328,6 +354,19 @@
     <div class="regole-testo" id="glosLista"></div>
     <button id="btnChiudiGlos">Chiudi</button>
   </div>
+</div>
+
+<div class="overlay" id="galassiaMac" style="display:none">
+  <canvas id="galMacBg"></canvas>
+  <div id="galMacHead">La <span>galassia delle parole</span> &middot; cittadinanza digitale</div>
+  <div id="galFlight"><div id="galFlightWorld"></div></div>
+  <div id="galMacHelp">Vola con <b>&uarr; &darr;</b> o lo <b>scroll</b> &middot; <b>clic</b> sulla parola a fuoco per la spiegazione</div>
+  <div id="galMacDett" style="display:none">
+    <div class="gm-term" id="gmTerm"></div>
+    <div class="gm-def" id="gmDef"></div>
+    <button id="gmChiudiDett">&larr; Torna alla galassia</button>
+  </div>
+  <button id="btnEsciGalMac">Esci</button>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -1451,11 +1490,29 @@ const PICKUPS=[]; let portaProxy=null;
 // proxy dell'omino LEGO (easter egg Visione Matrix)
 const legoProxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2,.9),new THREE.MeshBasicMaterial({visible:false}));
 legoProxy.position.set(-7.3,1.05,2.55); legoProxy.userData={tipo:'lego'}; scene.add(legoProxy);
+// proxy del MacBook del prof (schermata Claude) → galassia delle 50 parole
+const macProxy=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),new THREE.MeshBasicMaterial({visible:false}));
+macProxy.position.set(-2.5,.95,-0.35); macProxy.userData={tipo:'macbook'}; scene.add(macProxy);
 // fascio verde che rivela il Mac-bersaglio durante la Visione Matrix
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,3.6,10),
   new THREE.MeshBasicMaterial({color:0x39ff14,transparent:true,opacity:.5,depthTest:false}));
 beam.renderOrder=999; beam.visible=false; scene.add(beam);
-const TARGETS=[...PROXIES,...PICKUPS,portaProxy,legoProxy];
+// ---- loghi PULSANTI che segnalano i due "mondi paralleli" ----
+function disegnaAsterisco(g,cx,cy,r,col){
+  g.clearRect(0,0,128,128); g.save(); g.translate(cx,cy); g.fillStyle=col;
+  const n=12;
+  for(let i=0;i<n;i++){ g.rotate(Math.PI*2/n);
+    g.beginPath(); g.moveTo(0,-r*0.15); g.quadraticCurveTo(r*0.5,-r*0.05,r,0);
+    g.quadraticCurveTo(r*0.5,r*0.05,0,r*0.15); g.closePath(); g.fill();
+  }
+  g.beginPath(); g.arc(0,0,r*0.22,0,7); g.fill(); g.restore();
+}
+function spriteLogo(cv){ return new THREE.Sprite(new THREE.SpriteMaterial({map:tex(cv),transparent:true,depthWrite:false})); }
+const acLego=mkCanvas(128,128); melaApple(acLego.getContext('2d'),64,66,52,'#ffffff');
+const attLego=spriteLogo(acLego); attLego.position.set(-7.3,2.4,2.55); attLego.scale.set(.34,.34,.34); scene.add(attLego);
+const acMac=mkCanvas(128,128); disegnaAsterisco(acMac.getContext('2d'),64,64,54,'#d97757');
+const attMac=spriteLogo(acMac); attMac.position.set(-2.5,1.35,-0.35); attMac.scale.set(.30,.30,.30); scene.add(attMac);
+const TARGETS=[...PROXIES,...PICKUPS,portaProxy,legoProxy,macProxy];
 function raccogli(tipo,mesh){
   if(!tipo||G.inv[tipo]) return;
   G.inv[tipo]=true; if(mesh) mesh.visible=false;
@@ -1473,6 +1530,7 @@ function usaMirato(){
   if(m.tipo==='pickup') raccogli(m.pickup,m.mesh);
   else if(m.tipo==='porta') usaPorta();
   else if(m.tipo==='lego') attivaMatrix();
+  else if(m.tipo==='macbook') apriGalassiaMac();
   else if(m.macNum!=null) accediMac(m.macNum);
 }
 // ---- EASTER EGG: la mela del LEGO si apre → Ambiente segreto (Algoritmi & IA) → VISIONE MATRIX ----
@@ -1674,7 +1732,6 @@ function apriEnigma(e){
     $('enTesto').textContent=e.testo;
   }
   $('enInput').value=''; $('enFeedback').textContent='';
-  $('enSugg').style.display='none'; $('enSugg').textContent='Suggerimento: '+e.sugg;
   $('enEsito').style.display='none'; $('enForm').style.display='block';
   $('btnContinua').style.display='none';
   // ripristina dallo stato "trappola" a "enigma"
@@ -1796,7 +1853,7 @@ function verificaRisposta(){
     // avanza SOLO ora (dopo aver mostrato l'esito)
     G.avanzaAllaChiusura=true;
   } else {
-    $('enFeedback').textContent='Non è la parola giusta. Riprova (o usa il suggerimento).';
+    $('enFeedback').textContent='Non è la parola giusta. Va’ a studiare le parole sul MacBook del prof. Andrea (a capotavola), poi riprova!';
   }
 }
 function continuaDopoEnigma(){
@@ -1860,13 +1917,15 @@ function vittoria(){
 addEventListener('keydown',e=>{
   tasti[e.key.toLowerCase()]=true;
   if(G.gioco && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  const galMacAperta = $('galassiaMac').style.display==='flex';
   if(e.key==='Enter'){
-    if(G.overlay && $('enDecoy').style.display==='block'){ chiudiEnigma(); }
+    if(galMacAperta){ /* nella galassia parole l'Invio non fa nulla */ }
+    else if(G.overlay && $('enDecoy').style.display==='block'){ chiudiEnigma(); }
     else if(G.overlay && $('enEsito').style.display==='block'){ continuaDopoEnigma(); }
     else if(G.overlay){ verificaRisposta(); }
     else if(G.gioco && document.pointerLockElement===canvasEl && G.mirato){ usaMirato(); }
   }
-  if(e.key==='Escape' && G.overlay){ chiudiEnigma(); }
+  if(e.key==='Escape' && G.overlay){ galMacAperta ? chiudiGalassiaMac() : chiudiEnigma(); }
 });
 addEventListener('keyup',e=>{ tasti[e.key.toLowerCase()]=false; });
 canvasEl.addEventListener('click',()=>{
@@ -1943,7 +2002,6 @@ $('btnMusica').addEventListener('click',toggleMusica);
 // a fine video Matrix si torna al laboratorio in automatico
 $('matrixVid').addEventListener('ended',()=>{ if(matrixOn) disattivaMatrix(); });
 $('btnVerifica').addEventListener('click',verificaRisposta);
-$('btnSugg').addEventListener('click',()=>{ $('enSugg').style.display='block'; });
 $('btnContinua').addEventListener('click',continuaDopoEnigma);
 $('btnDecoyEsci').addEventListener('click',chiudiEnigma);
 $('btnRicomincia').addEventListener('click',()=>location.reload());
@@ -1971,6 +2029,80 @@ $('btnRicomincia').addEventListener('click',()=>location.reload());
   $('glosSearch').addEventListener('input',e=>render(e.target.value));
 })();
 
+// ---- GALASSIA DELLE 50 PAROLE (MacBook di Andrea, schermata Claude) ----
+let galMacRAF=null, galMacStars=[], galMacCostruita=false;
+let galCards=[], galCamZ=0, galCamMax=0;
+const GAL_STEP=240;                                   // distanza fra una parola e la successiva lungo il volo
+function costruisciGalMac(){
+  if(galMacCostruita) return; galMacCostruita=true;
+  const world=$('galFlightWorld');
+  GLOSSARIO.forEach((g,i)=>{
+    const el=document.createElement('button'); el.className='gm-card'; el.textContent=g.t;
+    const ang=i*0.7, R=78;                            // corridoio a spirale stretta, in ordine alfabetico
+    const x=Math.cos(ang)*R, y=Math.sin(ang)*R, baseZ=-i*GAL_STEP;
+    el.addEventListener('click',()=>{
+      if(Math.abs(baseZ+galCamZ) < GAL_STEP*0.5) mostraDettGal(g);   // a fuoco → apri; altrimenti volaci sopra
+      else { galCamZ=i*GAL_STEP; aggiornaVolo(); }
+    });
+    world.appendChild(el); galCards.push({el,x,y,baseZ});
+  });
+  galCamMax=(GLOSSARIO.length-1)*GAL_STEP;
+}
+// muovo la "camera" spostando la z di OGNI card (niente traslazione gigante del mondo)
+function aggiornaVolo(){
+  galCamZ=Math.max(0,Math.min(galCamMax,galCamZ));
+  let best=-1,bestd=1e9;
+  galCards.forEach((c,i)=>{ const ez=c.baseZ+galCamZ;
+    c.el.style.transform='translate(-50%,-50%) translate3d('+c.x.toFixed(0)+'px,'+c.y.toFixed(0)+'px,'+ez.toFixed(0)+'px)';
+    c.el.style.visibility = (ez>120) ? 'hidden' : 'visible';   // nascondi le parole già superate
+    const d=Math.abs(ez); if(d<bestd){bestd=d;best=i;}
+  });
+  galCards.forEach((c,i)=>c.el.classList.toggle('vicina', i===best));
+}
+function volaDi(n){ galCamZ+=n*GAL_STEP; aggiornaVolo(); }
+function mostraDettGal(g){
+  $('gmTerm').textContent=g.t; $('gmDef').textContent=g.d;
+  $('galFlight').classList.add('dim'); $('galMacDett').style.display='block';
+}
+function nascondiDettGal(){ $('galMacDett').style.display='none'; $('galFlight').classList.remove('dim'); }
+function apriGalassiaMac(){
+  G.overlay=true; if(document.pointerLockElement) document.exitPointerLock();
+  costruisciGalMac(); nascondiDettGal(); galCamZ=0;
+  $('galassiaMac').style.display='flex'; avviaGalMacBg(); aggiornaVolo();
+}
+function chiudiGalassiaMac(){
+  $('galassiaMac').style.display='none'; fermaGalMacBg(); G.overlay=false;
+  if(G.gioco && !G.finita) canvasEl.requestPointerLock();
+}
+function avviaGalMacBg(){
+  const cv=$('galMacBg'); if(!cv) return; const ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight;
+  galMacStars=[]; for(let i=0;i<200;i++) galMacStars.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()});
+  let warp=1;
+  function frame(){
+    const w=cv.width,h=cv.height,cx=w/2,cy=h/2;
+    ctx.fillStyle='rgba(3,6,18,0.30)'; ctx.fillRect(0,0,w,h);
+    warp+=(0.05-warp)*0.04;
+    for(const s of galMacStars){ s.z-=warp*0.012; if(s.z<=0.02){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1;}
+      const k=0.6/s.z, px=cx+s.x*k*cx, py=cy+s.y*k*cy; if(px<0||px>w||py<0||py>h) continue;
+      const a=Math.min(1,1-s.z); ctx.beginPath(); ctx.fillStyle='rgba(150,190,255,'+a.toFixed(2)+')';
+      ctx.arc(px,py,Math.max(.4,(1-s.z)*2.4),0,7); ctx.fill(); }
+    galMacRAF=requestAnimationFrame(frame);
+  }
+  frame();
+}
+function fermaGalMacBg(){ if(galMacRAF) cancelAnimationFrame(galMacRAF); galMacRAF=null; }
+$('btnEsciGalMac').addEventListener('click',chiudiGalassiaMac);
+$('gmChiudiDett').addEventListener('click',nascondiDettGal);
+// comandi di volo: scroll e frecce (attivi solo quando la galassia è aperta e non si legge un dettaglio)
+$('galFlight').addEventListener('wheel',e=>{ e.preventDefault(); galCamZ+=Math.sign(e.deltaY)*GAL_STEP*0.5; aggiornaVolo(); },{passive:false});
+addEventListener('keydown',e=>{
+  if($('galassiaMac').style.display!=='flex') return;
+  if($('galMacDett').style.display==='block') return;
+  if(e.key==='ArrowDown'||e.key==='ArrowRight'){ volaDi(1); e.preventDefault(); }
+  else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){ volaDi(-1); e.preventDefault(); }
+});
+
 // ---- loop ----
 function animate(){
   requestAnimationFrame(animate);
@@ -1981,6 +2113,10 @@ function animate(){
   aggiornaTemporale(dt);
   // easter egg LEGO: la mela si apre/chiude, e conto alla rovescia della Visione Matrix
   if(legoMela) legoMela.rotation.y += ((melaTarget*-1.55) - legoMela.rotation.y)*Math.min(1,dt*7);
+  // loghi pulsanti dei due mondi (mela Apple sul Lego, asterisco Claude sul MacBook)
+  { const tt=clock.elapsedTime, pa=1+0.22*Math.sin(tt*3.2), pb=1+0.22*Math.sin(tt*3.2+1.6);
+    if(attLego){ attLego.scale.set(.34*pa,.34*pa,1); attLego.material.opacity=0.55+0.45*(0.5+0.5*Math.sin(tt*3.2)); }
+    if(attMac){ attMac.scale.set(.30*pb,.30*pb,1); attMac.material.opacity=0.55+0.45*(0.5+0.5*Math.sin(tt*3.2+1.6)); } }
   if(matrixOn){ matrixT-=dt; aggiornaBeam(); if(matrixT<=0) disattivaMatrix(); }
   // VOLO PANORAMICO iniziale: orbita l'aula, poi atterra alla postazione di partenza
   if(G.intro){
@@ -2030,6 +2166,7 @@ function animate(){
       else { $('hint').style.display='block';
         if(m.tipo==='pickup') $('hint').textContent='Prendi '+(m.pickup==='cifrario'?'il Cifrario 3D':'la Chiave 3D')+' — [clic] o [Invio]';
         else if(m.tipo==='lego') $('hint').textContent='Tocca la mela dell’omino — [clic] o [Invio]';
+        else if(m.tipo==='macbook') $('hint').textContent='MacBook di Andrea — entra nella galassia delle parole [clic] o [Invio]';
         else if(m.tipo==='porta') $('hint').textContent='Porta del laboratorio — [clic] o [Invio]';
         else $('hint').textContent=(macNum===0?'Cattedra (Prof)':'Mac '+macNum)+' — [clic] o [Invio] per accedere';
       }
