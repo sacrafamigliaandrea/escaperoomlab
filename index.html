@@ -189,7 +189,17 @@
   #matrixTint{position:fixed;inset:0;z-index:5;pointer-events:none;display:none;
     background:radial-gradient(circle at 50% 50%,rgba(0,80,20,.10),rgba(0,40,10,.30));
     box-shadow:inset 0 0 200px rgba(0,255,60,.25)}
-  #matrix~#matrixTint{}
+  /* ---- Glossario ---- */
+  #btnGlossario{position:fixed;bottom:16px;right:174px;z-index:12;
+    background:var(--panel);color:#fff;border:1px solid rgba(255,255,255,.18);
+    border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px)}
+  #btnGlossario:hover{background:var(--blu);border-color:var(--blu)}
+  #glossario .box{max-width:600px}
+  #glosSearch{width:100%;margin:0 0 12px;padding:11px 15px;font-size:15px;border-radius:10px;
+    border:2px solid var(--blu);background:#0d1830;color:#fff;text-align:left}
+  #glosLista{max-height:52vh}
+  #glosLista p{font-size:13.5px;line-height:1.5;margin:0 0 10px}
+  #glosLista b{color:var(--blu-chiaro)}
   /* ---- logo sacrafamiglia.education ---- */
   .wm{font-size:20px;letter-spacing:-.3px;color:#fff;line-height:1;white-space:nowrap}
   .wm-r{font-weight:400}.wm-b{font-weight:700}.wm-i{font-weight:700;font-style:italic}
@@ -224,6 +234,7 @@
   <div><b>Risolvi l&rsquo;enigma</b> per avere l&rsquo;indizio del Mac successivo</div>
 </div>
 <button id="btnInfo" title="Come si gioca">i</button>
+<button id="btnGlossario" title="Glossario delle 50 parole">Glossario</button>
 <button id="btnMusica" title="Musica on/off"><svg viewBox="0 0 16 16"><path d="M6 2v8.2a2.5 2.5 0 1 0 1.5 2.3V5.5l6-1.5v5.2a2.5 2.5 0 1 0 1.5 2.3V2z"/></svg><span>Musica</span></button>
 <button id="btnSalta" style="display:none">Salta introduzione &rsaquo;</button>
 <div id="yt"></div>
@@ -304,6 +315,15 @@
       <p><b>Fuga.</b> Dopo il 12&deg; enigma la serratura &egrave; pronta: prendi la <b>chiave 3D</b> dal bancone e usala sulla porta per uscire nel corridoio.</p>
     </div>
     <button id="btnChiudiRegole">Ho capito!</button>
+  </div>
+</div>
+
+<div class="overlay" id="glossario" style="display:none">
+  <div class="box regole-box">
+    <h2><span>Glossario</span> &mdash; 50 parole</h2>
+    <input id="glosSearch" placeholder="Cerca una parola&hellip;" autocomplete="off">
+    <div class="regole-testo" id="glosLista"></div>
+    <button id="btnChiudiGlos">Chiudi</button>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1245,6 +1265,60 @@ const POOL=[
 const N_TAPPE=12;
 let ENIGMI=[];
 
+// ---- GLOSSARIO: 50 parole di cittadinanza digitale (per cercare le soluzioni) ----
+const GLOSSARIO=[
+ {t:'Account', d:'Il tuo profilo personale su un sito o un’app, protetto da nome utente e password.'},
+ {t:'Adescamento', d:'Quando online un adulto sconosciuto finge di essere un coetaneo per conquistare la fiducia di un ragazzo e ingannarlo. Se succede, parlane subito con un adulto.'},
+ {t:'Aggiornamento', d:'L’operazione che rende un’app o un sistema più recente, sicuro e corretto nei difetti.'},
+ {t:'Algoritmo', d:'Una sequenza precisa di passi che il computer segue per svolgere un compito o decidere cosa mostrarti.'},
+ {t:'Antivirus', d:'Il programma che trova e blocca virus e altri programmi dannosi sul dispositivo.'},
+ {t:'Backup', d:'Una copia di sicurezza dei tuoi file, utile se il dispositivo si rompe o i dati vanno persi.'},
+ {t:'Bloccare', d:'Impedire a una persona di contattarti o di vedere i tuoi contenuti online.'},
+ {t:'Bufala', d:'Una notizia falsa costruita apposta per ingannare chi la legge.'},
+ {t:'Cittadinanza digitale', d:'Comportarsi in rete in modo corretto e responsabile, con diritti e doveri come nella vita reale.'},
+ {t:'Cloud', d:'Uno spazio su server lontani, raggiungibile via internet, dove salvare file e programmi (“la nuvola”).'},
+ {t:'Consenso (permesso)', d:'L’autorizzazione che devi chiedere prima di pubblicare foto o dati di un’altra persona.'},
+ {t:'Cookie', d:'Piccoli file che i siti salvano sul tuo dispositivo per ricordarsi di te e delle tue scelte.'},
+ {t:'Copyright (diritto d’autore)', d:'Il diritto di chi crea un’opera (canzone, foto, video): non puoi copiarla e spacciarla per tua.'},
+ {t:'Cronologia', d:'L’elenco dei siti e delle pagine che hai visitato con il browser.'},
+ {t:'Cyberbullismo', d:'Offendere, minacciare o umiliare qualcuno online in modo ripetuto.'},
+ {t:'Dark web', d:'La parte nascosta di internet, non raggiungibile dai normali motori di ricerca, spesso usata per attività illegali.'},
+ {t:'Dati personali', d:'Le informazioni che dicono chi sei (nome, foto, indirizzo, telefono): non vanno date a sconosciuti.'},
+ {t:'Deepfake', d:'Un video o audio falso creato con l’IA in cui una persona sembra dire o fare cose mai avvenute.'},
+ {t:'Dipendenza', d:'Non riuscire più a staccarsi da schermi, videogiochi o social.'},
+ {t:'Download', d:'Scaricare un file da internet sul proprio dispositivo (il contrario di upload).'},
+ {t:'Fake news', d:'Notizie false diffuse come se fossero vere.'},
+ {t:'Fonte', d:'L’origine di un’informazione; controllarla aiuta a capire se è affidabile.'},
+ {t:'Geolocalizzazione', d:'La funzione che permette alle app di sapere dove ti trovi grazie al GPS.'},
+ {t:'Gestore di password', d:'Uno strumento che crea e custodisce password diverse e complesse per ogni sito.'},
+ {t:'Impronta digitale', d:'La traccia che lasci online con ogni post, foto o like; resta nel tempo.'},
+ {t:'Incognito (navigazione)', d:'Una modalità del browser che non salva la cronologia sul dispositivo.'},
+ {t:'Intelligenza artificiale (IA)', d:'Programmi che imitano il ragionamento umano, come assistenti e chatbot.'},
+ {t:'Logout', d:'L’uscita da un account; importante soprattutto sui computer condivisi.'},
+ {t:'Lucchetto', d:'Il simbolo nella barra dell’indirizzo (con “https”) che indica una connessione protetta.'},
+ {t:'Malware', d:'Qualsiasi programma dannoso (virus, spyware…) creato per danneggiare o spiare.'},
+ {t:'Motore di ricerca', d:'Strumento (come Google) che cerca pagine e informazioni nel web.'},
+ {t:'Netiquette', d:'Le buone maniere da tenere quando si comunica in rete.'},
+ {t:'Password', d:'La parola segreta che protegge il tuo account: lunga, con numeri e simboli, mai condivisa.'},
+ {t:'Phishing', d:'Un inganno via email o messaggio che, con un’esca, cerca di rubarti password o dati.'},
+ {t:'Privacy', d:'Il diritto di proteggere le proprie informazioni e decidere chi può vederle.'},
+ {t:'Profilo falso', d:'Un account che finge di essere un’altra persona per ingannare.'},
+ {t:'Pubblicità mirata', d:'Annunci costruiti su misura per te a partire dai tuoi dati e dalle tue ricerche.'},
+ {t:'Rispetto', d:'Trattare gli altri online con la stessa cortesia della vita reale.'},
+ {t:'Screenshot', d:'Una “foto” di ciò che appare sullo schermo, utile come prova.'},
+ {t:'Segnalare', d:'Avvisare la piattaforma di un contenuto offensivo o pericoloso, con l’apposito pulsante.'},
+ {t:'Spam', d:'Messaggi pubblicitari indesiderati che riempiono la posta.'},
+ {t:'Termini e condizioni', d:'Le regole di un servizio che accetti iscrivendoti; andrebbero sempre lette.'},
+ {t:'Tracciamento', d:'Seguire i tuoi spostamenti tra i siti per costruire un profilo di te.'},
+ {t:'Troll', d:'Chi provoca e offende apposta online per far arrabbiare gli altri.'},
+ {t:'Truffa online', d:'Un inganno che ti fa credere a un affare falso per rubarti soldi o dati.'},
+ {t:'Uso consapevole', d:'Usare la tecnologia con equilibrio, senza esagerare con i tempi davanti allo schermo.'},
+ {t:'Verifica in due passaggi', d:'Sicurezza in più: oltre alla password serve un secondo codice (per esempio sul telefono).'},
+ {t:'Verificare le fonti', d:'Controllare più fonti attendibili prima di credere o condividere una notizia.'},
+ {t:'Virus', d:'Programma dannoso che si intrufola nel dispositivo e lo fa funzionare male.'},
+ {t:'VPN', d:'Rete privata virtuale: nasconde il tuo indirizzo e protegge la connessione.'}
+];
+
 // ---- generatore di partita casuale (domande + percorso + indizi) ----
 function mescola(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function cesare(parola,shift){ return parola.toUpperCase().replace(/[A-Z]/g,c=>String.fromCharCode((c.charCodeAt(0)-65+shift)%26+65)); }
@@ -1400,12 +1474,13 @@ function usaMirato(){
 }
 // ---- EASTER EGG: la mela del LEGO si apre → Ambiente segreto (Algoritmi & IA) → VISIONE MATRIX ----
 let matrixOn=false, matrixT=0, melaTarget=0, mrRAF=null, mrDrops=[];
-const MATRIX_DUR=18;
+const MATRIX_DUR=62;   // quanto dura la Visione Matrix = durata del brano (1:02)
 function attivaMatrix(){
   if(matrixOn){ matrixT=MATRIX_DUR; return; }        // riattiva/ricarica il tempo
   matrixOn=true; matrixT=MATRIX_DUR; melaTarget=1;    // apre la mela
   if(legoCore) legoCore.visible=true;
   $('matrixTint').style.display='block';
+  matriximizza(true);                 // il laboratorio diventa codice (wireframe verde)
   avviaCodeRain(); aggiornaBeam();
   splash('Visione Matrix attivata','#39ff14');
   suonoPower(); avviaMusicaMatrix();
@@ -1414,7 +1489,28 @@ function disattivaMatrix(){
   matrixOn=false; melaTarget=0;
   if(legoCore) legoCore.visible=false;
   $('matrixTint').style.display='none';
+  matriximizza(false);                // ripristina il laboratorio reale
   fermaCodeRain(); beam.visible=false; fermaMusicaMatrix();
+}
+// il mondo "diventa codice": sostituisco tutti i materiali con un wireframe verde
+const matMatrix=new THREE.MeshBasicMaterial({color:0x39ff14, wireframe:true});
+let salvaMat=[], matrixed=false, bgOrig=null, fogColOrig=null;
+function matriximizza(on){
+  if(on && !matrixed){
+    matrixed=true; salvaMat=[];
+    scene.traverse(o=>{
+      if(o.isMesh && o!==beam && o.material && o.material.visible!==false){
+        salvaMat.push([o,o.material]); o.material=matMatrix;
+      }
+    });
+    bgOrig=scene.background; scene.background=new THREE.Color(0x010603);
+    if(scene.fog){ fogColOrig=scene.fog.color.getHex(); scene.fog.color.setHex(0x04160b); }
+  } else if(!on && matrixed){
+    matrixed=false;
+    salvaMat.forEach(pm=>{ pm[0].material=pm[1]; }); salvaMat=[];
+    if(bgOrig) scene.background=bgOrig;
+    if(scene.fog && fogColOrig!=null) scene.fog.color.setHex(fogColOrig);
+  }
 }
 // musica dedicata alla Visione Matrix: mette in pausa la musica di sottofondo e la riprende alla fine
 function avviaMusicaMatrix(){
@@ -1780,7 +1876,7 @@ $('btnSalta').addEventListener('click',avviaGameplay);
 // Per cambiare brano incolla qui l'id del video (la parte dopo youtu.be/ o v=).
 const YT_MUSICA='Q3_QOVaBA98';       // musica di sottofondo
 const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffiche casuali)
-const YT_MATRIX='q1ZiQ6I6gf8';       // musica dedicata alla Visione Matrix
+const YT_MATRIX='7fOpgd1hciY';       // musica dedicata alla Visione Matrix (parte al clic sulla mela)
 let ytPlayer=null, ytPronto=false, musicaOn=true;
 let matrixPlayer=null, matrixPronto=false;
 function onYouTubeIframeAPIReady(){
@@ -1827,6 +1923,22 @@ $('btnRicomincia').addEventListener('click',()=>location.reload());
   const chiudi=()=>{ $('regole').style.display='none'; if(G.gioco && !G.overlay && !G.finita) canvasEl.requestPointerLock(); };
   $('btnInfo').addEventListener('click',apri);
   $('btnChiudiRegole').addEventListener('click',chiudi);
+})();
+// glossario (cerca la soluzione agli enigmi)
+(function(){
+  function render(filtro){
+    const q=(filtro||'').toLowerCase().trim();
+    const voci=GLOSSARIO.filter(g=>!q || g.t.toLowerCase().includes(q) || g.d.toLowerCase().includes(q));
+    $('glosLista').innerHTML = voci.length
+      ? voci.map(g=>'<p><b>'+g.t+'</b> &mdash; '+g.d+'</p>').join('')
+      : '<p>Nessuna voce trovata.</p>';
+  }
+  const apri=()=>{ if(document.pointerLockElement) document.exitPointerLock();
+    $('glosSearch').value=''; render(''); $('glossario').style.display='flex'; setTimeout(()=>$('glosSearch').focus(),60); };
+  const chiudi=()=>{ $('glossario').style.display='none'; if(G.gioco && !G.overlay && !G.finita) canvasEl.requestPointerLock(); };
+  $('btnGlossario').addEventListener('click',apri);
+  $('btnChiudiGlos').addEventListener('click',chiudi);
+  $('glosSearch').addEventListener('input',e=>render(e.target.value));
 })();
 
 // ---- loop ----
