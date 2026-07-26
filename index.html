@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fuga dal Laboratorio — Escape Room di Cittadinanza Digitale</title>
+<title>Escape Lab — Escape Room di Cittadinanza Digitale · sacrafamiglia.education</title>
 <style>
   :root{ --blu:#123E90; --blu-chiaro:#6ea0e6; --panel:rgba(9,18,40,.86);
          --arancio:#123E90; --arancio-chiaro:#6ea0e6; }
@@ -140,10 +140,41 @@
   #enEsito{text-align:center}
   #enEsito .clue{font-size:15px;color:#fff;background:rgba(18,62,144,.5);
     padding:9px 13px;border-radius:10px;margin-top:8px;line-height:1.4}
+  /* ---- tuffo nel Mac: mini-galassia ---- */
+  #enigma{background:radial-gradient(circle at 50% 45%,#0b1a3c,#02060f 72%)}
+  #galassia{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  #cardsFaint{position:absolute;inset:0;z-index:1;pointer-events:none}
+  .cardFaint{position:absolute;transform:translate(-50%,-50%);
+    padding:10px 14px;border-radius:12px;background:rgba(18,62,144,.16);
+    border:1px solid rgba(120,160,230,.25);color:rgba(180,205,255,.5);
+    font-size:12px;font-weight:600;filter:blur(1.2px);white-space:nowrap;
+    animation:derivaCard 7s ease-in-out infinite alternate}
+  @keyframes derivaCard{from{transform:translate(-50%,-50%) translateY(-6px)}
+    to{transform:translate(-50%,-50%) translateY(6px)}}
+  #enBox{position:relative;z-index:2;box-shadow:0 0 60px rgba(40,90,200,.35)}
+  .dive-hint{text-align:center;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;
+    color:rgba(140,180,255,.7);margin-bottom:6px}
+  #btnSalta{position:fixed;bottom:16px;right:18px;z-index:12;
+    background:var(--panel);color:#fff;border:1px solid rgba(255,255,255,.18);
+    border-radius:10px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;
+    backdrop-filter:blur(6px)}
+  #btnSalta:hover{background:var(--blu);border-color:var(--blu)}
+  /* ---- logo sacrafamiglia.education ---- */
+  .wm{font-size:20px;letter-spacing:-.3px;color:#fff;line-height:1;white-space:nowrap}
+  .wm-r{font-weight:400}.wm-b{font-weight:700}.wm-i{font-weight:700;font-style:italic}
+  .brandlogo{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:14px}
+  .brandlogo .logo-mark{width:44px;height:44px;flex:none;filter:drop-shadow(0 4px 14px rgba(18,62,144,.55))}
+  #brandmini{position:fixed;top:14px;left:16px;z-index:11;display:flex;align-items:center;gap:8px;
+    opacity:.9;pointer-events:none}
+  #brandmini svg{width:26px;height:26px;flex:none}
+  #brandmini .wm{font-size:14px}
 </style>
 </head>
 <body>
 <canvas id="scena"></canvas>
+<div id="brandmini">
+  <span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
+</div>
 <div id="hud" class="pann"><div id="hudTappa"></div><div id="hudTema"></div></div>
 <div id="mirino"></div>
 <div id="hint"></div>
@@ -156,10 +187,14 @@
   <div><b>Risolvi l&rsquo;enigma</b> per avere l&rsquo;indizio del Mac successivo</div>
 </div>
 <button id="btnInfo" title="Come si gioca">i</button>
+<button id="btnSalta" style="display:none">Salta introduzione &rsaquo;</button>
 
 <div class="overlay" id="consegna">
   <div class="box">
-    <h2>Fuga dal <span>Laboratorio</span></h2>
+    <div class="brandlogo">
+<span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
+    </div>
+    <h2>Escape <span>Lab</span></h2>
     <p>La campanella &egrave; suonata ma la porta del laboratorio &egrave; bloccata. Nei computer dell&rsquo;aula
        sono nascosti <b>12 enigmi di cittadinanza digitale</b>: risolvili tutti, di Mac in Mac,
        per sbloccare la serratura e uscire nel corridoio.</p>
@@ -171,7 +206,10 @@
 </div>
 
 <div class="overlay" id="enigma" style="display:none">
-  <div class="box regole-box">
+  <canvas id="galassia"></canvas>
+  <div id="cardsFaint"></div>
+  <div class="box regole-box" id="enBox">
+    <div class="dive-hint">Sei entrato nel Mac&hellip;</div>
     <div class="en-tema" id="enTema"></div>
     <div id="enForm">
       <p id="enTesto"></p>
@@ -190,6 +228,9 @@
 
 <div class="overlay" id="vittoria" style="display:none">
   <div class="box">
+    <div class="brandlogo">
+<span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
+    </div>
     <h2>Sei <span>fuggito!</span></h2>
     <p>Complimenti: hai risolto tutti e 12 gli enigmi di cittadinanza digitale e hai aperto la porta
        del laboratorio. Sei nel corridoio: libero!</p>
@@ -218,7 +259,7 @@
 <script>
 'use strict';
 /* ============================================================
-   FUGA DAL LABORATORIO — escape room di cittadinanza digitale
+   ESCAPE LAB — escape room di cittadinanza digitale (sacrafamiglia.education)
    Costruita sulla ricostruzione fedele del laboratorio di informatica.
    12 enigmi nascosti nei Mac (numerati come in numerazione.png):
    ogni parola-chiave corretta dà l'indizio per il Mac successivo.
@@ -829,25 +870,27 @@ const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
   }
   // 28 iMac studenti ("Osservo 28 computer"): 14 per tavolone, schiena contro
   // schiena — 7 rivolti alle finestre (+z) e 7 alle porte (-z), sedie sui due lati
-  // numerazione (da numerazione.png), a serpentina:
-  //  fila NORD (+z, finestre): ovest 21..15 (da centro a parete), est 22..28
-  //  fila SUD  (-z, porte):    ovest 8..14  (da centro a parete), est 7..1
+  // NUMERAZIONE (da numerazione.png). Orientamento reale del mondo 3D:
+  //  +x = OVEST (bancone stampante),  -x = EST (lavagna),  +z = NORD (finestre),  -z = SUD (porte).
+  //  Angoli: Mac1 = sud-est, Mac14 = sud-ovest, Mac15 = nord-ovest, Mac28 = nord-est.
+  //  Il "tavolo a x negativo" nel codice è il tavolo EST (Mac 22..28 nord, 7..1 sud);
+  //  il "tavolo a x positivo" è il tavolo OVEST (Mac 21..15 nord, 8..14 sud).
   for(let i=0;i<7;i++){
-    // tavolone OVEST (della cattedra): studenti dopo la testa del docente
+    // tavolo a x NEGATIVO = EST (verso la lavagna)
     const xo=-3.1-i*0.7;
     const imF=mkiMac(.5,.42,i%2?mViola2:mViola);
-    imF.position.set(xo,.77,0.34); scene.add(imF); MAC_REG.push({num:21-i,x:xo,z:0.34});
+    imF.position.set(xo,.77,0.34); scene.add(imF); MAC_REG.push({num:22+i,x:xo,z:0.34});   // nord-est: 22..28
     const sF=mkSedia(); sF.position.set(xo,0,1.32); sF.rotation.y=Math.PI; scene.add(sF);
     const imP=mkiMac(.5,.42,i%2?mViola:mViola2);
-    imP.position.set(xo-.35,.77,-0.04); imP.rotation.y=Math.PI; scene.add(imP); MAC_REG.push({num:8+i,x:xo-.35,z:-0.04});
+    imP.position.set(xo-.35,.77,-0.04); imP.rotation.y=Math.PI; scene.add(imP); MAC_REG.push({num:7-i,x:xo-.35,z:-0.04});  // sud-est: 7..1
     const sP=mkSedia(); sP.position.set(xo-.35,0,-0.82); scene.add(sP);
-    // tavolone EST
+    // tavolo a x POSITIVO = OVEST (verso il bancone stampante)
     const xe=2.55+i*0.75;
     const imF2=mkiMac(.5,.42,i%2?mViola:mViola2);
-    imF2.position.set(xe,.77,0.34); scene.add(imF2); MAC_REG.push({num:22+i,x:xe,z:0.34});
+    imF2.position.set(xe,.77,0.34); scene.add(imF2); MAC_REG.push({num:21-i,x:xe,z:0.34});   // nord-ovest: 21..15
     const sF2=mkSedia(); sF2.position.set(xe,0,1.32); sF2.rotation.y=Math.PI; scene.add(sF2);
     const imP2=mkiMac(.5,.42,i%2?mViola2:mViola);
-    imP2.position.set(xe+.36,.77,-0.04); imP2.rotation.y=Math.PI; scene.add(imP2); MAC_REG.push({num:7-i,x:xe+.36,z:-0.04});
+    imP2.position.set(xe+.36,.77,-0.04); imP2.rotation.y=Math.PI; scene.add(imP2); MAC_REG.push({num:8+i,x:xe+.36,z:-0.04});  // sud-ovest: 8..14
     const sP2=mkSedia(); sP2.position.set(xe+.36,0,-0.82); scene.add(sP2);
   }
   // CAPOTAVOLA CENTRALE: l'iMac 27" del docente in testa al tavolone est,
@@ -1090,31 +1133,31 @@ const ENIGMI=[
  { mac:10, tema:'Netiquette',            trova:'Conta le lettere di PASSWORD (sono 8) e aggiungi 2.',
    testo:'Scrivere TUTTO MAIUSCOLO online è come urlare, ed è maleducazione. L’insieme delle buone maniere in rete si chiama (net + etiquette)…?',
    chiavi:['netiquette'], sugg:'Unisci “net” e “etichetta” all’inglese: net…' },
- { mac:15, tema:'Privacy',               trova:'Fila nord del tavolo ovest (lato finestre), il primo da sinistra.',
+ { mac:15, tema:'Privacy',               trova:'Lato finestre (nord), tavolo OVEST — quello del bancone stampante: l’ultimo posto all’estremità, vicino alla parete.',
    testo:'Nome, cognome, indirizzo, foto e numero di telefono sono i tuoi dati … : non vanno dati a sconosciuti online.',
    chiavi:['personali','dati personali'], sugg:'Dati che riguardano te come persona: dati p…' },
  { mac:21, tema:'Phishing',              trova:'Il triplo di 7.',
    testo:'Arriva un messaggio: “Hai vinto un telefono! Clicca e scrivi la tua password”. È un’esca per rubarti i dati. Questo inganno si chiama (suona come “fishing”)…?',
    chiavi:['phishing'], sugg:'Come “pescare” in inglese, ma si scrive con PH.' },
- { mac:14, tema:'Fake news',             trova:'Fila sud del tavolo ovest (lato porte), l’ultimo a sinistra vicino alla parete.',
+ { mac:14, tema:'Fake news',             trova:'Lato porte (sud), tavolo OVEST (bancone stampante): il posto all’estremità, vicino alla parete.',
    testo:'Leggi una notizia clamorosa. Prima di condividerla, cosa devi fare per capire se è vera? (controllare più fonti attendibili)',
    chiavi:['verificare','verifica','controllare','controllo'], sugg:'V… le fonti prima di condividere.' },
  { mac:24, tema:'Cyberbullismo',         trova:'Cinque per cinque, meno uno.',
    testo:'Prendere in giro, minacciare o umiliare qualcuno con messaggi e post ripetuti si chiama cyber…?',
    chiavi:['bullismo','cyberbullismo'], sugg:'Cyber + b… (come il bullo in classe).' },
- { mac:2,  tema:'Impronta digitale',     trova:'Fila sud del tavolo est (lato porte), il secondo partendo da destra.',
+ { mac:2,  tema:'Impronta digitale',     trova:'Lato porte (sud), tavolo EST — quello della lavagna: il secondo posto partendo dalla parete est.',
    testo:'Ogni foto, commento o like che pubblichi lascia una traccia che resta nel tempo: la tua … digitale.',
    chiavi:['impronta'], sugg:'Come l’impronta del piede sulla sabbia, ma… digitale.' },
  { mac:12, tema:'Diritto d’autore',       trova:'Le ore di un giorno diviso due.',
    testo:'Una canzone, un’immagine o un video hanno un autore: non puoi copiarli e spacciarli per tuoi. Sono protetti dal diritto d’…?',
    chiavi:['autore','copyright'], sugg:'Diritto d’a…' },
- { mac:22, tema:'Verifica in due passaggi', trova:'Fila nord del tavolo est (lato finestre), il primo da sinistra.',
+ { mac:22, tema:'Verifica in due passaggi', trova:'Lato finestre (nord), tavolo EST (lavagna): il primo posto verso il centro dell’aula.',
    testo:'Oltre alla password, molti siti chiedono anche un codice che arriva sul telefono. È la verifica in due …?',
    chiavi:['fattori','passaggi','due fattori'], sugg:'Due f… (oppure due passaggi).' },
  { mac:6,  tema:'Acquisti sicuri',       trova:'Il doppio di tre.',
    testo:'Prima di comprare su un sito controlli che l’indirizzo inizi con https e che ci sia il simbolo di un piccolo … chiuso (segno di sicurezza).',
    chiavi:['lucchetto'], sugg:'Il simbolo che “chiude”, come su una porta: il l…' },
- { mac:18, tema:'Uso consapevole',       trova:'Fila nord del tavolo ovest (lato finestre), il quarto: quello centrale.',
+ { mac:18, tema:'Uso consapevole',       trova:'Lato finestre (nord), tavolo OVEST (bancone stampante): il quarto posto partendo dal centro.',
    testo:'Stare troppe ore attaccati allo schermo fa male. Tra vita online e vita reale bisogna trovare il giusto …?',
    chiavi:['equilibrio'], sugg:'Come sulla bilancia o in bici: e…' },
  { mac:5,  tema:'Cittadinanza digitale', trova:'Le dita di una mano.',
@@ -1238,11 +1281,58 @@ function apriEnigma(e){
   $('enInput').value=''; $('enFeedback').textContent='';
   $('enSugg').style.display='none'; $('enSugg').textContent='Suggerimento: '+e.sugg;
   $('enEsito').style.display='none'; $('enForm').style.display='block';
-  $('enigma').style.display='flex'; setTimeout(()=>$('enInput').focus(),50);
+  $('btnContinua').style.display='none';
+  $('enigma').style.display='flex';
+  // TUFFO nel Mac → mini-galassia: la card della domanda è quella a fuoco
+  avviaGalassia(); popolaCardsFaint(e.tema);
+  const box=$('enBox');
+  box.style.transition='none'; box.style.transform='scale(.16)'; box.style.opacity='0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.style.transition='transform .6s cubic-bezier(.2,.85,.25,1),opacity .55s';
+    box.style.transform='scale(1)'; box.style.opacity='1';
+  }));
+  setTimeout(()=>$('enInput').focus(),260);
 }
 function chiudiEnigma(){
   $('enigma').style.display='none'; G.overlay=false;
+  fermaGalassia();
   if(G.gioco && !G.finita) canvasEl.requestPointerLock();
+}
+// ---- mini-galassia dietro la card dell'enigma ----
+let galAnim=null, galStars=[];
+function avviaGalassia(){
+  const cv=$('galassia'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const dim=()=>{ cv.width=innerWidth; cv.height=innerHeight; };
+  dim();
+  galStars=[]; for(let i=0;i<230;i++) galStars.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()});
+  let warp=1.0;
+  function frame(){
+    const w=cv.width,h=cv.height,cx=w/2,cy=h/2;
+    ctx.fillStyle='rgba(2,6,15,0.32)'; ctx.fillRect(0,0,w,h);
+    warp += (0.05-warp)*0.035;                 // parte veloce (tuffo), poi deriva lenta
+    for(const s of galStars){
+      s.z-=warp*0.013; if(s.z<=0.02){ s.x=Math.random()*2-1; s.y=Math.random()*2-1; s.z=1; }
+      const k=0.6/s.z, px=cx+s.x*k*cx, py=cy+s.y*k*cy;
+      if(px<0||px>w||py<0||py>h) continue;
+      const a=Math.min(1,1-s.z), r=Math.max(.4,(1-s.z)*2.6);
+      ctx.beginPath(); ctx.fillStyle='rgba(150,190,255,'+a.toFixed(2)+')'; ctx.arc(px,py,r,0,7); ctx.fill();
+    }
+    galAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+function fermaGalassia(){ if(galAnim) cancelAnimationFrame(galAnim); galAnim=null; }
+function popolaCardsFaint(temaCorrente){
+  const cont=$('cardsFaint'); if(!cont) return; cont.innerHTML='';
+  const altri=ENIGMI.map(e=>e.tema).filter(t=>t&&t!==temaCorrente);
+  const spots=[[11,16],[82,13],[6,60],[88,58],[24,86],[74,84]];
+  altri.slice(0,6).forEach((t,i)=>{
+    const d=document.createElement('div'); d.className='cardFaint';
+    d.textContent=t; d.style.left=spots[i][0]+'%'; d.style.top=spots[i][1]+'%';
+    d.style.animationDelay=(i*0.7)+'s';
+    cont.appendChild(d);
+  });
 }
 function verificaRisposta(){
   const e=ENIGMI[G.tappa-1];
@@ -1257,6 +1347,7 @@ function verificaRisposta(){
         '<p>La porta del laboratorio si apre. Raggiungila ed esci nel corridoio!</p>';
     }
     $('enEsito').style.display='block';
+    $('btnContinua').style.display='inline-block';
     // avanza SOLO ora (dopo aver mostrato l'esito)
     G.avanzaAllaChiusura=true;
   } else {
@@ -1278,12 +1369,30 @@ function apriPorta(){
   splash('La porta si apre!','#8fc0ff');
 }
 
+// ---- VOLO PANORAMICO iniziale ----
+const INTRO_DUR=15, INTRO_GIRI=1.4;
+const introCurve=new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-6.4,2.3,2.7), new THREE.Vector3(0,2.75,3.05),
+  new THREE.Vector3(6.4,2.3,2.7),  new THREE.Vector3(7.2,1.8,0),
+  new THREE.Vector3(6.4,2.5,-2.7), new THREE.Vector3(0,2.8,-3.05),
+  new THREE.Vector3(-6.4,2.5,-2.7),new THREE.Vector3(-7.2,1.8,0)
+], true, 'catmullrom', .5);
+const INTRO_TARGET=new THREE.Vector3(0,1.2,0.15);
+const INTRO_LAND=new THREE.Vector3(-0.6,1.5,0.7);
+const INTRO_LOOK=new THREE.Vector3(-2.35,1.15,0.15);   // guarda la cattedra atterrando
+
 // ---- avvio / vittoria ----
-function iniziaGioco(){
+function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al termine
   $('consegna').style.display='none';
+  G.intro=true; G.introT=0; G.gioco=false; G.finita=false; G.tappa=0;
+  $('btnSalta').style.display='block';
+  aggiornaHUD();
+}
+function avviaGameplay(){
+  G.intro=false; $('btnSalta').style.display='none';
   G.gioco=true; G.tappa=1; G.finita=false;
-  camera.position.set(-0.6,1.5,0.7);
-  yaw=Math.PI/2; pitch=0;
+  camera.position.copy(INTRO_LAND); yaw=Math.PI/2; pitch=0;
+  camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
   aggiornaHUD();
   canvasEl.requestPointerLock();
 }
@@ -1320,6 +1429,7 @@ addEventListener('mousemove',e=>{
 
 // pulsanti overlay
 $('btnInizia').addEventListener('click',iniziaGioco);
+$('btnSalta').addEventListener('click',avviaGameplay);
 $('btnVerifica').addEventListener('click',verificaRisposta);
 $('btnSugg').addEventListener('click',()=>{ $('enSugg').style.display='block'; });
 $('btnContinua').addEventListener('click',continuaDopoEnigma);
@@ -1336,6 +1446,23 @@ $('btnRicomincia').addEventListener('click',()=>location.reload());
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05);
+  // VOLO PANORAMICO iniziale: orbita l'aula, poi atterra alla postazione di partenza
+  if(G.intro){
+    G.introT=Math.min(1,G.introT+dt/INTRO_DUR);
+    const t=G.introT;
+    if(t<0.82){
+      const u=((t/0.82)*INTRO_GIRI)%1;
+      camera.position.copy(introCurve.getPointAt(u));
+      camera.lookAt(INTRO_TARGET);
+    } else {
+      const e=(t-0.82)/0.18, s=e<.5?2*e*e:1-Math.pow(-2*e+2,2)/2;
+      const from=introCurve.getPointAt((INTRO_GIRI)%1);
+      camera.position.copy(from.clone().lerp(INTRO_LAND,s));
+      camera.lookAt(INTRO_TARGET.clone().lerp(INTRO_LOOK,s));
+    }
+    if(G.introT>=1) avviaGameplay();
+    renderer.render(scene,camera); return;
+  }
   if(G.gioco && !G.overlay){
     camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
     // movimento
