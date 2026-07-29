@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Escape Lab — Escape Room di Cittadinanza Digitale · sacrafamiglia.education</title>
 <style>
   :root{ --blu:#123E90; --blu-chiaro:#6ea0e6; --panel:rgba(9,18,40,.86);
@@ -276,31 +276,30 @@
     opacity:.9;pointer-events:none}
   #brandmini svg{width:26px;height:26px;flex:none}
   #brandmini .wm{font-size:14px}
-  /* ---- enigma tastiera (aula di musica) ---- */
-  #tastieraBox{background:linear-gradient(180deg,#0f1830,#0a1120);border:1px solid rgba(120,160,235,.4);
-    border-radius:18px;padding:22px 26px;max-width:min(680px,92vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-  #tastieraBox h3{color:#8fc0ff;font-size:21px;margin-bottom:6px}
-  #tastieraBox #tkTesto{color:rgba(220,230,250,.85);font-size:14px;margin-bottom:14px}
-  .tk-riga{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0}
-  .tk-lab{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8fb0e6;min-width:78px;text-align:right}
-  #tkTarget,#tkStato{display:flex;gap:5px;flex-wrap:wrap;min-height:28px;justify-content:center}
-  #tkTarget span,#tkStato span{display:inline-block;padding:3px 9px;border-radius:7px;font-weight:800;font-size:13px}
-  #tkTarget span{background:rgba(90,145,235,.28);color:#dbe7ff}
-  #tkStato span{background:rgba(143,192,255,.55);color:#08122a}
-  #tkKeys{display:flex;gap:4px;justify-content:center;margin:16px 0 6px}
-  #tkKeys .tk-key{width:46px;height:120px;border:1px solid #b9c2d4;border-radius:0 0 7px 7px;background:linear-gradient(180deg,#fbfcff,#e6ebf5)!important;
-    color:#20304e!important;font-weight:800;font-size:13px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;cursor:pointer;transition:transform .05s,background .1s}
-  #tkKeys .tk-key:hover{background:linear-gradient(180deg,#eaf1ff,#cdd8ee)!important}
-  #tkKeys .tk-key:active,#tkKeys .tk-key.on{background:linear-gradient(180deg,#8fc0ff,#5a91e6)!important;color:#fff!important;transform:translateY(2px)}
-  #tkFeedback{min-height:22px;font-size:14px;font-weight:700;margin-top:8px}
-  #tkFeedback.ok{color:#7ddc9a}#tkFeedback.ko{color:#ffcf6b}
-  #tkAzioni{display:flex;gap:10px;justify-content:center;margin-top:12px}
-  #tkAzioni button{padding:9px 20px;border-radius:22px;border:1px solid rgba(120,160,235,.5);background:rgba(30,60,140,.5);color:#fff;font-weight:700;cursor:pointer}
-  #tkAzioni button:hover{background:var(--arancio,#e8721c);border-color:transparent}
+
+  /* ---- COMANDI TOUCH (iPad/telefono): joystick, sguardo, tasto USA ---- */
+  html.touch #scena{touch-action:none}
+  html.touch #istruzioni{display:none}
+  #joyBase{position:fixed;width:132px;height:132px;border-radius:50%;z-index:14;display:none;
+    background:rgba(18,62,144,.16);border:2px solid rgba(150,190,255,.5);backdrop-filter:blur(2px);pointer-events:none}
+  #joyKnob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+    background:rgba(143,192,255,.75);border:2px solid rgba(255,255,255,.8);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  #btnUsa{position:fixed;right:22px;bottom:120px;z-index:15;display:none;padding:16px 26px;border-radius:32px;
+    border:2px solid rgba(150,190,255,.7);background:rgba(18,62,144,.85);color:#fff;font-size:17px;font-weight:800;
+    box-shadow:0 6px 22px rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent}
+  #btnUsa:active{background:var(--arancio,#e8721c)}
+  html.touch #btnUsa.on{display:block}
+  #tocTip{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:14;display:none;
+    background:rgba(6,12,28,.72);border:1px solid rgba(120,160,235,.35);color:#cfe0ff;font-size:12px;
+    padding:7px 14px;border-radius:16px;text-align:center;pointer-events:none}
+  html.touch #tocTip.on{display:block}
 </style>
 </head>
 <body>
 <canvas id="scena"></canvas>
+<div id="joyBase"><div id="joyKnob"></div></div>
+<button id="btnUsa" type="button">USA</button>
+<div id="tocTip"></div>
 <div id="brandmini">
   <span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
 </div>
@@ -404,17 +403,6 @@
   </div>
 </div>
 
-<div class="overlay" id="tastieraOv" style="display:none">
-  <div id="tastieraBox">
-    <h3 id="tkTitolo">Il pianoforte del maniero</h3>
-    <p id="tkTesto">Suona la melodia scritta sulla pergamena: clicca i tasti nell&rsquo;ordine giusto.</p>
-    <div class="tk-riga"><span class="tk-lab">Da suonare</span><div id="tkTarget"></div></div>
-    <div class="tk-riga"><span class="tk-lab">Suonato</span><div id="tkStato"></div></div>
-    <div id="tkKeys"></div>
-    <div id="tkFeedback"></div>
-    <div id="tkAzioni"><button id="tkCanc" type="button">Ricomincia</button><button id="tkChiudi" type="button">Esci</button></div>
-  </div>
-</div>
 <div class="overlay" id="galassiaMac" style="display:none">
   <canvas id="galMacBg"></canvas>
   <div id="galMacHead">La <span>galassia delle parole</span> &middot; cittadinanza digitale</div>
@@ -1612,87 +1600,9 @@ function usaMirato(){
   const m=G.mirato; if(!m) return;
   if(m.tipo==='pickup') raccogli(m.pickup,m.mesh);
   else if(m.tipo==='porta') usaPorta();
-  else if(m.tipo==='quiz') apriQuiz(m);
-  else if(m.tipo==='tastiera') apriTastiera();
   else if(m.tipo==='lego') attivaMatrix();
   else if(m.tipo==='macbook') apriGalassiaMac();
   else if(m.macNum!=null) accediMac(m.macNum);
-}
-// ---- ENIGMI TEMATICI delle aule (musica / scienze): riusano l'overlay dell'enigma ----
-// ---- ENIGMA TASTIERA (aula di musica): suona la melodia sulla tastiera, con audio Web Audio ----
-let audioCtx=null, tkSeq=[], tkBloc=false;
-const NOTE_FREQ={do:261.63,re:293.66,mi:329.63,fa:349.23,sol:392.0,la:440.0,si:493.88};
-function suonaNota(n){
-  try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain(), t=audioCtx.currentTime;
-    o.type='triangle'; o.frequency.value=NOTE_FREQ[n]||440;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.28,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
-    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.57);
-  }catch(e){}
-}
-function apriTastiera(){
-  if(G.overlay) return;
-  G.overlay=true; tkBloc=false; if(document.pointerLockElement) document.exitPointerLock();
-  tkSeq=[];
-  $('tkTarget').innerHTML=MELODIA.seq.map(n=>'<span>'+n.toUpperCase()+'</span>').join('');
-  $('tkStato').innerHTML=''; $('tkFeedback').textContent=''; $('tkFeedback').className='';
-  $('tastieraOv').style.display='flex';
-}
-function chiudiTastiera(){ $('tastieraOv').style.display='none'; G.overlay=false; if(G.gioco&&!G.finita) canvasEl.requestPointerLock(); }
-function premiTasto(n){
-  if(tkBloc) return;
-  suonaNota(n); tkSeq.push(n);
-  $('tkStato').innerHTML=tkSeq.map(x=>'<span>'+x.toUpperCase()+'</span>').join('');
-  const i=tkSeq.length-1;
-  if(tkSeq[i]!==MELODIA.seq[i]){
-    tkBloc=true; $('tkFeedback').textContent='Stecca! Riascolta la melodia e ricomincia.'; $('tkFeedback').className='ko';
-    setTimeout(()=>{ tkSeq=[]; $('tkStato').innerHTML=''; $('tkFeedback').textContent=''; $('tkFeedback').className=''; tkBloc=false; },1000);
-    return;
-  }
-  if(tkSeq.length===MELODIA.seq.length){
-    tkBloc=true; $('tkFeedback').textContent=MELODIA.esito; $('tkFeedback').className='ok';
-    setTimeout(()=>{ chiudiTastiera(); liberaAula('musica'); },1500);
-  }
-}
-(function(){
-  const cont=$('tkKeys'); if(!cont) return;
-  ['do','re','mi','fa','sol','la','si'].forEach(n=>{ const b=document.createElement('button');
-    b.type='button'; b.className='tk-key'; b.textContent=n.toUpperCase(); b.addEventListener('click',()=>premiTasto(n)); cont.appendChild(b); });
-  $('tkCanc').addEventListener('click',()=>{ tkSeq=[]; tkBloc=false; $('tkStato').innerHTML=''; $('tkFeedback').textContent=''; $('tkFeedback').className=''; });
-  $('tkChiudi').addEventListener('click',chiudiTastiera);
-})();
-let quizCorrente=null;
-function apriQuiz(m){
-  if(G.overlay) return;
-  const q=m.quiz; quizCorrente=q; G.overlay=true;
-  if(document.pointerLockElement) document.exitPointerLock();
-  $('enCifrario').style.display='none';
-  $('enTesto').textContent=q.testo;
-  $('enInput').value=''; $('enFeedback').textContent='';
-  $('enEsito').style.display='none'; $('enForm').style.display='block'; $('btnContinua').style.display='none';
-  $('enigma').classList.remove('pericolo'); $('enDecoy').style.display='none'; $('enTema').style.display='';
-  document.querySelector('#enBox .dive-hint').textContent=m.nome+'…';
-  $('enTema').textContent=q.tema;
-  $('enigma').style.display='flex';
-  avviaGalassia(false); $('cardsFaint').innerHTML='';
-  const box=$('enBox'); box.style.transition='none'; box.style.transform='scale(.16)'; box.style.opacity='0';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ box.style.transition='transform .6s cubic-bezier(.2,.85,.25,1),opacity .55s'; box.style.transform='scale(1)'; box.style.opacity='1'; }));
-  setTimeout(()=>$('enInput').focus(),260);
-}
-function verificaQuiz(){
-  const q=quizCorrente; if(!q) return;
-  if(rispostaOk($('enInput').value,q.chiavi)){
-    $('enForm').style.display='none';
-    $('enEsito').innerHTML='<h3 style="color:#8fc0ff;margin-bottom:8px">Esatto!</h3><p>'+q.esito+'</p>';
-    $('enEsito').style.display='block'; $('btnContinua').style.display='inline-block'; q._done=true;
-    if(SCIENZE_QUIZ.indexOf(q)>=0){                                  // enigma di scienze: aggiorna il contatore di stanza
-      if(SCIENZE_QUIZ.every(x=>x._done)) setTimeout(()=>liberaAula('scienze'),300);
-      else if(AULA.scienze.sigillo) aggiornaObiettivoAula('scienze');
-    }
-  } else {
-    $('enFeedback').textContent='Non è la parola giusta. Indizio: '+q.sugg;
-  }
 }
 // ---- EASTER EGG: la mela del LEGO si apre → Ambiente segreto (Algoritmi & IA) → VISIONE MATRIX ----
 let matrixOn=false, matrixT=0, melaTarget=0, mrRAF=null, mrDrops=[];
@@ -1795,398 +1705,151 @@ function aggiornaInventario(){
 }
 
 // ============================================================================
-//  OLTRE LA PORTA: corridoio esplorabile + AULA DI MUSICA + LABORATORIO DI SCIENZE
-//  Layout (coord. mondo): lab z[-3.35..3.35]; corridoio z[-6..-3.35]; aule z[-12..-6].
-//  Aula MUSICA a sinistra (x[-9..-1]), lab SCIENZE a destra (x[1..9]).
+//  IL CORRIDOIO oltre la porta della fuga — ricostruito dal video (corridoio.MOV)
+//  Riferimenti reali: largh. 2,30 m (da Laboratori.sh3d), h 3,0 m.
+//  Scala verificata sulla planimetria appesa: foglio A3 orizzontale = 0,42 x 0,297 m.
+//  Aspetto: pavimento a scacchiera beige/crema, pareti bianche con fasce GIALLE,
+//  radiatori gialli sotto le finestre, plafoniere quadrate, targhe e cartelli.
+//  Il gioco TERMINA quando il giocatore entra nel corridoio.
 // ============================================================================
-// ZONE calpestabili (rettangoli interni) e OSTACOLI (arredi ingombranti): usati dal movimento.
-// Le zone marcate gate:true restano chiuse finché non apri la porta della fuga.
+const CORR={ x0:-1.15, x1:1.15, z0:-13.0, z1:-3.35 };     // corridoio stretto e lungo, perpendicolare al lab
 const ZONE=[
-  {x0:-7.6,x1:7.6, z0:-2.95,z1:3.05},                    // LAB informatica
-  {x0:-1.15,x1:0.15,z0:-3.55,z1:-2.85, gate:true},       // varco porta di fuga
-  {x0:-8.7,x1:8.7, z0:-5.75,z1:-3.35, gate:true},        // CORRIDOIO (si ferma al muro z=-6)
-  {x0:-4.6,x1:-3.4, z0:-6.2,z1:-5.7, gate:true, aula:'musica'},      // varco porta MUSICA (unico passaggio, stacco 40cm)
-  {x0:-8.7,x1:-1.35,z0:-11.65,z1:-6.15, gate:true, dentro:'musica'}, // AULA DI MUSICA (parte oltre il muro)
-  {x0:3.4,x1:4.6,  z0:-6.2,z1:-5.7, gate:true, aula:'scienze'},      // varco porta SCIENZE
-  {x0:1.35,x1:8.7,  z0:-11.65,z1:-6.15, gate:true, dentro:'scienze'},// LAB DI SCIENZE
+  {x0:-7.6,x1:7.6, z0:-2.95,z1:3.05},                     // LABORATORIO di informatica
+  {x0:-1.15,x1:0.15,z0:-3.55,z1:-2.85, gate:true},        // varco della porta di fuga
+  {x0:CORR.x0,x1:CORR.x1, z0:CORR.z0,z1:CORR.z1, gate:true}, // CORRIDOIO
 ];
-// stato ESCAPE ROOM delle due aule: appena entri la porta si sigilla, e si riapre solo a enigmi risolti
-const AULA={ musica:{sigillo:false, risolta:false, porta:null}, scienze:{sigillo:false, risolta:false, porta:null} };
 const OSTACOLI=[];
 function posValida(x,z){
   const aperto = PORTA_USCITA && PORTA_USCITA.aperta;
-  for(const r of ZONE){ if(x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1){
-    if(r.gate&&!aperto) continue;
-    if(r.aula && AULA[r.aula].sigillo) continue;         // varco sigillato: sei chiuso dentro finché non risolvi
-    return true; } }
+  for(const r of ZONE){ if(x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1){ if(r.gate&&!aperto) continue; return true; } }
   return false;
 }
-function stanzaDentro(x,z){ for(const r of ZONE){ if(r.dentro && x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1) return r.dentro; } return null; }
 function bloccato(x,z){ return dentroTavolo(x,z) || OSTACOLI.some(r=>x>r.x0&&x<r.x1&&z>r.z0&&z<r.z1); }
-// quiz tematici delle due aule (oggetti da mirare)
-// --- Enigmi del LABORATORIO DI SCIENZE (programma di scuola secondaria di I grado) ---
-const QUIZ_SCHELETRO ={tema:'Lo scheletro', testo:'Nella coscia si trova l’osso più lungo e robusto del corpo umano. Come si chiama?',
-  chiavi:['femore'], sugg:'Va dall’anca fino al ginocchio: fe-…', esito:'Il femore: l’osso più lungo dello scheletro umano.'};
-const QUIZ_CORPO ={tema:'Il corpo umano', testo:'L’organo che, battendo di continuo, spinge il sangue in tutto il corpo dentro vene e arterie?',
-  chiavi:['cuore'], sugg:'Sta al centro del petto e fa “tu-tum”: è la pompa del sistema circolatorio.', esito:'Il cuore: il motore del sistema circolatorio.'};
-const QUIZ_SOLARE ={tema:'Il Sistema Solare', testo:'Quanti sono oggi i pianeti che orbitano attorno al Sole?',
-  chiavi:['otto','8'], sugg:'Da Mercurio a Nettuno; Plutone dal 2006 non è più contato tra i pianeti.', esito:'Otto pianeti: Mercurio, Venere, Terra, Marte, Giove, Saturno, Urano, Nettuno.'};
-const QUIZ_MICRO ={tema:'Il microscopio', testo:'La più piccola parte vivente di ogni essere, che si osserva sui vetrini al microscopio, è la …?',
-  chiavi:['cellula'], sugg:'È il “mattoncino” di cui sono fatti tutti i viventi.', esito:'La cellula: l’unità fondamentale di ogni organismo vivente.'};
-// --- Enigma dell'AULA DI MUSICA: suonare una melodia sulla tastiera ---
-const MELODIA={ tema:'Aula di Musica', titolo:'Inno alla Gioia — Beethoven',
-  seq:['mi','mi','fa','sol','sol','fa','mi','re'],
-  esito:'Hai suonato l’Inno alla Gioia! Le mura del maniero tremano di note.' };
-// luci da far sfarfallare nel loop: torce del castello (calde) e neon del laboratorio (freddi, guasti)
 const torceLuci=[], neonLuci=[];
-const SCIENZE_QUIZ=[QUIZ_SCHELETRO,QUIZ_CORPO,QUIZ_SOLARE,QUIZ_MICRO];
-function sigillaAula(st){
-  if(AULA[st].sigillo || AULA[st].risolta) return;
-  AULA[st].sigillo=true; if(AULA[st].porta) AULA[st].porta.target=0;   // la porta si chiude alle spalle
-  splash('La porta si chiude! Sei chiuso dentro: risolvi per uscire.','#ffd28a');
-  aggiornaObiettivoAula(st);
-}
-function aggiornaObiettivoAula(st){
-  $('indizio').style.display='block';
-  if(st==='musica') $('indizioTxt').textContent='Chiuso nell’Aula di Musica: suona la melodia sul PIANOFORTE per aprire la porta.';
-  else { const n=SCIENZE_QUIZ.filter(q=>q._done).length;
-    $('indizioTxt').textContent='Chiuso nel Laboratorio di Scienze: risolvi tutti gli enigmi ('+n+'/'+SCIENZE_QUIZ.length+') per aprire la porta.'; }
-}
-function liberaAula(st){
-  AULA[st].risolta=true; AULA[st].sigillo=false; if(AULA[st].porta) AULA[st].porta.target=-1.4;   // la porta si riapre
-  splash('Enigma risolto! La porta si apre: sei libero.','#8fc0ff'); $('indizio').style.display='none';
-}
 {
-  const matPav =new THREE.MeshStandardMaterial({color:0xcfc9bd,roughness:.95});
-  const matMuro=new THREE.MeshStandardMaterial({color:0xece9e2,roughness:.95,side:THREE.DoubleSide});
-  const mkPav =(w,d,mat,x,z)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat); m.rotation.x=-Math.PI/2; m.position.set(x,0,z); scene.add(m); return m; };
-  const mkSoff=(w,d,x,z)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),matSoffitto); m.rotation.x=Math.PI/2; m.position.set(x,3.0,z); scene.add(m); return m; };
-  const mkMX=(d,x,z,mat)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(d,3.0),mat||matMuro); m.rotation.y=Math.PI/2; m.position.set(x,1.5,z); scene.add(m); return m; }; // muro lungo z (normale ±x)
-  const mkMZ=(w,x,z,mat)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,3.0),mat||matMuro); m.position.set(x,1.5,z); scene.add(m); return m; };               // muro lungo x (normale ±z)
-  const luce=(x,y,z,i,dist,col)=>{ const l=new THREE.PointLight(col||0xfff0d8,i,dist); l.position.set(x,y,z); scene.add(l); return l; };
-  const plafo=(x,z)=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(1.2,.05,.4),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff6e2,emissiveIntensity:.8})); p.position.set(x,2.94,z); scene.add(p); };
-  const insegna=(txt,col,x,z,ry)=>{ const c=mkCanvas(320,80),g=c.getContext('2d'); g.fillStyle=col; rRect(g,0,0,320,80,14); g.fill();
-    g.fillStyle='#fff'; g.font='bold 30px Segoe UI,Arial'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,160,44);
-    const m=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.375),new THREE.MeshBasicMaterial({map:tex(c),transparent:true})); m.position.set(x,2.45,z); if(ry)m.rotation.y=ry; scene.add(m); return m; };
+  // ---- materiali fedeli alle riprese ----
+  const GIALLO=0xd19c10, BIANCO=0xf2efe8, SCURO=0x3a3a3c;
+  const texScacchi=(()=>{ const c=mkCanvas(256,256),g=c.getContext('2d'); const n=4,s=256/n;   // piastrelle 40 cm
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++){ g.fillStyle=(i+j)%2?'#c9bca8':'#ece7db'; g.fillRect(i*s,j*s,s,s); }
+    g.strokeStyle='rgba(150,140,125,.35)'; g.lineWidth=1.5;
+    for(let i=0;i<=n;i++){ g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,256);g.stroke(); g.beginPath();g.moveTo(0,i*s);g.lineTo(256,i*s);g.stroke(); }
+    const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2.875,12.1); return t; })();  // 2 piastrelle/m
+  const matPavC =new THREE.MeshStandardMaterial({map:texScacchi,roughness:.55,metalness:.02});
+  const matMuroC=new THREE.MeshStandardMaterial({color:BIANCO,roughness:.92,side:THREE.DoubleSide});
+  const matGialloC=new THREE.MeshStandardMaterial({color:GIALLO,roughness:.85,side:THREE.DoubleSide});
+  const matSoffC=new THREE.MeshStandardMaterial({color:0xfafaf7,roughness:.95});
+  const matTelaio=new THREE.MeshStandardMaterial({color:SCURO,roughness:.5,metalness:.15});
+  const W=CORR.x1-CORR.x0, L=CORR.z1-CORR.z0, CZ=(CORR.z0+CORR.z1)/2;
 
-  // ---------------- CORRIDOIO (x[-9..9], z[-6..-3.35]) ----------------
-  mkPav(18,2.65,matPav,0,-4.675); mkSoff(18,2.65,0,-4.675);
-  mkMX(2.65,-9,-4.675); mkMX(2.65,9,-4.675);                          // pareti laterali corridoio
-  // parete di fondo corridoio (z=-6) con due aperture per le porte delle aule
-  mkMZ(4.4,-6.8,-6); mkMZ(6.8,0,-6); mkMZ(4.4,6.8,-6);               // varchi: x[-4.6..-3.4] e x[3.4..4.6]
-  plafo(-4,-4.675); plafo(4,-4.675); luce(0,2.6,-4.675,.6,16);
-  insegna('AULA DI MUSICA','#123E90',-4,-5.99,Math.PI); insegna('LAB. DI SCIENZE','#1c5a6e',4,-5.99,Math.PI);
-  // PORTE delle due aule (sui varchi z=-6): iniziano aperte; entrando si sigillano, si riaprono a enigma risolto
-  const portaAula=(cx,col)=>{ const cardine=new THREE.Group(); cardine.position.set(cx-0.6,1.05,-6.0); scene.add(cardine);
-    const anta=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.05,.06),new THREE.MeshStandardMaterial({color:col,roughness:.6})); anta.position.set(.6,0,0); cardine.add(anta);
-    const mani=new THREE.Mesh(new THREE.BoxGeometry(.05,.12,.05),new THREE.MeshStandardMaterial({color:0xd8b24a,metalness:.6,roughness:.3})); mani.position.set(1.05,0,.06); cardine.add(mani);
-    cardine.rotation.y=-1.4; return {cardine, target:-1.4}; };
-  AULA.musica.porta = portaAula(-4, 0x4a3526);        // porta lignea
-  AULA.scienze.porta= portaAula(4,  0xcdd6dc);        // porta chiara asettica
+  // ---- guscio: pavimento, soffitto, pareti laterali e fondo ----
+  { const p=new THREE.Mesh(new THREE.PlaneGeometry(W,L),matPavC); p.rotation.x=-Math.PI/2; p.position.set(0,0,CZ); scene.add(p);
+    const s=new THREE.Mesh(new THREE.PlaneGeometry(W,L),matSoffC); s.rotation.x=Math.PI/2; s.position.set(0,3.0,CZ); scene.add(s); }
+  const mkLat=(x)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(L,3.0),matMuroC); m.rotation.y=Math.PI/2; m.position.set(x,1.5,CZ); scene.add(m); };
+  mkLat(CORR.x0); mkLat(CORR.x1);
+  { const f=new THREE.Mesh(new THREE.PlaneGeometry(W,3.0),matMuroC); f.position.set(0,1.5,CORR.z0); scene.add(f); }   // fondo
+  // battiscopa chiaro
+  for(const sx of [CORR.x0,CORR.x1]){ const b=new THREE.Mesh(new THREE.BoxGeometry(.03,.09,L),new THREE.MeshStandardMaterial({color:0xe8e4da,roughness:.7}));
+    b.position.set(sx+(sx<0?.02:-.02),.045,CZ); scene.add(b); }
 
-  // ================= AULA DI MUSICA — CASTELLO MEDIEVALE (x[-9..-1], z[-12..-6]) =================
-  const texPietra=(rx,ry)=>{ const c=mkCanvas(256,256),g=c.getContext('2d'); g.fillStyle='#2b2620'; g.fillRect(0,0,256,256);
-    const bw=64,bh=32; for(let r=0;r<8;r++){ const off=(r%2)*bw/2;
-      for(let cx=-1;cx<5;cx++){ const sh=((Math.sin(r*3.1+cx*7.7)*0.5+0.5)*26)|0;
-        g.fillStyle='rgb('+(88+sh)+','+(84+sh)+','+(76+sh)+')'; g.fillRect(cx*bw+off+2, r*bh+2, bw-4, bh-4); } }
-    const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); return t; };
-  const matPietra =new THREE.MeshStandardMaterial({map:texPietra(3,1.5),roughness:.98,side:THREE.DoubleSide});
-  const matPietraP=new THREE.MeshStandardMaterial({map:texPietra(4,3),roughness:.98});
-  const matPietraSc=new THREE.MeshStandardMaterial({color:0x1c1914,roughness:1});
-  mkPav(8,6,matPietraP,-5,-9);
-  { const so=new THREE.Mesh(new THREE.PlaneGeometry(8,6),matPietraSc); so.rotation.x=Math.PI/2; so.position.set(-5,3.0,-9); scene.add(so); }
-  mkMX(6,-9,-9,matPietra); mkMX(6,-1,-9,matPietra); mkMZ(8,-5,-12,matPietra);
-  luce(-5,2.5,-9,.42,12,0xffb060);                                   // luce ambrata fioca (atmosfera cupa)
-  // TORCE alle pareti (fiamma + luce calda tremolante, registrate per lo sfarfallio)
-  const torcia=(x,z,nx)=>{
-    const supp=new THREE.Mesh(new THREE.CylinderGeometry(.028,.045,.34,8),new THREE.MeshStandardMaterial({color:0x241a10,roughness:.9}));
-    supp.position.set(x,1.75,z); supp.rotation.z=nx*0.5; scene.add(supp);
-    const fiamma=new THREE.Mesh(new THREE.ConeGeometry(.085,.26,10),new THREE.MeshBasicMaterial({color:0xffb43b}));
-    fiamma.material.toneMapped=false; fiamma.position.set(x+nx*0.06,2.0,z); scene.add(fiamma);
-    const l=new THREE.PointLight(0xff8a28,.95,6.5); l.position.set(x+nx*0.14,2.0,z); scene.add(l);
-    torceLuci.push({l,fiamma,base:.95}); };
-  torcia(-8.85,-7.6,1); torcia(-8.85,-10.6,1);                       // parete sinistra
-  torcia(-1.15,-7.6,-1); torcia(-1.15,-10.6,-1);                     // parete destra
-  torcia(-6.6,-11.85,0); torcia(-3.4,-11.85,0);                      // parete di fondo
-  // RAGNATELE negli angoli alti
-  const ragnatela=(x,y,z,ry,size)=>{ const c=mkCanvas(128,128),g=c.getContext('2d'); g.clearRect(0,0,128,128);
-    g.strokeStyle='rgba(255,255,255,.5)'; g.lineWidth=1; const cx=6,cy=6;
-    for(let a=0;a<=6;a++){ const an=a*(Math.PI/2/6); g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx+Math.cos(an)*128,cy+Math.sin(an)*128); g.stroke(); }
-    for(let rr=16;rr<128;rr+=17){ g.beginPath(); for(let a=0;a<=6;a++){ const an=a*(Math.PI/2/6),px=cx+Math.cos(an)*rr,py=cy+Math.sin(an)*rr; a?g.lineTo(px,py):g.moveTo(px,py);} g.stroke(); }
-    const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),new THREE.MeshBasicMaterial({map:tex(c),transparent:true,depthWrite:false,opacity:.65}));
-    m.position.set(x,y,z); m.rotation.y=ry; scene.add(m); };
-  ragnatela(-8.83,2.55,-11.75,Math.PI/2,1.1); ragnatela(-1.17,2.55,-6.35,-Math.PI/2,1.0);
-  ragnatela(-8.6,2.6,-11.9,0,0.9);
-  // STEMMA sulla parete di fondo
-  { const c=mkCanvas(200,240),g=c.getContext('2d'); g.clearRect(0,0,200,240);
-    g.fillStyle='#123E90'; g.beginPath(); g.moveTo(20,20); g.lineTo(180,20); g.lineTo(180,150); g.quadraticCurveTo(100,240,20,150); g.closePath(); g.fill();
-    g.strokeStyle='#d8b24a'; g.lineWidth=8; g.stroke();
-    g.fillStyle='#d8b24a'; g.font='bold 120px Georgia'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('𝄞',100,120);
-    const sc=new THREE.Mesh(new THREE.PlaneGeometry(.9,1.08),new THREE.MeshStandardMaterial({map:tex(c),transparent:true,roughness:.6})); sc.position.set(-3.2,1.9,-11.88); scene.add(sc); }
-  // PERGAMENA con la melodia (indizio dell'enigma)
-  { const c=mkCanvas(300,210),g=c.getContext('2d'); g.fillStyle='#e6d3a0'; rRect(g,4,4,292,202,8); g.fill();
-    g.strokeStyle='#6e4e22'; g.lineWidth=6; g.stroke();
-    g.fillStyle='#4a3316'; g.textAlign='center';
-    g.font='bold 20px Georgia'; g.fillText('Inno alla Gioia',150,42);
-    g.font='bold 27px Georgia'; g.fillText('MI  MI  FA  SOL',150,100); g.fillText('SOL  FA  MI  RE',150,140);
-    g.font='italic 13px Georgia'; g.fillText('suonala sul pianoforte del maniero',150,178);
-    const pg=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.8),new THREE.MeshStandardMaterial({map:tex(c),roughness:.85})); pg.position.set(-6.7,1.6,-11.86); scene.add(pg);
-    luce(-6.7,1.7,-11.2,.4,3.5,0xffd9a0); }
-  // PIANOFORTE del maniero (legno scuro) = enigma della tastiera suonabile
-  { const legnoSc=new THREE.MeshStandardMaterial({color:0x3a251a,roughness:.55,metalness:.1});
-    const corpo=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,.6),legnoSc); corpo.position.set(-2.2,.75,-10.6); corpo.rotation.y=-Math.PI/2; scene.add(corpo);
-    const alzata=new THREE.Mesh(new THREE.BoxGeometry(1.5,.55,.06),legnoSc); alzata.position.set(-1.9,1.45,-10.6); alzata.rotation.y=-Math.PI/2; scene.add(alzata);
-    const tast=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,1.5),new THREE.MeshStandardMaterial({color:0xefe6d2,roughness:.5})); tast.position.set(-1.86,.92,-10.6); scene.add(tast);
-    const kg=mkCanvas(32,256).getContext('2d'); kg.fillStyle='#efe6d2'; kg.fillRect(0,0,32,256);
-    kg.fillStyle='#20160e'; for(let i=0;i<15;i++){ if([0,1,3,4,5].includes(i%7)) kg.fillRect(0,i*17+11,20,7); }
-    const kt=new THREE.Mesh(new THREE.PlaneGeometry(.26,1.5),new THREE.MeshBasicMaterial({map:tex(kg.canvas)})); kt.rotation.x=-Math.PI/2; kt.rotation.z=Math.PI/2; kt.position.set(-1.72,.971,-10.6); scene.add(kt);
-    const cand=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.2,8),new THREE.MeshStandardMaterial({color:0xd8b24a,metalness:.6,roughness:.3})); cand.position.set(-1.95,1.6,-10.6); scene.add(cand);
-    luce(-2.0,1.75,-10.6,.5,3.5,0xffca6a);
-    OSTACOLI.push({x0:-2.75,x1:-1.55,z0:-11.55,z1:-9.65});
-    const proxy=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.6,2.0),new THREE.MeshBasicMaterial({visible:false}));
-    proxy.position.set(-2.1,1.0,-10.6); proxy.userData={tipo:'tastiera',nome:'Pianoforte del maniero'}; scene.add(proxy); TARGETS.push(proxy); }
-  // ---- ARREDI del maniero: strumenti, candelabri, bauli, barili, arazzi ----
-  { const legno=new THREE.MeshStandardMaterial({color:0x4a3221,roughness:.7});
-    const legnoCh=new THREE.MeshStandardMaterial({color:0x6b4a2c,roughness:.7});
-    const ferro=new THREE.MeshStandardMaterial({color:0x2a2620,metalness:.6,roughness:.5});
-    const ottone=new THREE.MeshStandardMaterial({color:0xc9a44a,metalness:.7,roughness:.35});
-    // candelabro a terra con fiamma (registrata nel flicker)
-    const candelabro=(x,z)=>{ const st=new THREE.Mesh(new THREE.CylinderGeometry(.03,.06,1.1,8),ferro); st.position.set(x,.55,z); scene.add(st);
-      const pi=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.03,10),ferro); pi.position.set(x,.02,z); scene.add(pi);
-      const cera=new THREE.Mesh(new THREE.CylinderGeometry(.03,.035,.16,8),new THREE.MeshStandardMaterial({color:0xf0e6c8,roughness:.6})); cera.position.set(x,1.18,z); scene.add(cera);
-      const fi=new THREE.Mesh(new THREE.ConeGeometry(.03,.1,8),new THREE.MeshBasicMaterial({color:0xffc040})); fi.material.toneMapped=false; fi.position.set(x,1.31,z); scene.add(fi);
-      const l=new THREE.PointLight(0xffb648,.5,4); l.position.set(x,1.32,z); scene.add(l); torceLuci.push({l,fiamma:fi,base:.5}); };
-    candelabro(-8.4,-6.7); candelabro(-1.6,-8.6); candelabro(-5,-6.5);
-    // LIUTO appeso alla parete sinistra
-    { const g=new THREE.Group(); const cassa=new THREE.Mesh(new THREE.SphereGeometry(.16,16,12),legnoCh); cassa.scale.set(1,1,.5); g.add(cassa);
-      const manico=new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.04),legno); manico.position.set(0,.32,0); g.add(manico);
-      const pg=new THREE.Mesh(new THREE.BoxGeometry(.07,.1,.05),legno); pg.position.set(0,.58,0); pg.rotation.z=.3; g.add(pg);
-      for(let i=0;i<4;i++){ const c=new THREE.Mesh(new THREE.CylinderGeometry(.002,.002,.66,4),ottone); c.position.set(-.03+i*.02,.18,.06); g.add(c); }
-      g.position.set(-8.86,1.7,-9.4); g.rotation.y=Math.PI/2; g.rotation.z=.15; scene.add(g); }
-    // ARPA in un angolo
-    { const g=new THREE.Group();
-      const col=new THREE.Mesh(new THREE.CylinderGeometry(.04,.05,1.1,10),legnoCh); col.position.set(.35,.55,0); g.add(col);
-      const base=new THREE.Mesh(new THREE.BoxGeometry(.6,.06,.14),legnoCh); base.position.set(.1,.02,0); g.add(base);
-      const arco=new THREE.Mesh(new THREE.TorusGeometry(.5,.045,8,24,Math.PI*0.8),legnoCh); arco.position.set(.05,.7,0); arco.rotation.z=.7; g.add(arco);
-      for(let i=0;i<9;i++){ const h=.2+i*.09; const c=new THREE.Mesh(new THREE.CylinderGeometry(.002,.002,h,4),new THREE.MeshStandardMaterial({color:0xe8dcc0}));
-        c.position.set(.34-i*.037,.1+h/2,0); c.rotation.z=.24; g.add(c); }
-      g.position.set(-8.1,0,-11.1); g.rotation.y=.5; scene.add(g); OSTACOLI.push({x0:-8.5,x1:-7.5,z0:-11.5,z1:-10.6}); }
-    // TAMBURO
-    { const corpo=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.28,20),new THREE.MeshStandardMaterial({color:0x8a3b28,roughness:.6})); corpo.position.set(-7,.72,-7.2); scene.add(corpo);
-      const pelle=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.02,20),new THREE.MeshStandardMaterial({color:0xe8dcc0,roughness:.7})); pelle.position.set(-7,.86,-7.2); scene.add(pelle);
-      for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const z=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.28,4),ottone); z.position.set(-7+Math.cos(a)*.22,.72,-7.2+Math.sin(a)*.22); scene.add(z); }
-      OSTACOLI.push({x0:-7.3,x1:-6.7,z0:-7.5,z1:-6.9}); }
-    // VIOLINO su un supporto a muro
-    { const g=new THREE.Group(); const cassa=new THREE.Mesh(new THREE.SphereGeometry(.12,14,10),new THREE.MeshStandardMaterial({color:0x7a3418,roughness:.4})); cassa.scale.set(1,1.5,.4); g.add(cassa);
-      const manico=new THREE.Mesh(new THREE.BoxGeometry(.03,.34,.03),legno); manico.position.set(0,.3,0); g.add(manico);
-      g.position.set(-8.86,1.8,-7.4); g.rotation.y=Math.PI/2; scene.add(g); }
-    // BAULI e BARILI
-    const baule=(x,z,ry)=>{ const g=new THREE.Group(); const b=new THREE.Mesh(new THREE.BoxGeometry(.7,.4,.44),legno); b.position.y=.2; g.add(b);
-      const cop=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.7,12,1,false,0,Math.PI),legnoCh); cop.rotation.z=Math.PI/2; cop.position.y=.4; g.add(cop);
-      for(const sx of [-.3,.3]){ const f=new THREE.Mesh(new THREE.BoxGeometry(.03,.62,.46),ferro); f.position.set(sx,.28,0); g.add(f); }
-      g.position.set(x,0,z); g.rotation.y=ry; scene.add(g); OSTACOLI.push({x0:x-.45,x1:x+.45,z0:z-.32,z1:z+.32}); };
-    baule(-8.3,-8.4,.2); baule(-6.4,-6.6,-.3);
-    const barile=(x,z)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(.26,.22,.7,16),legnoCh); b.position.set(x,.35,z); scene.add(b);
-      for(const y of [.15,.55]){ const c=new THREE.Mesh(new THREE.TorusGeometry(.255,.02,6,18),ferro); c.position.set(x,y,z); c.rotation.x=Math.PI/2; scene.add(c); }
-      OSTACOLI.push({x0:x-.32,x1:x+.32,z0:z-.32,z1:z+.32}); };
-    barile(-8.4,-9.7); barile(-2.4,-6.7);
-    // PANCA di legno
-    { const s=new THREE.Mesh(new THREE.BoxGeometry(1.3,.08,.34),legno); s.position.set(-4.6,.46,-7.0); scene.add(s);
-      for(const sx of [-.55,.55]){ const g=new THREE.Mesh(new THREE.BoxGeometry(.1,.46,.3),legno); g.position.set(-4.6+sx,.23,-7.0); scene.add(g); }
-      OSTACOLI.push({x0:-5.35,x1:-3.85,z0:-7.25,z1:-6.75}); }
-    // ARAZZI alle pareti (stendardi)
-    const arazzo=(x,z,ry,col)=>{ const c=mkCanvas(120,200),g=c.getContext('2d'); g.fillStyle=col; g.fillRect(0,0,120,200);
-      g.fillStyle='rgba(0,0,0,.18)'; for(let i=0;i<200;i+=14) g.fillRect(0,i,120,2);
-      g.fillStyle='#d8b24a'; g.beginPath(); g.arc(60,80,26,0,7); g.fill(); g.fillStyle=col; g.font='bold 30px Georgia'; g.textAlign='center'; g.fillText('♪',60,92);
-      const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,1.15),new THREE.MeshStandardMaterial({map:tex(c),roughness:.9})); m.position.set(x,1.75,z); m.rotation.y=ry; scene.add(m); };
-    arazzo(-8.88,-8.6,Math.PI/2,'#5a2038'); arazzo(-1.12,-9.6,-Math.PI/2,'#1f3a5a');
-    // TAPPETO centrale
-    { const c=mkCanvas(128,96),g=c.getContext('2d'); g.fillStyle='#6a2436'; g.fillRect(0,0,128,96); g.strokeStyle='#d8b24a'; g.lineWidth=6; g.strokeRect(8,8,112,80);
-      g.strokeStyle='#c98fa8'; g.lineWidth=2; g.strokeRect(20,20,88,56);
-      const t=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.0),new THREE.MeshStandardMaterial({map:tex(c),roughness:.95})); t.rotation.x=-Math.PI/2; t.position.set(-5,.011,-8.4); scene.add(t); }
-    // altre RAGNATELE
-    ragnatela(-1.17,2.55,-11.4,-Math.PI/2,0.85); ragnatela(-8.83,2.5,-6.6,Math.PI/2,0.8);
-  }
+  // ---- FASCE GIALLE a parete (come nel video: pannelli pieni alternati al bianco) ----
+  const fasciaGialla=(x,zc,lung,h,y)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(lung,h),matGialloC);
+    m.rotation.y=x<0?Math.PI/2:-Math.PI/2; m.position.set(x+(x<0?.012:-.012),y,zc); scene.add(m); return m; };
+  fasciaGialla(CORR.x1,-4.5,2.0,3.0,1.5);      // parete destra, vicino all'ingresso
+  fasciaGialla(CORR.x1,-9.4,2.6,3.0,1.5);
+  fasciaGialla(CORR.x0,-6.9,2.2,3.0,1.5);      // parete sinistra
+  fasciaGialla(CORR.x0,-11.8,2.0,3.0,1.5);
+  { const f=new THREE.Mesh(new THREE.PlaneGeometry(W,3.0),matGialloC); f.position.set(0,1.5,CORR.z0+.008); scene.add(f); }   // fondo giallo
 
-  // ================= LABORATORIO DI SCIENZE — CASTELLO DI FRANKENSTEIN JUNIOR (x[1..9], z[-12..-6]) =================
-  // pavimento a piastrelle a SCACCHIERA bianco/nero (gotico); pareti in pietra, soffitto scuro
-  const texScacchi=(()=>{ const c=mkCanvas(256,256),g=c.getContext('2d'); const n=4,s=256/n;
-    for(let i=0;i<n;i++)for(let j=0;j<n;j++){ g.fillStyle=(i+j)%2?'#17161a':'#b8b2a6'; g.fillRect(i*s,j*s,s,s); }
-    g.strokeStyle='rgba(0,0,0,.25)'; g.lineWidth=2; for(let i=0;i<=n;i++){ g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,256);g.stroke(); g.beginPath();g.moveTo(0,i*s);g.lineTo(256,i*s);g.stroke(); }
-    const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,4); return t; })();
-  const matPavLab=new THREE.MeshStandardMaterial({map:texScacchi,roughness:.5,metalness:.05});
-  const matPietraS=new THREE.MeshStandardMaterial({map:texPietra(3,1.5),roughness:.98,side:THREE.DoubleSide});
-  const matSoffS=new THREE.MeshStandardMaterial({color:0x14120f,roughness:1});
-  const legnoScuro=new THREE.MeshStandardMaterial({color:0x2f2216,roughness:.7});
-  const metallo=new THREE.MeshStandardMaterial({color:0x40454c,metalness:.6,roughness:.45});
-  const ottone=new THREE.MeshStandardMaterial({color:0xc19a3e,metalness:.75,roughness:.35});
-  mkPav(8,6,matPavLab,5,-9);
-  { const so=new THREE.Mesh(new THREE.PlaneGeometry(8,6),matSoffS); so.rotation.x=Math.PI/2; so.position.set(5,3.0,-9); scene.add(so); }
-  mkMX(6,9,-9,matPietraS); mkMX(6,1,-9,matPietraS); mkMZ(8,5,-12,matPietraS);
-  luce(5,2.5,-9,.32,12,0x8fb4e6);                     // luce fioca e fredda
-  // LUCI ELETTRICHE che sfarfallano (bagliori azzurri, registrate per il flicker)
-  const elettro=(x,y,z,i)=>{ const l=new THREE.PointLight(0x9fd0ff,i||.6,10); l.position.set(x,y,z); scene.add(l); neonLuci.push({l,base:i||.55}); return l; };
-  elettro(5,2.7,-8,.5); elettro(3,2.7,-11,.45);
-  // BOBINE DI TESLA con toroide, sfera luminosa e scariche verso l'alto
-  const bobina=(x,z)=>{ const base=new THREE.Mesh(new THREE.BoxGeometry(.5,.2,.5),legnoScuro); base.position.set(x,.1,z); scene.add(base);
-    const col=new THREE.Mesh(new THREE.CylinderGeometry(.12,.15,1.5,16),new THREE.MeshStandardMaterial({color:0x9c6b2f,metalness:.5,roughness:.5})); col.position.set(x,.95,z); scene.add(col);
-    const toro=new THREE.Mesh(new THREE.TorusGeometry(.24,.075,12,24),ottone); toro.position.set(x,1.75,z); toro.rotation.x=Math.PI/2; scene.add(toro);
-    const sfera=new THREE.Mesh(new THREE.SphereGeometry(.11,18,16),new THREE.MeshStandardMaterial({color:0xdfeaff,emissive:0x7ab8ff,emissiveIntensity:1})); sfera.position.set(x,1.9,z); sfera.material.toneMapped=false; scene.add(sfera);
-    const l=new THREE.PointLight(0x8fc0ff,.9,7); l.position.set(x,1.95,z); scene.add(l); neonLuci.push({l,base:.75,glow:sfera});
-    for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const arc=new THREE.Mesh(new THREE.CylinderGeometry(.006,.002,.45,4),new THREE.MeshBasicMaterial({color:0xbfe0ff})); arc.material.toneMapped=false;
-      arc.position.set(x+Math.cos(a)*.13,2.12,z+Math.sin(a)*.13); arc.rotation.z=Math.cos(a)*.6; arc.rotation.x=Math.sin(a)*.6; scene.add(arc); }
-    OSTACOLI.push({x0:x-.32,x1:x+.32,z0:z-.32,z1:z+.32}); };
-  bobina(2.1,-6.6); bobina(8.4,-6.7);
-  // QUADRO ELETTRICO con grandi LEVE a coltello e quadranti (parete di sinistra)
-  { const g=new THREE.Group();
-    const pann=new THREE.Mesh(new THREE.BoxGeometry(.14,1.7,1.9),legnoScuro); pann.position.set(0,1.3,0); g.add(pann);
-    for(let i=0;i<4;i++){ const zz=-.6+i*.4;
-      const zoc=new THREE.Mesh(new THREE.BoxGeometry(.06,.14,.12),metallo); zoc.position.set(.1,1.55,zz); g.add(zoc);
-      const leva=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.3,8),new THREE.MeshStandardMaterial({color:0xb8b2a0,metalness:.6})); leva.position.set(.18,1.62,zz); leva.rotation.z=(i%2?-.7:.7); g.add(leva);
-      const pomo=new THREE.Mesh(new THREE.SphereGeometry(.035,10,10),new THREE.MeshStandardMaterial({color:0xa8321f})); pomo.position.set(.18+(i%2?-.12:.12),1.62+.12,zz); g.add(pomo); }
-    for(let i=0;i<3;i++){ const q=new THREE.Mesh(new THREE.CircleGeometry(.11,20),new THREE.MeshStandardMaterial({color:0xe6d6a8,emissive:0x4a3a10,emissiveIntensity:.3})); q.position.set(.08,.95,-.5+i*.5); q.rotation.y=Math.PI/2; g.add(q);
-      const ago=new THREE.Mesh(new THREE.BoxGeometry(.012,.09,.006),new THREE.MeshStandardMaterial({color:0x1a1a1a})); ago.position.set(.085,.95,-.5+i*.5); ago.rotation.x=i*.7; g.add(ago); }
-    g.position.set(1.12,0,-9); scene.add(g); OSTACOLI.push({x0:1.1,x1:1.7,z0:-10.1,z1:-7.9}); }
-  // SFERA AL PLASMA su una colonna
-  { const x=3.2,z=-6.5; const col=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,.85,12),legnoScuro); col.position.set(x,.42,z); scene.add(col);
-    const globo=new THREE.Mesh(new THREE.SphereGeometry(.19,20,16),new THREE.MeshStandardMaterial({color:0x9f7ad0,transparent:true,opacity:.28,emissive:0x7a3ac0,emissiveIntensity:.5})); globo.position.set(x,1.05,z); globo.material.toneMapped=false; scene.add(globo);
-    const core=new THREE.Mesh(new THREE.SphereGeometry(.04,10,10),new THREE.MeshBasicMaterial({color:0xffb0ff})); core.material.toneMapped=false; core.position.set(x,1.05,z); scene.add(core);
-    for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; const fil=new THREE.Mesh(new THREE.CylinderGeometry(.004,.001,.17,4),new THREE.MeshBasicMaterial({color:0xd07af0})); fil.material.toneMapped=false;
-      fil.position.set(x+Math.cos(a)*.09,1.05+Math.sin(a*1.7)*.04,z+Math.sin(a)*.09); fil.rotation.z=Math.PI/2-a; scene.add(fil); }
-    const l=new THREE.PointLight(0xb07ae0,.5,4); l.position.set(x,1.05,z); scene.add(l); neonLuci.push({l,base:.4,glow:core});
-    OSTACOLI.push({x0:x-.28,x1:x+.28,z0:z-.28,z1:z+.28}); }
-  // JACOB'S LADDER (scala di scariche) alla parete di fondo
-  { const x=6.2,z=-11.8; for(const sx of [-.09,.09]){ const asta=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1.0,6),metallo); asta.position.set(x+sx,1.4,z); asta.rotation.z=sx>0?-.12:.12; scene.add(asta); }
-    for(let i=0;i<4;i++){ const arc=new THREE.Mesh(new THREE.TorusGeometry(.05+i*.02,.006,6,12,Math.PI),new THREE.MeshBasicMaterial({color:0xbfe0ff})); arc.material.toneMapped=false;
-      arc.position.set(x,1.05+i*.22,z); arc.rotation.x=Math.PI/2; scene.add(arc); }
-    const l=new THREE.PointLight(0x9fd0ff,.4,4); l.position.set(x,1.6,z); scene.add(l); neonLuci.push({l,base:.35}); }
-  // CAVI che pendono dal soffitto
-  for(const [cx,cz] of [[4,-7.5],[6.4,-9],[3.4,-10]]){ const cavo=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,1.2,6),new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:.8}));
-    cavo.position.set(cx,2.4,cz); cavo.rotation.z=.12; scene.add(cavo); }
-  // SCHELETRO su piedistallo (parete di fondo, a sinistra)
-  { const osso=new THREE.MeshStandardMaterial({color:0xeae4d2,roughness:.7});
-    const gx=2.3, gz=-11.2;
-    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.1,18),new THREE.MeshStandardMaterial({color:0x2b3138,metalness:.4,roughness:.5})); ped.position.set(gx,.05,gz); scene.add(ped);
-    const asta=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,1.9,8),new THREE.MeshStandardMaterial({color:0x8892a0,metalness:.6,roughness:.4})); asta.position.set(gx,.95,gz-.16); scene.add(asta);
-    const cranio=new THREE.Mesh(new THREE.SphereGeometry(.13,16,16),osso); cranio.position.set(gx,1.72,gz); cranio.scale.set(1,1.15,1.05); scene.add(cranio);
-    const mand=new THREE.Mesh(new THREE.BoxGeometry(.16,.06,.12),osso); mand.position.set(gx,1.58,gz+.03); scene.add(mand);
-    const colonna=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.62,8),osso); colonna.position.set(gx,1.2,gz); scene.add(colonna);
-    for(let i=0;i<5;i++){ const cost=new THREE.Mesh(new THREE.TorusGeometry(.13-i*.006,.012,8,18,Math.PI*1.1),osso);
-      cost.position.set(gx,1.42-i*.075,gz); cost.rotation.x=Math.PI/2; cost.rotation.z=-Math.PI*0.55; scene.add(cost); }
-    const bacino=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,8,18),osso); bacino.position.set(gx,.9,gz); bacino.rotation.x=Math.PI/2; bacino.scale.set(1,.7,1); scene.add(bacino);
-    const spalle=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.4,8),osso); spalle.position.set(gx,1.48,gz); spalle.rotation.z=Math.PI/2; scene.add(spalle);
-    for(const s of [-1,1]){
-      const braccio=new THREE.Mesh(new THREE.CylinderGeometry(.02,.017,.55,8),osso); braccio.position.set(gx+s*.22,1.2,gz); braccio.rotation.z=s*.12; scene.add(braccio);
-      const gamba=new THREE.Mesh(new THREE.CylinderGeometry(.025,.02,.8,8),osso); gamba.position.set(gx+s*.07,.5,gz); scene.add(gamba); }
-    luce(gx,1.8,gz+.8,.4,3,0xeaf4ff);
-    OSTACOLI.push({x0:gx-.4,x1:gx+.4,z0:gz-.45,z1:gz+.45});
-    const proxy=new THREE.Mesh(new THREE.BoxGeometry(.9,2.0,.9),new THREE.MeshBasicMaterial({visible:false}));
-    proxy.position.set(gx,1.1,gz); proxy.userData={tipo:'quiz',quiz:QUIZ_SCHELETRO,nome:'Lo scheletro'}; scene.add(proxy); TARGETS.push(proxy); }
-  // LA CREATURA sul TAVOLO OPERATORIO inclinato (con organi = enigma del corpo umano)
-  { const cx=7.4, cz=-10.4;
-    // gambe e telaio del lettino
-    for(const dx of [-.4,.4])for(const dz of [-.9,.9]){ const g=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.9,8),metallo); g.position.set(cx+dx,.45,cz+dz); scene.add(g); }
-    // piano inclinato (testa in alto) + creatura, in un gruppo ruotato
-    const g=new THREE.Group(); g.position.set(cx,.9,cz); g.rotation.x=-0.38; scene.add(g);
-    const lastra=new THREE.Mesh(new THREE.BoxGeometry(.95,.08,2.3),new THREE.MeshStandardMaterial({color:0x3a2a1c,roughness:.6})); g.add(lastra);
-    const pelle=new THREE.MeshStandardMaterial({color:0x93a578,roughness:.75});   // carnagione verdastra da creatura
-    const testa=new THREE.Mesh(new THREE.BoxGeometry(.34,.3,.32),pelle); testa.position.set(0,.16,.92); g.add(testa);
-    const fronte=new THREE.Mesh(new THREE.BoxGeometry(.35,.1,.33),pelle); fronte.position.set(0,.3,.9); g.add(fronte);   // fronte piatta
-    for(const sx of [-.2,.2]){ const bull=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.12,10),metallo); bull.position.set(sx,.05,.78); bull.rotation.z=Math.PI/2; g.add(bull); }  // bulloni al collo
-    const torso=new THREE.Mesh(new THREE.BoxGeometry(.5,.22,.9),pelle); torso.position.set(0,.13,.2); g.add(torso);
-    for(const sx of [-1,1]){ const braccio=new THREE.Mesh(new THREE.CylinderGeometry(.07,.06,.8,8),pelle); braccio.position.set(sx*.36,.1,.2); braccio.rotation.z=Math.PI/2*sx*.08+Math.PI/2; g.add(braccio);
-      const gamba=new THREE.Mesh(new THREE.CylinderGeometry(.09,.07,.85,8),pelle); gamba.position.set(sx*.14,.12,-.55); g.add(gamba); }
-    // TORACE APERTO con organi (respiratorio, circolatorio, digerente)
-    const cavita=new THREE.Mesh(new THREE.BoxGeometry(.34,.04,.5),new THREE.MeshStandardMaterial({color:0x5a2a2a,roughness:.6})); cavita.position.set(0,.24,.28); g.add(cavita);
-    for(const s of [-1,1]){ const pol=new THREE.Mesh(new THREE.SphereGeometry(.09,14,14),new THREE.MeshStandardMaterial({color:0xf2a6b0,roughness:.6})); pol.position.set(s*.09,.27,.36); pol.scale.set(.8,.7,1.1); g.add(pol); }
-    const cuore=new THREE.Mesh(new THREE.SphereGeometry(.07,14,14),new THREE.MeshStandardMaterial({color:0xc0392b,emissive:0x6a1410,emissiveIntensity:.4,roughness:.5})); cuore.position.set(0,.29,.26); cuore.scale.set(1,1.2,1); g.add(cuore);
-    const stomaco=new THREE.Mesh(new THREE.SphereGeometry(.08,14,14),new THREE.MeshStandardMaterial({color:0xd98a5a,roughness:.6})); stomaco.position.set(-.05,.27,.1); stomaco.scale.set(1,.8,.7); g.add(stomaco);
-    const intest=new THREE.Mesh(new THREE.TorusKnotGeometry(.07,.025,50,8,2,3),new THREE.MeshStandardMaterial({color:0xe0a06a,roughness:.6})); intest.position.set(0,.26,-.05); intest.scale.set(1,.5,.8); g.add(intest);
-    // cinghie di contenzione
-    for(const zz of [.4,-.1,-.6]){ const ci=new THREE.Mesh(new THREE.BoxGeometry(.56,.03,.09),new THREE.MeshStandardMaterial({color:0x2a1a10})); ci.position.set(0,.2,zz); g.add(ci); }
-    // elettrodo sopra la testa con scarica
-    const el=new THREE.Mesh(new THREE.ConeGeometry(.05,.2,10),metallo); el.position.set(cx,2.2,cz-.7); scene.add(el);
-    const scar=new THREE.Mesh(new THREE.CylinderGeometry(.005,.02,.5,4),new THREE.MeshBasicMaterial({color:0xbfe0ff})); scar.material.toneMapped=false; scar.position.set(cx,1.85,cz-.55); scene.add(scar);
-    const lc=new THREE.PointLight(0x9fd0ff,.6,5); lc.position.set(cx,1.9,cz-.5); scene.add(lc); neonLuci.push({l:lc,base:.5});
-    OSTACOLI.push({x0:cx-.65,x1:cx+.65,z0:cz-1.15,z1:cz+1.15});
-    const proxy=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.4,2.4),new THREE.MeshBasicMaterial({visible:false}));
-    proxy.position.set(cx,1.1,cz); proxy.userData={tipo:'quiz',quiz:QUIZ_CORPO,nome:'La creatura'}; scene.add(proxy); TARGETS.push(proxy); }
-  // PLASTICO DEL SISTEMA SOLARE su tavolo centrale
-  { const tx=5, tz=-9;
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,.07,32),new THREE.MeshStandardMaterial({color:0x2b3138,roughness:.5})); top.position.set(tx,.78,tz); scene.add(top);
-    const gambo=new THREE.Mesh(new THREE.CylinderGeometry(.08,.12,.78,12),new THREE.MeshStandardMaterial({color:0xb8c2cc,metalness:.5,roughness:.4})); gambo.position.set(tx,.39,tz); scene.add(gambo);
-    const sole=new THREE.Mesh(new THREE.SphereGeometry(.14,18,18),new THREE.MeshStandardMaterial({color:0xffcc33,emissive:0xffaa11,emissiveIntensity:.8})); sole.position.set(tx,.95,tz); scene.add(sole);
-    const soleL=new THREE.PointLight(0xffcc66,.5,3); soleL.position.set(tx,.98,tz); scene.add(soleL);
-    const pianeti=[[.24,.03,0x9a8878],[.33,.045,0xd9a066],[.42,.05,0x4a86d6],[.5,.038,0xc0553a],[.66,.09,0xd6a15a],[.8,.075,0xe6c988],[.9,.06,0x8fd6d6],[.98,.055,0x5a7fd6]];
-    pianeti.forEach((p,i)=>{ const anello=new THREE.Mesh(new THREE.TorusGeometry(p[0],.004,6,48),new THREE.MeshStandardMaterial({color:0x8fa0b0,transparent:true,opacity:.5}));
-        anello.position.set(tx,.95,tz); anello.rotation.x=Math.PI/2; scene.add(anello);
-      const ang=i*0.9, px=tx+Math.cos(ang)*p[0], pz=tz+Math.sin(ang)*p[0];
-      const pl=new THREE.Mesh(new THREE.SphereGeometry(p[1],12,12),new THREE.MeshStandardMaterial({color:p[2],roughness:.7})); pl.position.set(px,.95,pz); scene.add(pl);
-      const ped=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.03,6),new THREE.MeshStandardMaterial({color:0x8fa0b0})); ped.position.set(px,.93,pz); scene.add(ped); });
-    OSTACOLI.push({x0:tx-1.05,x1:tx+1.05,z0:tz-1.05,z1:tz+1.05});
-    const proxy=new THREE.Mesh(new THREE.BoxGeometry(2.1,1.4,2.1),new THREE.MeshBasicMaterial({visible:false}));
-    proxy.position.set(tx,1.0,tz); proxy.userData={tipo:'quiz',quiz:QUIZ_SOLARE,nome:'Il plastico del Sistema Solare'}; scene.add(proxy); TARGETS.push(proxy); }
-  // BANCONE con MICROSCOPIO e VETRINI (parete destra)
-  { const bx=8.2, bz=-7.6;
-    const base=new THREE.Mesh(new THREE.BoxGeometry(.8,.9,2.4),new THREE.MeshStandardMaterial({color:0x2f2216,roughness:.7})); base.position.set(bx,.45,bz); scene.add(base);
-    const top=new THREE.Mesh(new THREE.BoxGeometry(.82,.06,2.5),new THREE.MeshStandardMaterial({color:0x241a10,roughness:.6})); top.position.set(bx,.92,bz); scene.add(top);
-    const mBody=new THREE.MeshStandardMaterial({color:0x30363d,metalness:.5,roughness:.4});
-    const mBase=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.05,18),mBody); mBase.position.set(bx,.98,bz-.2); scene.add(mBase);
-    const braccio=new THREE.Mesh(new THREE.BoxGeometry(.05,.32,.05),mBody); braccio.position.set(bx+.07,1.16,bz-.2); braccio.rotation.z=.18; scene.add(braccio);
-    const tubo=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.24,14),mBody); tubo.position.set(bx-.02,1.3,bz-.2); tubo.rotation.x=.5; scene.add(tubo);
-    const piano=new THREE.Mesh(new THREE.BoxGeometry(.16,.02,.16),mBody); piano.position.set(bx,1.06,bz-.2); scene.add(piano);
-    // vetrini colorati allineati
-    const vc=[0xef8aa0,0x8fd67a,0x7ab6e6,0xe0c060];
-    vc.forEach((c,i)=>{ const v=new THREE.Mesh(new THREE.BoxGeometry(.16,.008,.05),new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.7}));
-      v.position.set(bx,.955,bz+.35+i*.13); scene.add(v); });
-    luce(bx-.6,1.7,bz,.4,3,0xeaf4ff);
-    OSTACOLI.push({x0:bx-.5,x1:bx+.5,z0:bz-1.25,z1:bz+1.25});
-    const proxy=new THREE.Mesh(new THREE.BoxGeometry(.7,1.0,1.0),new THREE.MeshBasicMaterial({visible:false}));
-    proxy.position.set(bx-.2,1.1,bz-.2); proxy.userData={tipo:'quiz',quiz:QUIZ_MICRO,nome:'Il microscopio'}; scene.add(proxy); TARGETS.push(proxy); }
-  // ---- ARREDI DA LABORATORIO GOTICO: alambicchi, libri, candelabri, teschi, baule, globo ----
-  { const vetroL=(c)=>new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.55,roughness:.15,emissive:c,emissiveIntensity:.12});
-    // candelabro con fiamma (registrato nel flicker delle torce)
-    const candelabro=(x,z)=>{ const st=new THREE.Mesh(new THREE.CylinderGeometry(.025,.05,.9,8),ottone); st.position.set(x,.75,z); scene.add(st);
-      const pi=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.03,10),ottone); pi.position.set(x,.02,z); scene.add(pi);
-      const fi=new THREE.Mesh(new THREE.ConeGeometry(.028,.1,8),new THREE.MeshBasicMaterial({color:0xffc040})); fi.material.toneMapped=false; fi.position.set(x,1.28,z); scene.add(fi);
-      const l=new THREE.PointLight(0xffb648,.45,4); l.position.set(x,1.3,z); scene.add(l); torceLuci.push({l,fiamma:fi,base:.45}); };
-    candelabro(4.4,-6.5); candelabro(6.6,-6.4);
-    // BANCONE ALCHEMICO (legno scuro) con alambicchi e ampolle borbottanti (parete sinistra)
-    { const base=new THREE.Mesh(new THREE.BoxGeometry(.75,.9,2.6),legnoScuro); base.position.set(1.7,.45,-7.6); scene.add(base);
-      const top=new THREE.Mesh(new THREE.BoxGeometry(.8,.06,2.7),new THREE.MeshStandardMaterial({color:0x241a10,roughness:.6})); top.position.set(1.7,.92,-7.6); scene.add(top);
-      // alambicco: pallone di vetro + collo
-      const pall=new THREE.Mesh(new THREE.SphereGeometry(.12,16,14),vetroL(0x8fd67a)); pall.position.set(1.7,1.08,-8.4); scene.add(pall);
-      const collo=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.2,10),vetroL(0xbfe6ff)); collo.position.set(1.7,1.28,-8.4); collo.rotation.z=.5; scene.add(collo);
-      // ampolle di colori diversi
-      const cc=[0xef6a8a,0x6aa8ef,0xf0c85a,0xb98aef];
-      cc.forEach((c,i)=>{ const amp=new THREE.Mesh(new THREE.CylinderGeometry(.05,.06,.18,12),vetroL(c)); amp.position.set(1.7,1.05,-7.5+i*.4); scene.add(amp); });
-      const l=new THREE.PointLight(0x8fd67a,.3,2.5); l.position.set(1.7,1.15,-8.4); scene.add(l); neonLuci.push({l,base:.28});
-      OSTACOLI.push({x0:1.25,x1:2.15,z0:-9.0,z1:-6.2}); }
-    // SCAFFALE con libri antichi e barattoli-campione (parete di fondo)
-    { const mens=new THREE.Mesh(new THREE.BoxGeometry(2.0,.05,.3),legnoScuro); for(const y of [1.35,1.85]){ const m=mens.clone(); m.position.set(4.0,y,-11.82); scene.add(m); }
-      const dorsi=[0x6b2b2b,0x2b3b6b,0x3b5b2b,0x6b5b2b,0x4b2b5b];
-      for(let r=0;r<2;r++)for(let i=0;i<7;i++){ const lib=new THREE.Mesh(new THREE.BoxGeometry(.07+Math.abs(Math.sin(i*2))*0.02,.26,.2),new THREE.MeshStandardMaterial({color:dorsi[(i+r)%5],roughness:.7}));
-        lib.position.set(3.2+i*.11,(r?1.5:1.0)+.13,-11.82); lib.rotation.z=(i===5?.15:0); scene.add(lib); }
-      // barattoli con "campioni"
-      for(let i=0;i<3;i++){ const bar=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.16,12),vetroL([0x9ad07a,0xd0a07a,0x7aa0d0][i])); bar.position.set(4.45+i*.18,1.93,-11.8); scene.add(bar); } }
-    // TESCHIO su una mensola
-    { const cranio=new THREE.Mesh(new THREE.SphereGeometry(.09,14,12),new THREE.MeshStandardMaterial({color:0xdcd6c4,roughness:.7})); cranio.position.set(5.6,1.42,-11.8); cranio.scale.set(1,1.05,1.1); scene.add(cranio);
-      const mand=new THREE.Mesh(new THREE.BoxGeometry(.11,.05,.09),new THREE.MeshStandardMaterial({color:0xdcd6c4})); mand.position.set(5.6,1.34,-11.77); scene.add(mand);
-      const mens=new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.22),legnoScuro); mens.position.set(5.6,1.3,-11.83); scene.add(mens); }
-    // GLOBO CELESTE d'ottone su treppiede
-    { const bx=5.5, bz=-6.5; for(let i=0;i<3;i++){ const a=i/3*Math.PI*2; const g=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.7,6),legnoScuro); g.position.set(bx+Math.cos(a)*.14,.35,bz+Math.sin(a)*.14); g.rotation.x=Math.cos(a)*.2; g.rotation.z=Math.sin(a)*.2; scene.add(g); }
-      const anello=new THREE.Mesh(new THREE.TorusGeometry(.2,.014,8,28),ottone); anello.position.set(bx,.85,bz); anello.rotation.x=.4; scene.add(anello);
-      const c=mkCanvas(128,64),g=c.getContext('2d'); g.fillStyle='#1a2440'; g.fillRect(0,0,128,64); g.fillStyle='#d8c07a'; for(let i=0;i<40;i++) g.fillRect(Math.random()*128,Math.random()*64,1.5,1.5);
-      const globo=new THREE.Mesh(new THREE.SphereGeometry(.18,20,16),new THREE.MeshStandardMaterial({map:tex(c),roughness:.5,metalness:.2})); globo.position.set(bx,.85,bz); scene.add(globo);
-      OSTACOLI.push({x0:bx-.3,x1:bx+.3,z0:bz-.3,z1:bz+.3}); }
-    // BAULE nell'angolo
-    { const x=8.4,z=-11.5; const b=new THREE.Mesh(new THREE.BoxGeometry(.8,.45,.5),legnoScuro); b.position.set(x,.22,z); scene.add(b);
-      const cop=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,.8,12,1,false,0,Math.PI),new THREE.MeshStandardMaterial({color:0x3a2b1a,roughness:.7})); cop.rotation.z=Math.PI/2; cop.position.set(x,.45,z); scene.add(cop);
-      for(const sx of [-.3,.3]){ const f=new THREE.Mesh(new THREE.BoxGeometry(.03,.7,.52),metallo); f.position.set(x+sx,.32,z); scene.add(f); }
-      OSTACOLI.push({x0:x-.45,x1:x+.45,z0:z-.35,z1:z+.35}); }
-    // RAGNATELE agli angoli
-    ragnatela(8.83,2.55,-11.75,-Math.PI/2,1.0); ragnatela(1.17,2.5,-6.4,Math.PI/2,0.85);
-  }
+  // ---- PLAFONIERE quadrate a soffitto (luce calda) ----
+  const plafo=(z)=>{ const p=new THREE.Mesh(new THREE.PlaneGeometry(.55,.55),
+      new THREE.MeshBasicMaterial({color:0xfff4dc})); p.material.toneMapped=false; p.rotation.x=Math.PI/2; p.position.set(0,2.985,z); scene.add(p);
+    const l=new THREE.PointLight(0xfff0d0,.78,8); l.position.set(0,2.8,z); scene.add(l); };
+  for(let z=-4.6; z>=-12.4; z-=2.6) plafo(z);
+  // luce diffusa SOLO nel corridoio (PointLight con raggio limitato: il laboratorio resta cupo).
+  // NB: una HemisphereLight illuminerebbe tutta la scena — la sua posizione è ininfluente.
+  for(let z=-4.4; z>=-12.6; z-=2.6){
+    const f=new THREE.PointLight(0xfff6e8,.26,5.5); f.position.set(0,1.6,z); scene.add(f); }
+
+  // ---- FINESTRE con davanzale e RADIATORE GIALLO sotto (parete destra) ----
+  const finestraRad=(zc)=>{
+    const cor=new THREE.Mesh(new THREE.BoxGeometry(.08,1.15,1.25),matTelaio); cor.position.set(CORR.x1-.02,1.95,zc); scene.add(cor);
+    const c=mkCanvas(96,96),g=c.getContext('2d');                         // veneziana + luce esterna
+    const gr=g.createLinearGradient(0,0,0,96); gr.addColorStop(0,'#dfe9f2'); gr.addColorStop(1,'#c9d8e4'); g.fillStyle=gr; g.fillRect(0,0,96,96);
+    g.fillStyle='rgba(120,140,160,.35)'; for(let i=0;i<96;i+=6) g.fillRect(0,i,96,3);
+    const v=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.0),new THREE.MeshBasicMaterial({map:tex(c)})); v.rotation.y=-Math.PI/2; v.position.set(CORR.x1-.07,1.95,zc); scene.add(v);
+    const dav=new THREE.Mesh(new THREE.BoxGeometry(.16,.04,1.35),new THREE.MeshStandardMaterial({color:0xf4f2ec,roughness:.6})); dav.position.set(CORR.x1-.08,1.34,zc); scene.add(dav);
+    // radiatore giallo a elementi
+    const rad=new THREE.Group(); rad.position.set(CORR.x1-.10,.62,zc); scene.add(rad);
+    const matRad=new THREE.MeshStandardMaterial({color:GIALLO,roughness:.5,metalness:.2});
+    for(let i=0;i<14;i++){ const el=new THREE.Mesh(new THREE.BoxGeometry(.06,.62,.045),matRad); el.position.set(0,0,-.42+i*.065); rad.add(el); }
+    for(const y of [-.28,.28]){ const t=new THREE.Mesh(new THREE.BoxGeometry(.05,.04,.95),matRad); t.position.set(0,y,0); rad.add(t); }
+    OSTACOLI.push({x0:CORR.x1-.22,x1:CORR.x1,z0:zc-.55,z1:zc+.55});
+  };
+  finestraRad(-6.2); finestraRad(-11.0);
+
+  // ---- PORTE delle aule lungo il corridoio (chiuse: sono scenografia) ----
+  const portaChiusa=(x,zc,etichetta)=>{
+    const dir=x<0?1:-1;
+    const tel=new THREE.Mesh(new THREE.BoxGeometry(.10,2.15,1.02),matTelaio); tel.position.set(x+dir*.05,1.07,zc); scene.add(tel);
+    const anta=new THREE.Mesh(new THREE.BoxGeometry(.05,2.05,.92),new THREE.MeshStandardMaterial({color:0xe9e4d8,roughness:.65})); anta.position.set(x+dir*.09,1.03,zc); scene.add(anta);
+    const mani=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.13),new THREE.MeshStandardMaterial({color:0x2e2e30,metalness:.6,roughness:.35})); mani.position.set(x+dir*.13,1.02,zc+.34); scene.add(mani);
+    if(etichetta){                                                     // targa bianca con testo rosso (come "Laboratorio INFORMATICA")
+      const c=mkCanvas(256,96),g=c.getContext('2d'); g.fillStyle='#fbfbf8'; g.fillRect(0,0,256,96);
+      g.strokeStyle='#c9c4b8'; g.lineWidth=4; g.strokeRect(2,2,252,92);
+      g.fillStyle='#5a5a5a'; g.font='500 20px Segoe UI,Arial'; g.textAlign='center'; g.fillText('Laboratorio',128,42);
+      g.fillStyle='#c0392b'; g.font='bold 30px Segoe UI,Arial'; g.fillText(etichetta,128,74);
+      const t=new THREE.Mesh(new THREE.PlaneGeometry(.42,.16),new THREE.MeshBasicMaterial({map:tex(c)}));
+      t.rotation.y=dir>0?Math.PI/2:-Math.PI/2; t.position.set(x+dir*.055,2.0,zc+.85); scene.add(t);
+    }
+  };
+  portaChiusa(CORR.x0,-5.2,'INFORMATICA'); portaChiusa(CORR.x0,-9.0,null); portaChiusa(CORR.x1,-8.0,null);
+
+  // ---- PLANIMETRIA DI EVACUAZIONE: foglio A3 orizzontale (0,42 x 0,297 m) in cornice ----
+  { const zc=-7.6, x=CORR.x0;
+    const c=mkCanvas(420,297),g=c.getContext('2d'); g.fillStyle='#fdfdfa'; g.fillRect(0,0,420,297);
+    g.strokeStyle='#7a7a7a'; g.lineWidth=2;                                  // pianta schematica di aule
+    g.strokeRect(28,40,364,200);
+    for(let i=0;i<7;i++){ g.strokeRect(34+i*50,46,46,70); g.strokeRect(34+i*50,150,46,84); }
+    g.strokeStyle='#1f7a3a'; g.lineWidth=3; g.beginPath(); g.moveTo(60,130); g.lineTo(370,130); g.stroke();   // percorso di esodo
+    g.fillStyle='#1f7a3a'; g.beginPath(); g.moveTo(370,130); g.lineTo(356,122); g.lineTo(356,138); g.fill();
+    g.fillStyle='#333'; g.font='bold 15px Arial'; g.fillText('PIANTA DI EVACUAZIONE',28,270); g.font='11px Arial'; g.fillText('VOI SIETE QUI',300,270);
+    g.fillStyle='#c0392b'; g.beginPath(); g.arc(288,266,5,0,7); g.fill();
+    const cor=new THREE.Mesh(new THREE.BoxGeometry(.03,.32,.45),new THREE.MeshStandardMaterial({color:0xb8bcc0,metalness:.5,roughness:.4}));
+    cor.position.set(x+.025,1.62,zc); scene.add(cor);
+    const fo=new THREE.Mesh(new THREE.PlaneGeometry(.42,.297),new THREE.MeshBasicMaterial({map:tex(c)}));   // A3 orizzontale
+    fo.rotation.y=Math.PI/2; fo.position.set(x+.045,1.62,zc); scene.add(fo); }
+
+  // ---- ESTINTORE + cartello, INTERRUTTORI, QUADRETTI ----
+  { const zc=-10.2, x=CORR.x0;
+    const est=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.42,14),new THREE.MeshStandardMaterial({color:0xc0392b,roughness:.5}));
+    est.position.set(x+.12,1.0,zc); scene.add(est);
+    const ug=new THREE.Mesh(new THREE.BoxGeometry(.03,.14,.03),new THREE.MeshStandardMaterial({color:0x2a2a2a})); ug.position.set(x+.12,1.28,zc); scene.add(ug);
+    const c=mkCanvas(64,64),g=c.getContext('2d'); g.fillStyle='#c0392b'; g.fillRect(0,0,64,64); g.fillStyle='#fff'; g.font='bold 30px Arial'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('E',32,34);
+    const cart=new THREE.Mesh(new THREE.PlaneGeometry(.16,.16),new THREE.MeshBasicMaterial({map:tex(c)})); cart.rotation.y=Math.PI/2; cart.position.set(x+.03,1.55,zc); scene.add(cart); }
+  // placche interruttori (grigio scuro, come nel video)
+  for(const [x,zc] of [[CORR.x0,-4.2],[CORR.x0,-4.5],[CORR.x1,-7.2]]){
+    const p=new THREE.Mesh(new THREE.PlaneGeometry(.12,.09),new THREE.MeshStandardMaterial({color:0x4a4a4c,roughness:.5}));
+    p.rotation.y=x<0?Math.PI/2:-Math.PI/2; p.position.set(x+(x<0?.02:-.02),1.15,zc); scene.add(p); }
+  // quadretti/disegni appesi
+  const quadretto=(x,zc,col)=>{ const c=mkCanvas(80,100),g=c.getContext('2d'); g.fillStyle='#fbf8f0'; g.fillRect(0,0,80,100);
+    g.fillStyle=col; g.fillRect(10,12,60,54); g.fillStyle='rgba(255,255,255,.5)'; g.beginPath(); g.arc(30,32,10,0,7); g.fill();
+    g.fillStyle='#888'; g.font='8px Arial'; g.textAlign='center'; g.fillText('classe 2A',40,84);
+    const co=new THREE.Mesh(new THREE.BoxGeometry(.02,.30,.24),new THREE.MeshStandardMaterial({color:0xd8cfae,roughness:.7})); co.position.set(x+(x<0?.018:-.018),1.7,zc); scene.add(co);
+    const q=new THREE.Mesh(new THREE.PlaneGeometry(.22,.28),new THREE.MeshBasicMaterial({map:tex(c)}));
+    q.rotation.y=x<0?Math.PI/2:-Math.PI/2; q.position.set(x+(x<0?.032:-.032),1.7,zc); scene.add(q); };
+  quadretto(CORR.x1,-5.6,'#3b6fb5'); quadretto(CORR.x0,-12.2,'#c98a2e');
+
+  // ---- USCITA in fondo: porta a vetri + cartello verde luminoso ----
+  { const zc=CORR.z0+.06;
+    const tel=new THREE.Mesh(new THREE.BoxGeometry(1.25,2.2,.09),matTelaio); tel.position.set(0,1.1,zc); scene.add(tel);
+    const vetro=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.95),new THREE.MeshStandardMaterial({color:0xcfe0ea,transparent:true,opacity:.55,roughness:.15}));
+    vetro.position.set(0,1.08,zc+.06); scene.add(vetro);
+    const c=mkCanvas(256,96),g=c.getContext('2d'); g.fillStyle='#1f7a3a'; g.fillRect(0,0,256,96);
+    g.fillStyle='#fff'; g.font='bold 34px Segoe UI,Arial'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('USCITA',128,50);
+    g.fillRect(24,34,22,14); g.beginPath(); g.moveTo(46,28); g.lineTo(64,41); g.lineTo(46,54); g.fill();        // freccia
+    const targa=new THREE.Mesh(new THREE.PlaneGeometry(.7,.26),new THREE.MeshBasicMaterial({map:tex(c)})); targa.material.toneMapped=false;
+    targa.position.set(0,2.45,zc+.05); scene.add(targa);
+    const lu=new THREE.PointLight(0x9fe6b8,.5,5); lu.position.set(0,2.3,zc+.5); scene.add(lu); }
 }
 
 // ---- HUD / overlay ----
@@ -2295,11 +1958,10 @@ function apriEnigma(e){
   setTimeout(()=>$('enInput').focus(),260);
 }
 function chiudiEnigma(){
-  quizCorrente=null;
   $('enigma').style.display='none'; G.overlay=false;
   $('enigma').classList.remove('pericolo');
   fermaGalassia();
-  if(G.gioco && !G.finita) canvasEl.requestPointerLock();
+  if(G.gioco && !G.finita) bloccaMouse();
 }
 // ---- mini-galassia dietro la card dell'enigma ----
 let galAnim=null, galStars=[];
@@ -2378,7 +2040,6 @@ function suonoTemporale(){
   }catch(e){ sfxAttivo=false; }
 }
 function verificaRisposta(){
-  if(quizCorrente){ verificaQuiz(); return; }
   const e=ENIGMI[G.tappa-1];
   if(e.cifrato && !G.inv.cifrario){
     $('enFeedback').textContent='Messaggio cifrato: prendi prima il CIFRARIO 3D dal bancone della stampante.';
@@ -2403,7 +2064,6 @@ function verificaRisposta(){
   }
 }
 function continuaDopoEnigma(){
-  if(quizCorrente){ quizCorrente=null; chiudiEnigma(); return; }
   if(G.avanzaAllaChiusura){
     G.avanzaAllaChiusura=false;
     if(G.tappa<N_TAPPE){ G.tappa++; aggiornaHUD(); splash('Enigma risolto!','#8fc0ff'); }
@@ -2446,12 +2106,14 @@ function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al 
   aggiornaHUD();
 }
 function avviaGameplay(){
+  if(TOUCH){ const t=$('tocTip'); t.innerHTML='<b>Dito sinistro</b>: muoviti &middot; <b>dito destro</b>: guardati intorno &middot; <b>tocca</b> un oggetto o premi <b>USA</b>';
+    t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),9000); }
   G.intro=false; $('btnSalta').style.display='none';
   G.gioco=true; G.tappa=1; G.finita=false;
   camera.position.copy(INTRO_LAND); yaw=Math.PI/2; pitch=0;
   camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
   aggiornaHUD(); aggiornaInventario();
-  canvasEl.requestPointerLock();
+  bloccaMouse();
 }
 function vittoria(){
   if(G.finita) return;
@@ -2460,25 +2122,82 @@ function vittoria(){
   $('vittoria').style.display='flex';
 }
 
+
+// ---- COMANDI TOUCH (iPad / telefono) --------------------------------------
+// Su iOS non esistono Pointer Lock né tastiera: servono joystick virtuale,
+// trascinamento per guardarsi intorno e un tasto USA per interagire.
+// ?touch=1 forza i comandi touch anche da desktop (utile per provarli senza iPad)
+const TOUCH = location.search.includes('touch=1') || matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints>0);
+if(TOUCH) document.documentElement.classList.add('touch');
+function bloccaMouse(){ if(!TOUCH && canvasEl.requestPointerLock) canvasEl.requestPointerLock(); }
+const joy={attivo:false,id:null,cx:0,cy:0,dx:0,dy:0};      // dx,dy in [-1..1]
+const look={id:null,x:0,y:0,mosso:false};
+if(TOUCH){
+  const base=$('joyBase'), knob=$('joyKnob'), R=52;
+  const dentroGioco=()=> G.gioco && !G.overlay && !G.finita;
+  canvasEl.addEventListener('touchstart',e=>{
+    if(!dentroGioco()) return;
+    for(const t of e.changedTouches){
+      if(t.clientX < innerWidth*0.45 && !joy.attivo){       // metà sinistra: joystick
+        joy.attivo=true; joy.id=t.identifier; joy.cx=t.clientX; joy.cy=t.clientY; joy.dx=joy.dy=0;
+        base.style.left=(t.clientX-66)+'px'; base.style.top=(t.clientY-66)+'px'; base.style.display='block';
+        knob.style.transform='translate(0,0)';
+      } else if(look.id===null){                            // metà destra: sguardo
+        look.id=t.identifier; look.x=t.clientX; look.y=t.clientY; look.mosso=false;
+      }
+    }
+    e.preventDefault();
+  },{passive:false});
+  canvasEl.addEventListener('touchmove',e=>{
+    for(const t of e.changedTouches){
+      if(t.identifier===joy.id){
+        let dx=t.clientX-joy.cx, dy=t.clientY-joy.cy;
+        const d=Math.hypot(dx,dy); if(d>R){ dx*=R/d; dy*=R/d; }
+        joy.dx=dx/R; joy.dy=dy/R;
+        knob.style.transform='translate('+dx.toFixed(0)+'px,'+dy.toFixed(0)+'px)';
+      } else if(t.identifier===look.id){
+        yaw   -= (t.clientX-look.x)*0.0055;                 // stessa sensibilità del mouse, tarata al dito
+        pitch -= (t.clientY-look.y)*0.0055;
+        pitch=Math.max(-1.2,Math.min(1.2,pitch));
+        if(Math.abs(t.clientX-look.x)+Math.abs(t.clientY-look.y)>6) look.mosso=true;
+        look.x=t.clientX; look.y=t.clientY;
+      }
+    }
+    e.preventDefault();
+  },{passive:false});
+  const finetocco=e=>{
+    for(const t of e.changedTouches){
+      if(t.identifier===joy.id){ joy.attivo=false; joy.id=null; joy.dx=joy.dy=0; $('joyBase').style.display='none'; }
+      else if(t.identifier===look.id){
+        if(!look.mosso && G.mirato && dentroGioco()) usaMirato();   // tap secco = interagisci
+        look.id=null;
+      }
+    }
+  };
+  canvasEl.addEventListener('touchend',finetocco);
+  canvasEl.addEventListener('touchcancel',finetocco);
+  $('btnUsa').addEventListener('click',e=>{ e.preventDefault(); if(G.mirato && dentroGioco()) usaMirato(); });
+}
+
 // ---- input ----
 addEventListener('keydown',e=>{
   tasti[e.key.toLowerCase()]=true;
   if(G.gioco && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
   const galMacAperta = $('galassiaMac').style.display==='flex';
-  const tastieraAperta = $('tastieraOv').style.display==='flex';
   if(e.key==='Enter'){
-    if(galMacAperta || tastieraAperta){ /* qui l'Invio non fa nulla: si usano i tasti/il mouse */ }
+    if(galMacAperta){ /* nella galassia delle parole l'Invio non fa nulla */ }
     else if(G.overlay && $('enDecoy').style.display==='block'){ chiudiEnigma(); }
     else if(G.overlay && $('enEsito').style.display==='block'){ continuaDopoEnigma(); }
     else if(G.overlay){ verificaRisposta(); }
-    else if(G.gioco && document.pointerLockElement===canvasEl && G.mirato){ usaMirato(); }
+    else if(G.gioco && (TOUCH||document.pointerLockElement===canvasEl) && G.mirato){ usaMirato(); }
   }
-  if(e.key==='Escape' && G.overlay){ tastieraAperta ? chiudiTastiera() : (galMacAperta ? chiudiGalassiaMac() : chiudiEnigma()); }
+  if(e.key==='Escape' && G.overlay){ galMacAperta ? chiudiGalassiaMac() : chiudiEnigma(); }
 });
 addEventListener('keyup',e=>{ tasti[e.key.toLowerCase()]=false; });
 canvasEl.addEventListener('click',()=>{
+  if(TOUCH) return;                       // su touch l'interazione avviene con tap/tasto USA
   if(G.overlay || G.finita || !G.gioco) return;
-  if(document.pointerLockElement!==canvasEl){ canvasEl.requestPointerLock(); return; }
+  if(!TOUCH && document.pointerLockElement!==canvasEl){ bloccaMouse(); return; }
   usaMirato();
 });
 addEventListener('mousemove',e=>{
@@ -2513,24 +2232,7 @@ const YT_TEMPORALE='_p5iYozFgrs';    // suono del temporale (riprodotto a raffic
 const YT_MATRIX='i_8RBP20yj8';       // musica dedicata alla Visione Matrix (parte al clic sulla mela)
 let ytPlayer=null, ytPronto=false, musicaOn=true, musicaAvviata=false;
 let matrixPlayer=null, matrixPronto=false;
-// Brani dedicati alle due aule: entrando cambia il sottofondo; nel lab/corridoio torna quello base.
-const YT_MUS_MUSICA='hWaNoK3gN6M';    // aula di musica
-const YT_MUS_SCIENZE='FbHX3fQ2jmg';   // laboratorio di scienze (Frankenstein Junior)
 let branoCorrente=YT_MUSICA;
-function ambienteBrano(){
-  const p=camera.position;
-  if(p.z<-5.75 && p.x<-1) return YT_MUS_MUSICA;    // aula di musica (sinistra)
-  if(p.z<-5.75 && p.x>1)  return YT_MUS_SCIENZE;   // laboratorio di scienze (destra)
-  return YT_MUSICA;                                 // lab / corridoio: sottofondo base
-}
-function aggiornaAmbiente(){
-  if(!ytPronto || matrixOn) return;
-  const b=ambienteBrano();
-  if(b===branoCorrente) return;
-  branoCorrente=b;
-  try{ ytPlayer.loadVideoById(b); ytPlayer.setVolume(32);
-    if(!musicaOn) setTimeout(()=>{ try{ytPlayer.pauseVideo();}catch(_){} },400); }catch(e){}
-}
 // Rete di sicurezza autoplay: se al clic "Inizia" l'API YT non era ancora pronta,
 // il retry di onReady cade fuori da un gesto utente e il browser blocca il play.
 // Qui riprovo ad ogni gesto (clic/tasto) finché il sottofondo non parte davvero.
@@ -2587,7 +2289,7 @@ $('btnRicomincia').addEventListener('click',()=>location.reload());
 // info / regole
 (function(){
   const apri=()=>{ if(document.pointerLockElement) document.exitPointerLock(); $('regole').style.display='flex'; segBuf=''; };
-  const chiudi=()=>{ $('regole').style.display='none'; if(G.gioco && !G.overlay && !G.finita) canvasEl.requestPointerLock(); };
+  const chiudi=()=>{ $('regole').style.display='none'; if(G.gioco && !G.overlay && !G.finita) bloccaMouse(); };
   $('btnInfo').addEventListener('click',apri);
   $('btnChiudiRegole').addEventListener('click',chiudi);
 })();
@@ -2609,10 +2311,9 @@ function accessoSegreto(){
   }
   G.serraturaPronta=true; G.inv.chiave=true;       // sblocca la porta
   if(PORTA_USCITA){ PORTA_USCITA.aperta=true; PORTA_USCITA.ang=-1.35; PORTA_USCITA.cardine.rotation.y=-1.35; }
-  camera.position.set(0,1.5,-4.6); yaw=0; pitch=0; camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
-  G.uscito=true;
-  splash('Shall we play a game? Accesso «Joshua» — sei nel corridoio.','#8fc0ff');
-  canvasEl.requestPointerLock();
+  camera.position.set(PORTA_X,1.5,-1.6); yaw=0; pitch=0; camera.rotation.order='YXZ'; camera.rotation.set(pitch,yaw,0);
+  splash('Shall we play a game? Accesso «Joshua» — la porta è aperta.','#8fc0ff');
+  bloccaMouse();
 }
 // glossario (cerca la soluzione agli enigmi)
 (function(){
@@ -2625,7 +2326,7 @@ function accessoSegreto(){
   }
   const apri=()=>{ if(document.pointerLockElement) document.exitPointerLock();
     $('glosSearch').value=''; render(''); $('glossario').style.display='flex'; setTimeout(()=>$('glosSearch').focus(),60); };
-  const chiudi=()=>{ $('glossario').style.display='none'; if(G.gioco && !G.overlay && !G.finita) canvasEl.requestPointerLock(); };
+  const chiudi=()=>{ $('glossario').style.display='none'; if(G.gioco && !G.overlay && !G.finita) bloccaMouse(); };
   $('btnGlossario').addEventListener('click',apri);
   $('btnChiudiGlos').addEventListener('click',chiudi);
   $('glosSearch').addEventListener('input',e=>render(e.target.value));
@@ -2749,7 +2450,7 @@ function apriGalassiaMac(){
 }
 function chiudiGalassiaMac(){
   $('galassiaMac').style.display='none'; fermaGalMacBg(); G.overlay=false;
-  if(G.gioco && !G.finita) canvasEl.requestPointerLock();
+  if(G.gioco && !G.finita) bloccaMouse();
 }
 function avviaGalMacBg(){
   const cv=$('galMacBg'); if(!cv) return; const ctx=cv.getContext('2d');
@@ -2838,13 +2539,16 @@ function animate(){
     if(tasti['arrowdown']||tasti['s']) nuova.addScaledVector(dir,-v);
     if(tasti['arrowleft']||tasti['a']) nuova.addScaledVector(destra,-v);
     if(tasti['arrowright']||tasti['d']) nuova.addScaledVector(destra,v);
+    if(TOUCH && (joy.dx||joy.dy)){         // joystick virtuale: su = avanti, giù = indietro
+      nuova.addScaledVector(dir,-joy.dy*v*1.35);
+      nuova.addScaledVector(destra, joy.dx*v*1.35);
+    }
     // collisioni multi-stanza: resta dentro una zona calpestabile e fuori dagli arredi; se bloccato, scivola su un asse
     const ok=(nx,nz)=>posValida(nx,nz)&&!bloccato(nx,nz);
     if(ok(nuova.x,nuova.z)) camera.position.copy(nuova);
     else if(ok(nuova.x,camera.position.z)) camera.position.x=nuova.x;
     else if(ok(camera.position.x,nuova.z)) camera.position.z=nuova.z;
     camera.position.y=1.5;
-    aggiornaAmbiente();
     // mira ai Mac
     camera.updateMatrixWorld();
     raycaster.setFromCamera({x:0,y:0},camera);
@@ -2854,35 +2558,24 @@ function animate(){
     const chiave=m?((m.tipo||'mac')+':'+(m.macNum!=null?m.macNum:m.pickup||'porta')):null;
     if(chiave!==G._miratoKey){
       G._miratoKey=chiave; G.mirato=m; evidenziaMac(macNum);
-      if(!m){ $('hint').style.display='none'; }
-      else { $('hint').style.display='block';
+      if(!m){ $('hint').style.display='none'; $('btnUsa').classList.remove('on'); }
+      else { $('hint').style.display='block'; $('btnUsa').classList.add('on');
         if(m.tipo==='pickup') $('hint').textContent='Prendi '+(m.pickup==='cifrario'?'il Cifrario 3D':'la Chiave 3D')+' — [clic] o [Invio]';
         else if(m.tipo==='lego') $('hint').textContent='Tocca la mela dell’omino — [clic] o [Invio]';
         else if(m.tipo==='macbook') $('hint').textContent='MacBook di Andrea — entra nella galassia delle parole [clic] o [Invio]';
         else if(m.tipo==='porta') $('hint').textContent='Porta del laboratorio — [clic] o [Invio]';
-        else if(m.tipo==='quiz') $('hint').textContent=m.nome+' — enigma [clic] o [Invio]';
-        else if(m.tipo==='tastiera') $('hint').textContent=m.nome+' — suona [clic] o [Invio]';
         else $('hint').textContent=(macNum===0?'Cattedra (Prof)':'Mac '+macNum)+' — [clic] o [Invio] per accedere';
       }
     }
-    // primo passaggio nel corridoio: benvenuto (niente più fine-gioco forzata: si esplora)
-    if(PORTA_USCITA && PORTA_USCITA.aperta && !G.uscito && camera.position.z<-3.6){
-      G.uscito=true;
-      splash('Sei nel corridoio! A sinistra l’AULA DI MUSICA, a destra il LABORATORIO DI SCIENZE','#8fc0ff');
-    }
-    // ESCAPE ROOM: appena entri in un'aula non ancora risolta, la porta si sigilla dietro di te
-    const stDentro=stanzaDentro(camera.position.x,camera.position.z);
-    if(stDentro) sigillaAula(stDentro);
+    // FUGA RIUSCITA: superata la soglia si è nel corridoio → il gioco finisce
+    if(PORTA_USCITA && PORTA_USCITA.aperta && camera.position.z<-4.2) vittoria();
   } else {
-    $('hint').style.display='none'; G.mirato=null; G._miratoKey=null;
+    $('hint').style.display='none'; G.mirato=null; G._miratoKey=null; $('btnUsa').classList.remove('on');
   }
   // animazione apertura porta della fuga
   if(PORTA_USCITA && PORTA_USCITA.aperta && PORTA_USCITA.ang>-1.35){
     PORTA_USCITA.ang-=dt*1.7; PORTA_USCITA.cardine.rotation.y=PORTA_USCITA.ang;
   }
-  // animazione porte delle aule (verso il target: chiusa=0, aperta=-1.4)
-  for(const st of ['musica','scienze']){ const p=AULA[st].porta;
-    if(p){ const d=p.target-p.cardine.rotation.y; if(Math.abs(d)>0.008) p.cardine.rotation.y+=d*Math.min(1,dt*4.5); } }
   renderer.render(scene,camera);
 }
 aggiornaHUD();
