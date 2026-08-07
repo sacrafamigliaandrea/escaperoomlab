@@ -816,15 +816,29 @@ const matLegno=new THREE.MeshStandardMaterial({map:legnoTex,roughness:.55});
   pav.rotation.x=-Math.PI/2; scene.add(pav);
   const soff=new THREE.Mesh(new THREE.PlaneGeometry(16,6.7),matSoffitto);
   soff.rotation.x=Math.PI/2; soff.position.y=3.0; scene.add(soff);
+  // fascia arancione sul soffitto: attraversa l'aula in corrispondenza della BUSSOLA CENTRALE (x=-0.5)
+  { const fascia=new THREE.Mesh(new THREE.PlaneGeometry(1.9,6.7),matArancio);
+    fascia.rotation.x=Math.PI/2; fascia.position.set(-0.5,2.985,0); scene.add(fascia); }
   const mkParete=(w,h,mat)=>new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
   // parete porte (z=-3.35) a SEGMENTI: lascia un varco sulla porta della fuga (x=-0.5) così, aperta la porta,
   // si vede davvero il corridoio dietro. DoubleSide: visibile anche dal lato corridoio.
   const matMuroDS=new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:.95,side:THREE.DoubleSide});
-  { const segSx=mkParete(7.25,3.0,matMuroDS); segSx.position.set(-4.375,1.5,-3.35); scene.add(segSx);   // da x=-8 a x=-1.25
-    const segDx=mkParete(7.75,3.0,matMuroDS); segDx.position.set(4.125,1.5,-3.35); scene.add(segDx); }  // da x=0.25 a x=8 (include la porta 6.5, che resta chiusa)
+  // Le due porte hanno la BUSSOLA RIENTRANTE (dalla planimetria: tasca nello spessore del muro).
+  // La parete si apre in corrispondenza dei due vani; spalle, cielino e architrave li chiudono.
+  const BUS={dep:.60, hw:.63};                               // profondità 60 cm (uguale al bancone) e semi-larghezza del vano
+  { const segSx =mkParete(6.87,3.0,matMuroDS); segSx.position.set(-4.565,1.5,-3.35); scene.add(segSx);  // -8 → -1.13
+    const segMid=mkParete(5.74,3.0,matMuroDS); segMid.position.set(3.00,1.5,-3.35); scene.add(segMid); // 0.13 → 5.87
+    const segDx =mkParete(0.87,3.0,matMuroDS); segDx.position.set(7.565,1.5,-3.35); scene.add(segDx); }// 7.13 → 8
   // (le uniche pareti arancioni sono le due corte di fondo)
-  const pFin=mkParete(16,3.0,matBianco); pFin.position.set(0,1.5,3.35); pFin.rotation.y=Math.PI; scene.add(pFin);
-  const pFondo=mkParete(6.7,3.0,matArancio); pFondo.position.set(8,1.5,0); pFondo.rotation.y=-Math.PI/2; scene.add(pFondo);
+  // SPIGOLO ARROTONDATO (dal vero, foto IMG_4967 + arco in planimetria): la parete arancione
+  // con la grande tastiera (x=+8, lato bancone stampante) si raccorda con una curva alla
+  // parete delle finestre. Le due pareti si accorciano e il quarto di cilindro chiude l'angolo.
+  const RC=0.9, CX=8-RC, CZ=3.35-RC;                       // centro della curva
+  const pFin=mkParete(16-RC,3.0,matBianco); pFin.position.set(-RC/2,1.5,3.35); pFin.rotation.y=Math.PI; scene.add(pFin);
+  const pFondo=mkParete(6.7-RC,3.0,matArancio); pFondo.position.set(8,1.5,-RC/2); pFondo.rotation.y=-Math.PI/2; scene.add(pFondo);
+  { const curva=new THREE.Mesh(new THREE.CylinderGeometry(RC,RC,3.0,26,1,true,0,Math.PI/2),
+      new THREE.MeshStandardMaterial({color:0xe8721c,roughness:.9,side:THREE.DoubleSide}));
+    curva.position.set(CX,1.5,CZ); scene.add(curva); }
   const pIn=mkParete(6.7,3.0,matArancio); pIn.position.set(-8,1.5,0); pIn.rotation.y=Math.PI/2; scene.add(pIn);
   // plafoniere
   for(const x of [-6,-2,2,6]){
@@ -835,24 +849,50 @@ const matLegno=new THREE.MeshStandardMaterial({map:legnoTex,roughness:.55});
   // due porte BIANCHE sulla parete z=-3.35: un battente grande più un pezzetto
   const matPorta=new THREE.MeshStandardMaterial({color:0xf6f4ef,roughness:.7});
   const matTelaio=new THREE.MeshStandardMaterial({color:0xd8d4cc,roughness:.7});
+  const zAnta=-3.35+BUS.dep-.06;                              // l'anta sta sul filo INTERNO del vano (lato aula)
   for(const px of [6.5,-0.5]){
-    const telaio=new THREE.Mesh(new THREE.BoxGeometry(1.42,2.15,.08),matTelaio);
-    telaio.position.set(px,1.07,-3.31); scene.add(telaio);
+    // ---- BUSSOLA A TUTTA ALTEZZA (foto IMG_4950): intradosso arancione, telaio scuro
+    //      dal pavimento al soffitto, porta in basso e SOPRALUCE A VETRO sopra ----
+    for(const sx of [-1,1]){                                 // spalle (intradosso del vano), a tutta altezza
+      const sp=new THREE.Mesh(new THREE.PlaneGeometry(BUS.dep,3.0),
+        new THREE.MeshStandardMaterial({color:0xe8721c,roughness:.9,side:THREE.DoubleSide}));
+      sp.rotation.y=sx>0?-Math.PI/2:Math.PI/2;
+      sp.position.set(px+sx*BUS.hw, 1.5, -3.35+BUS.dep/2); scene.add(sp);
+    }
+    const ciel=new THREE.Mesh(new THREE.PlaneGeometry(BUS.hw*2,BUS.dep),   // cielo del vano, a 3 m
+      new THREE.MeshStandardMaterial({color:0xf2f0ea,roughness:.9,side:THREE.DoubleSide}));
+    ciel.rotation.x=Math.PI/2; ciel.position.set(px,3.0,-3.35+BUS.dep/2); scene.add(ciel);
+    // ---- serramento scuro a tutta altezza sul filo interno del vano ----
+    const matScuro=new THREE.MeshStandardMaterial({color:0x1c1c1e,roughness:.45,metalness:.2});
+    const HP=2.10;                                            // quota del traverso (testa della porta)
+    for(const sx of [-1,1]){                                  // montanti verticali
+      const mo=new THREE.Mesh(new THREE.BoxGeometry(.07,3.0,.09),matScuro);
+      mo.position.set(px+sx*(BUS.hw-.035),1.5,zAnta-.03); scene.add(mo);
+    }
+    { const trav=new THREE.Mesh(new THREE.BoxGeometry(BUS.hw*2,.09,.09),matScuro);   // traverso
+      trav.position.set(px,HP,zAnta-.03); scene.add(trav);
+      const cima=new THREE.Mesh(new THREE.BoxGeometry(BUS.hw*2,.07,.09),matScuro);   // cimasa a soffitto
+      cima.position.set(px,2.965,zAnta-.03); scene.add(cima);
+      // SOPRALUCE: vetro fra traverso e soffitto
+      const vetro=new THREE.Mesh(new THREE.PlaneGeometry(BUS.hw*2-.14,3.0-HP-.12),
+        new THREE.MeshStandardMaterial({color:0xdfe7ea,transparent:true,opacity:.32,roughness:.1,side:THREE.DoubleSide}));
+      vetro.position.set(px,(3.0+HP)/2-.02,zAnta-.03); scene.add(vetro); }
+    // ---- porta (solo la parte bassa, fino al traverso) ----
     const uscita=(px===-0.5);        // questa è la porta della fuga: apribile su cardine
-    const antaGrande=new THREE.Mesh(new THREE.BoxGeometry(.95,2.05,.05),matPorta);
-    const pezzetto=new THREE.Mesh(new THREE.BoxGeometry(.38,2.05,.05),matPorta);
-    pezzetto.position.set(px+.49,1.03,-3.26); scene.add(pezzetto);
+    const antaGrande=new THREE.Mesh(new THREE.BoxGeometry(.88,HP-.09,.05),matPorta);
+    const pezzetto=new THREE.Mesh(new THREE.BoxGeometry(.34,HP-.09,.05),matPorta);
+    pezzetto.position.set(px+.44,(HP-.09)/2,zAnta); scene.add(pezzetto);
     const maniglia=new THREE.Mesh(new THREE.BoxGeometry(.14,.03,.03),
       new THREE.MeshStandardMaterial({color:0x8e9094,metalness:.7,roughness:.3}));
     if(uscita){
       // anta + maniglia dentro un pivot sul cardine sinistro, così ruota per aprirsi
-      const cardine=new THREE.Group(); cardine.position.set(px-.675,1.03,-3.26); scene.add(cardine);
-      antaGrande.position.set(.475,0,0); cardine.add(antaGrande);
-      maniglia.position.set(.875,-.01,.04); cardine.add(maniglia);
+      const cardine=new THREE.Group(); cardine.position.set(px-BUS.hw,(HP-.09)/2,zAnta); scene.add(cardine);
+      antaGrande.position.set(.44,0,0); cardine.add(antaGrande);
+      maniglia.position.set(.80,-.01,.04); cardine.add(maniglia);
       PORTA_USCITA={cardine,x:px,aperta:false,ang:0};
     } else {
-      antaGrande.position.set(px-.2,1.03,-3.26); scene.add(antaGrande);
-      maniglia.position.set(px+.2,1.02,-3.22); scene.add(maniglia);
+      antaGrande.position.set(px-.19,(HP-.09)/2,zAnta); scene.add(antaGrande);
+      maniglia.position.set(px+.19,(HP-.09)/2,zAnta+.04); scene.add(maniglia);
     }
   }
 }
@@ -1149,28 +1189,32 @@ const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
 }
 // ---------- bancone con la stampante 3D (dalle foto), parete delle porte ----------
 {
-  const mob=new THREE.Mesh(new THREE.BoxGeometry(2.4,.9,.6),
+  // Il piano corre senza interruzioni DA BUSSOLA A BUSSOLA (foto IMG_4949): x da 0.13 a 5.87
+  const mob=new THREE.Mesh(new THREE.BoxGeometry(5.64,.9,.6),
     new THREE.MeshStandardMaterial({color:0xf0ede6,roughness:.8}));
-  mob.position.set(5.0,.45,-2.98); scene.add(mob);
-  const top=new THREE.Mesh(new THREE.BoxGeometry(2.5,.05,.68),matLegno);
-  top.position.set(5.0,.925,-2.96); scene.add(top);
+  mob.position.set(3.0,.45,-3.05); scene.add(mob);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(5.74,.05,.62),matLegno);
+  top.position.set(3.0,.925,-3.04); scene.add(top);
+  // bordo anteriore arrotondato del piano (come nelle foto)
+  { const bordo=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,5.74,12),matLegno);
+    bordo.rotation.z=Math.PI/2; bordo.position.set(3.0,.925,-2.73); scene.add(bordo); }
   // stampante 3D stile Kobra: base scura + telaio a portale
   const mNero=new THREE.MeshStandardMaterial({color:0x24262b,roughness:.5});
   const base=new THREE.Mesh(new THREE.BoxGeometry(.42,.08,.42),mNero);
-  base.position.set(4.6,.99,-2.95); scene.add(base);
+  base.position.set(1.15,.99,-2.95); scene.add(base);
   const piatto=new THREE.Mesh(new THREE.BoxGeometry(.3,.02,.3),
     new THREE.MeshStandardMaterial({color:0x3a3f47,roughness:.3,metalness:.4}));
-  piatto.position.set(4.6,1.04,-2.95); scene.add(piatto);
+  piatto.position.set(1.15,1.04,-2.95); scene.add(piatto);
   for(const dx of [-.19,.19]){
     const mont=new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.05),mNero);
-    mont.position.set(4.6+dx,1.28,-3.02); scene.add(mont);
+    mont.position.set(1.15+dx,1.28,-3.02); scene.add(mont);
   }
   const trave=new THREE.Mesh(new THREE.BoxGeometry(.44,.06,.06),mNero);
-  trave.position.set(4.6,1.52,-3.02); scene.add(trave);
+  trave.position.set(1.15,1.52,-3.02); scene.add(trave);
   // bobina di filamento arancione
   const bobina=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.06,16),
     new THREE.MeshStandardMaterial({color:0xe8721c,roughness:.6}));
-  bobina.rotation.x=Math.PI/2; bobina.position.set(4.6,1.62,-3.02); scene.add(bobina);
+  bobina.rotation.x=Math.PI/2; bobina.position.set(1.15,1.62,-3.02); scene.add(bobina);
   // gli oggetti stampati in 3D della foto, in mostra sul bancone
   const Y=0.95;                                 // quota del piano del bancone
   // vaso a spirale arcobaleno
@@ -1180,13 +1224,13 @@ const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
     bande.forEach((col,i)=>{ vg2.fillStyle=col; vg2.fillRect(0,i*128/6,64,128/6+1); });
     const vaso=new THREE.Mesh(new THREE.CylinderGeometry(.045,.032,.17,14),
       new THREE.MeshStandardMaterial({map:tex(vc2),roughness:.5}));
-    vaso.position.set(5.38,Y+.085,-2.95); scene.add(vaso);
+    vaso.position.set(2.25,Y+.085,-2.95); scene.add(vaso);
   }
   // orologio da tavolo nero con quadrante bianco
   {
     const cassa=new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,.03,20),
       new THREE.MeshStandardMaterial({color:0x1a1a1c,roughness:.5}));
-    cassa.rotation.x=Math.PI/2; cassa.position.set(5.68,Y+.075,-2.97); scene.add(cassa);
+    cassa.rotation.x=Math.PI/2; cassa.position.set(3.9,Y+.075,-2.97); scene.add(cassa);
     const qc=mkCanvas(64,64), qg=qc.getContext('2d');
     qg.fillStyle='#f5f5f2'; qg.beginPath(); qg.arc(32,32,30,0,7); qg.fill();
     qg.strokeStyle='#222'; qg.lineWidth=3;
@@ -1194,7 +1238,7 @@ const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
     qg.beginPath(); qg.moveTo(32,32); qg.lineTo(46,38); qg.stroke();
     const quadrante=new THREE.Mesh(new THREE.CircleGeometry(.055,20),
       new THREE.MeshBasicMaterial({map:tex(qc)}));
-    quadrante.position.set(5.68,Y+.075,-2.953); scene.add(quadrante);
+    quadrante.position.set(3.9,Y+.075,-2.953); scene.add(quadrante);
   }
   // mini scacchiera con pezzi
   {
@@ -1204,7 +1248,7 @@ const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
     }
     const board=new THREE.Mesh(new THREE.BoxGeometry(.15,.008,.15),
       new THREE.MeshStandardMaterial({map:tex(sc),roughness:.6}));
-    board.position.set(5.05,Y+.004,-2.85); scene.add(board);
+    board.position.set(4.05,Y+.004,-2.78); scene.add(board);
     for(const [px,pz,col] of [[-.05,-.05,0xf0eee8],[.04,-.03,0x2a2a2c],[0,.04,0xf0eee8],[.05,.05,0x2a2a2c]]){
       const pezzo=new THREE.Mesh(new THREE.CylinderGeometry(.008,.011,.03,8),
         new THREE.MeshStandardMaterial({color:col,roughness:.5}));
@@ -1247,12 +1291,141 @@ const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
   {
     const mBianco3D=new THREE.MeshStandardMaterial({color:0xf2f0ea,roughness:.7});
     const palo=new THREE.Mesh(new THREE.CylinderGeometry(.008,.012,.19,8),mBianco3D);
-    palo.position.set(3.82,Y+.095,-2.88); scene.add(palo);
+    palo.position.set(0.85,Y+.095,-2.88); scene.add(palo);
     for(let i=0;i<3;i++){
       const pala=new THREE.Mesh(new THREE.BoxGeometry(.005,.08,.018),mBianco3D);
-      pala.position.set(3.82,Y+.19,-2.88);
+      pala.position.set(0.85,Y+.19,-2.88);
       pala.rotation.x=i*2.094; pala.translateY(.04); scene.add(pala);
     }
+  }
+
+  // ======== DETTAGLI DAL VERO (foto IMG_4949…4971 del laboratorio) ========
+  const mBianco=new THREE.MeshStandardMaterial({color:0xf4f2ec,roughness:.75});
+  const mNero2 =new THREE.MeshStandardMaterial({color:0x1e2024,roughness:.55});
+  const mAcc   =new THREE.MeshStandardMaterial({color:0x9aa2ab,metalness:.55,roughness:.4});
+
+  // --- SOTTO IL BANCONE: cassettiere in legno a sinistra, pannelli chiari e prese scure ---
+  for(let i=0;i<3;i++){                                    // tre cassetti impilati (lato sinistro)
+    const cass=new THREE.Mesh(new THREE.BoxGeometry(.5,.22,.02),matLegno);
+    cass.position.set(0.55,.75-i*.25,-2.745); scene.add(cass);
+    const mani=new THREE.Mesh(new THREE.BoxGeometry(.16,.014,.02),mAcc);
+    mani.position.set(0.55,.80-i*.25,-2.735); scene.add(mani);
+  }
+  for(const px of [2.1,4.3]){                             // pannelli chiari di chiusura
+    const pan=new THREE.Mesh(new THREE.BoxGeometry(.8,.62,.02),new THREE.MeshStandardMaterial({color:0xdcd9d2,roughness:.85}));
+    pan.position.set(px,.58,-2.745); scene.add(pan);
+  }
+  for(const px of [1.7,3.2,4.9]){                         // canaline/prese scure sotto il piano
+    const pr=new THREE.Mesh(new THREE.BoxGeometry(.2,.1,.015),mNero2);
+    pr.position.set(px,.855,-2.74); scene.add(pr);
+  }
+
+  // --- PANNELLO ROSSO "tassorosso" con le foto degli studenti (parete sopra il bancone) ---
+  {
+    const c=mkCanvas(300,300), g=c.getContext('2d');
+    g.fillStyle='#c8322e'; g.fillRect(0,0,300,300);
+    g.fillStyle='#fff'; g.font='bold 30px Georgia'; g.textAlign='left';
+    g.fillText('tasso',26,52); g.fillStyle='rgba(255,255,255,.85)'; g.font='300 30px Georgia'; g.fillText('rosso',118,52);
+    g.fillStyle='#f0d78a'; g.beginPath(); g.moveTo(150,70); g.lineTo(178,84); g.lineTo(178,116); g.lineTo(150,132);
+    g.lineTo(122,116); g.lineTo(122,84); g.closePath(); g.fill();                     // stemma
+    const foto=[[28,150,120,78],[160,150,50,64],[218,150,54,64]];                     // scatti appesi
+    foto.forEach(f=>{ g.fillStyle='#fbfbf8'; g.fillRect(f[0]-4,f[1]-4,f[2]+8,f[3]+8);
+      g.fillStyle='#5b6472'; g.fillRect(f[0],f[1],f[2],f[3]);
+      g.fillStyle='#8d97a6'; g.fillRect(f[0]+6,f[1]+f[3]*0.55,f[2]-12,f[3]*0.3); });
+    const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.0),new THREE.MeshStandardMaterial({map:tex(c),roughness:.8}));
+    pan.position.set(3.0,1.72,-3.30); scene.add(pan);      // faccia verso la stanza; staccato dal muro (niente z-fighting)
+  }
+
+  // --- RIALZI BIANCHI espositivi sotto i pezzi stampati ---
+  for(const [rx,rz,rw] of [[2.55,-2.90,.42],[3.35,-2.86,.34],[1.75,-2.80,.30]]){
+    const r=new THREE.Mesh(new THREE.BoxGeometry(rw,.1,.26),mBianco);
+    r.position.set(rx,Y+.05,rz); scene.add(r);
+  }
+
+  // --- PEZZI STAMPATI CARATTERISTICI (dalle foto: monumenti, dinosauri, veicolo) ---
+  { // Colosseo: anello di archi
+    const col=new THREE.Group(); col.position.set(3.05,Y+.06,-3.06); scene.add(col);
+    for(let i=0;i<16;i++){ const a=i/16*Math.PI*2;
+      const p=new THREE.Mesh(new THREE.BoxGeometry(.018,.11,.018),new THREE.MeshStandardMaterial({color:0xb98a52,roughness:.8}));
+      p.position.set(Math.cos(a)*.085,.055,Math.sin(a)*.06); col.add(p); }
+    const cor=new THREE.Mesh(new THREE.TorusGeometry(.085,.008,6,20),new THREE.MeshStandardMaterial({color:0xb98a52,roughness:.8}));
+    cor.rotation.x=Math.PI/2; cor.scale.set(1,.7,1); cor.position.y=.11; col.add(cor);
+  }
+  { // Taj Mahal: cupola + minareti
+    const g=new THREE.Group(); g.position.set(3.45,Y,-3.02); scene.add(g);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(.17,.05,.12),mBianco); base.position.y=.025; g.add(base);
+    const cup=new THREE.Mesh(new THREE.SphereGeometry(.045,14,12),mBianco); cup.position.y=.085; cup.scale.set(1,1.25,1); g.add(cup);
+    for(const sx of [-.07,.07]) for(const sz of [-.045,.045]){
+      const m=new THREE.Mesh(new THREE.CylinderGeometry(.008,.01,.1,8),mBianco); m.position.set(sx,.075,sz); g.add(m); }
+  }
+  { // grattacielo stile Empire State
+    const g=new THREE.Group(); g.position.set(3.75,Y,-2.86); scene.add(g);
+    [[.06,.09],[.045,.07],[.03,.05]].forEach((t,i)=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(t[0],t[1],t[0]),mBianco);
+      b.position.y=.045+i*.075; g.add(b); });
+    const gu=new THREE.Mesh(new THREE.CylinderGeometry(.002,.006,.05,6),mBianco); gu.position.y=.24; g.add(gu);
+  }
+  { // dinosauri gialli/verdi su un rialzo
+    const cols=[0xe8c33a,0x7cb342,0xe8823a];
+    cols.forEach((c,i)=>{ const d=new THREE.Group(); d.position.set(1.68+i*.075,Y+.1,-2.80); scene.add(d);
+      const corpo=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.06,8),
+        new THREE.MeshStandardMaterial({color:c,roughness:.6})); corpo.rotation.z=Math.PI/2; corpo.position.y=.03; d.add(corpo);
+      const collo=new THREE.Mesh(new THREE.CylinderGeometry(.007,.009,.05,7),new THREE.MeshStandardMaterial({color:c,roughness:.6}));
+      collo.position.set(.03,.055,0); collo.rotation.z=-.3; d.add(collo);
+      for(const sx of [-.02,.02]){ const z=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.03,6),new THREE.MeshStandardMaterial({color:c}));
+        z.position.set(sx,.012,0); d.add(z); } });
+  }
+  { // squali bianchi in fila
+    for(let i=0;i<3;i++){ const sq=new THREE.Mesh(new THREE.ConeGeometry(.018,.09,10),mBianco);
+      sq.rotation.z=Math.PI/2; sq.position.set(2.45+i*.06,Y+.02,-2.74); scene.add(sq);
+      const pin=new THREE.Mesh(new THREE.ConeGeometry(.012,.03,4),mBianco);
+      pin.position.set(2.45+i*.06,Y+.045,-2.74); scene.add(pin); }
+  }
+  { // veicolo cingolato LEGO arancione/nero
+    const g=new THREE.Group(); g.position.set(2.0,Y,-2.74); scene.add(g);
+    const sc=new THREE.Mesh(new THREE.BoxGeometry(.14,.05,.08),new THREE.MeshStandardMaterial({color:0xe8721c,roughness:.5}));
+    sc.position.y=.045; g.add(sc);
+    for(const sz of [-.045,.045]){ const cing=new THREE.Mesh(new THREE.BoxGeometry(.16,.035,.025),mNero2);
+      cing.position.set(0,.018,sz); g.add(cing); }
+    const braccio=new THREE.Mesh(new THREE.BoxGeometry(.09,.014,.014),mNero2);
+    braccio.position.set(.06,.085,0); braccio.rotation.z=.4; g.add(braccio);
+  }
+  { // cartello verde scritto a mano ("maestro a mola")
+    const c=mkCanvas(96,64), g2=c.getContext('2d');
+    g2.fillStyle='#4c8a3a'; g2.fillRect(0,0,96,64); g2.fillStyle='#fff';
+    g2.font='bold 11px Segoe UI,Arial'; g2.textAlign='center'; g2.fillText('MAESTRO',48,28); g2.fillText('A MOLA',48,44);
+    const cart=new THREE.Mesh(new THREE.PlaneGeometry(.13,.087),new THREE.MeshStandardMaterial({map:tex(c),roughness:.8,side:THREE.DoubleSide}));
+    cart.position.set(2.8,Y+.055,-2.74); cart.rotation.y=0.15; scene.add(cart);
+    const app=new THREE.Mesh(new THREE.BoxGeometry(.13,.012,.05),mBianco); app.position.set(2.8,Y+.006,-2.735); scene.add(app);
+  }
+
+  // --- ESTREMITÀ DESTRA DEL BANCONE: testa di manichino, mappamondo, monitor ---
+  { // testa su base nera
+    const base=new THREE.Mesh(new THREE.BoxGeometry(.2,.06,.16),mNero2); base.position.set(4.62,Y+.03,-2.90); scene.add(base);
+    const mPelle=new THREE.MeshStandardMaterial({color:0xd9a882,roughness:.85});
+    const testa=new THREE.Mesh(new THREE.SphereGeometry(.062,18,16),mPelle);
+    testa.scale.set(.86,1.18,.95); testa.position.set(4.62,Y+.13,-2.90); scene.add(testa);
+    const collo=new THREE.Mesh(new THREE.CylinderGeometry(.032,.042,.05,12),mPelle);
+    collo.position.set(4.62,Y+.07,-2.90); scene.add(collo);
+  }
+  { // mappamondo su piede
+    const pie=new THREE.Mesh(new THREE.CylinderGeometry(.055,.065,.02,16),new THREE.MeshStandardMaterial({color:0x2b3d55,roughness:.6}));
+    pie.position.set(5.02,Y+.01,-2.90); scene.add(pie);
+    const arco=new THREE.Mesh(new THREE.TorusGeometry(.062,.005,6,20,Math.PI*1.15),mAcc);
+    arco.position.set(5.02,Y+.085,-2.90); arco.rotation.z=.35; scene.add(arco);
+    const c=mkCanvas(128,64), g3=c.getContext('2d');
+    g3.fillStyle='#2f6fb5'; g3.fillRect(0,0,128,64);
+    g3.fillStyle='#4f9a4a'; [[16,22,16,10],[46,16,20,12],[74,30,15,9],[100,20,14,11],[34,44,18,8],[92,46,16,7]]
+      .forEach(e=>{ g3.beginPath(); g3.ellipse(e[0],e[1],e[2],e[3],0,0,7); g3.fill(); });
+    g3.fillStyle='#e8e2d0'; g3.fillRect(0,0,128,3); g3.fillRect(0,61,128,3);
+    const globo=new THREE.Mesh(new THREE.SphereGeometry(.055,20,16),new THREE.MeshStandardMaterial({map:tex(c),roughness:.55}));
+    globo.position.set(5.02,Y+.085,-2.90); globo.rotation.z=.35; scene.add(globo);
+  }
+  { // monitor nero 16:9 spento
+    const pie=new THREE.Mesh(new THREE.CylinderGeometry(.05,.06,.012,14),mNero2); pie.position.set(5.35,Y+.006,-2.92); scene.add(pie);
+    const asta=new THREE.Mesh(new THREE.BoxGeometry(.03,.07,.03),mNero2); asta.position.set(5.35,Y+.045,-2.92); scene.add(asta);
+    const sch=new THREE.Mesh(new THREE.BoxGeometry(.34,.21,.018),mNero2); sch.position.set(5.35,Y+.18,-2.92); scene.add(sch);
+    const vetro=new THREE.Mesh(new THREE.PlaneGeometry(.31,.18),new THREE.MeshStandardMaterial({color:0x0a0c10,roughness:.25}));
+    vetro.rotation.y=Math.PI; vetro.position.set(5.35,Y+.18,-2.908); scene.add(vetro);
   }
 }
 // ---------- dettagli di fedeltà: battiscopa, magliette piegate, fogli ----------
@@ -1718,7 +1891,11 @@ const ZONE=[
   {x0:-1.15,x1:0.15,z0:-3.55,z1:-2.85, gate:true},        // varco della porta di fuga
   {x0:CORR.x0,x1:CORR.x1, z0:CORR.z0,z1:CORR.z1, gate:true}, // CORRIDOIO
 ];
-const OSTACOLI=[];
+const OSTACOLI=[
+  // spalle della bussola della porta di fuga: sono muri, non si attraversano di lato
+  {x0:0.10,x1:0.17,z0:-3.37,z1:-2.73},
+  {x0:-1.17,x1:-1.10,z0:-3.37,z1:-2.73},
+];
 function posValida(x,z){
   const aperto = PORTA_USCITA && PORTA_USCITA.aperta;
   for(const r of ZONE){ if(x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1){ if(r.gate&&!aperto) continue; return true; } }
@@ -2129,7 +2306,8 @@ function vittoria(){
 // ?touch=1 forza i comandi touch anche da desktop (utile per provarli senza iPad)
 const TOUCH = location.search.includes('touch=1') || matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints>0);
 if(TOUCH) document.documentElement.classList.add('touch');
-function bloccaMouse(){ if(!TOUCH && canvasEl.requestPointerLock) canvasEl.requestPointerLock(); }
+function bloccaMouse(){ if(TOUCH || !canvasEl.requestPointerLock) return;
+  try{ const r=canvasEl.requestPointerLock(); if(r&&r.catch) r.catch(()=>{}); }catch(e){} }   // può fallire (iframe, permessi): non deve sporcare la console
 const joy={attivo:false,id:null,cx:0,cy:0,dx:0,dy:0};      // dx,dy in [-1..1]
 const look={id:null,x:0,y:0,mosso:false};
 if(TOUCH){
