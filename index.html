@@ -874,25 +874,28 @@ const matLegno=new THREE.MeshStandardMaterial({map:legnoTex,roughness:.55});
       const cima=new THREE.Mesh(new THREE.BoxGeometry(BUS.hw*2,.07,.09),matScuro);   // cimasa a soffitto
       cima.position.set(px,2.965,zAnta-.03); scene.add(cima);
       // SOPRALUCE: vetro fra traverso e soffitto
-      const vetro=new THREE.Mesh(new THREE.PlaneGeometry(BUS.hw*2-.14,3.0-HP-.12),
+      const vetro=new THREE.Mesh(new THREE.PlaneGeometry(BUS.hw*2-.10,3.0-HP-.06),
         new THREE.MeshStandardMaterial({color:0xdfe7ea,transparent:true,opacity:.32,roughness:.1,side:THREE.DoubleSide}));
-      vetro.position.set(px,(3.0+HP)/2-.02,zAnta-.03); scene.add(vetro); }
+      vetro.position.set(px,(3.0+HP)/2,zAnta-.03); scene.add(vetro); }
     // ---- porta (solo la parte bassa, fino al traverso) ----
     const uscita=(px===-0.5);        // questa è la porta della fuga: apribile su cardine
-    const antaGrande=new THREE.Mesh(new THREE.BoxGeometry(.88,HP-.09,.05),matPorta);
-    const pezzetto=new THREE.Mesh(new THREE.BoxGeometry(.34,HP-.09,.05),matPorta);
-    pezzetto.position.set(px+.44,(HP-.09)/2,zAnta); scene.add(pezzetto);
+    // Battenti A TENUTA: si sovrappongono fra loro e sconfinano nel traverso e nei montanti,
+    // così a porta chiusa non resta nessuno spiraglio da cui intravedere il corridoio.
+    const AW=.915, PW=.375, AH=HP;                    // anta, pezzetto, altezza (entra nel traverso)
+    const antaGrande=new THREE.Mesh(new THREE.BoxGeometry(AW,AH,.05),matPorta);
+    const pezzetto=new THREE.Mesh(new THREE.BoxGeometry(PW,AH,.05),matPorta);
+    pezzetto.position.set(px+BUS.hw-PW/2,AH/2,zAnta-.02); scene.add(pezzetto);   // 2 cm dietro: niente z-fighting
     const maniglia=new THREE.Mesh(new THREE.BoxGeometry(.14,.03,.03),
       new THREE.MeshStandardMaterial({color:0x8e9094,metalness:.7,roughness:.3}));
     if(uscita){
       // anta + maniglia dentro un pivot sul cardine sinistro, così ruota per aprirsi
-      const cardine=new THREE.Group(); cardine.position.set(px-BUS.hw,(HP-.09)/2,zAnta); scene.add(cardine);
-      antaGrande.position.set(.44,0,0); cardine.add(antaGrande);
-      maniglia.position.set(.80,-.01,.04); cardine.add(maniglia);
+      const cardine=new THREE.Group(); cardine.position.set(px-BUS.hw,AH/2,zAnta); scene.add(cardine);
+      antaGrande.position.set(AW/2,0,0); cardine.add(antaGrande);
+      maniglia.position.set(AW-.08,-.01,.04); cardine.add(maniglia);
       PORTA_USCITA={cardine,x:px,aperta:false,ang:0};
     } else {
-      antaGrande.position.set(px-.19,(HP-.09)/2,zAnta); scene.add(antaGrande);
-      maniglia.position.set(px+.19,(HP-.09)/2,zAnta+.04); scene.add(maniglia);
+      antaGrande.position.set(px-BUS.hw+AW/2,AH/2,zAnta); scene.add(antaGrande);
+      maniglia.position.set(px-BUS.hw+AW-.08,1.05,zAnta+.04); scene.add(maniglia);
     }
   }
 }
