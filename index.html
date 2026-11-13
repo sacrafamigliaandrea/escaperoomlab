@@ -259,6 +259,47 @@
     border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer}
   /* ---- copertina + mappa dei 28 Mac (schermata iniziale) ---- */
   #consegna .box{max-width:860px}
+  /* scelta del livello */
+  .livelli{display:flex;gap:12px;justify-content:center;margin:0 auto 14px;flex-wrap:wrap}
+  .overlay .liv{margin:0;padding:10px 18px;min-width:240px;display:flex;flex-direction:column;gap:3px;align-items:center;border-radius:12px;
+    background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.22);color:#fff;box-shadow:none;font-size:15px;cursor:pointer}
+  .overlay .liv small{font-size:11.5px;font-weight:400;opacity:.85}
+  .overlay .liv:hover{transform:none;background:rgba(255,255,255,.14)}
+  .overlay .liv.sel{background:rgba(143,192,255,.22);border-color:#8fc0ff}
+  .overlay .liv[data-liv="cyber"].sel{background:rgba(86,200,255,.18);border-color:#56c8ff;box-shadow:0 0 0 2px rgba(86,200,255,.25),0 0 26px rgba(86,200,255,.28)}
+  /* sequenza di sblocco della porta (livello Cybersecurity) */
+  #sequenza{background:rgba(3,10,22,.86)}
+  .overlay .seq-box{max-width:820px;width:92vw;background:#07142a;border:2px solid #56c8ff;border-radius:14px;padding:22px 26px;
+    box-shadow:0 0 0 3px rgba(86,200,255,.18),0 24px 70px rgba(0,0,0,.6);font-family:'Courier New',ui-monospace,Menlo,monospace}
+  .seq-testa{display:flex;justify-content:space-between;align-items:baseline;color:#9fdcff;letter-spacing:2px;font-size:15px}
+  .seq-testa b{font-size:19px;color:#d8ecff}
+  .seq-barra{display:flex;gap:5px;margin:12px 0 4px} .seq-barra i{flex:1;height:9px;border-radius:2px;background:rgba(86,200,255,.18)}
+  .seq-barra i.ok{background:#3ddc84} .seq-barra i.ora{background:#ffb347}
+  .overlay .seq-guida{font-size:12.5px;opacity:.75;margin:8px 0 0;font-family:'Segoe UI',system-ui,sans-serif}
+  .overlay .seq-caso{font-family:'Segoe UI',system-ui,sans-serif;font-size:19px;line-height:1.45;opacity:1;color:#fff;background:rgba(86,200,255,.10);
+    border-left:4px solid #ffb347;border-radius:6px;padding:14px 16px;margin:12px 0 14px;text-align:left;min-height:84px}
+  .seq-carte{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .overlay .seq-carta{margin:0;padding:11px 8px;min-height:48px;border-radius:8px;background:#0e2444;border:1.5px solid rgba(86,200,255,.55);color:#d8ecff;
+    font:700 13.5px 'Courier New',ui-monospace,Menlo,monospace;box-shadow:none;cursor:pointer;line-height:1.2}
+  .overlay .seq-carta:hover{transform:none;background:#16345f}
+  .overlay .seq-carta.usata{background:rgba(61,220,132,.16);border-color:#3ddc84;color:#3ddc84;cursor:default}
+  .overlay .seq-carta.no{background:rgba(255,179,71,.28);border-color:#ffb347;animation:seqNo .4s}
+  @keyframes seqNo{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+  .seq-msg{min-height:20px;margin-top:10px;color:#ffb347;font-size:13.5px}
+  .overlay .seq-esci{margin-top:6px;background:transparent;border:1.5px solid rgba(86,200,255,.5);color:#9fdcff;font-size:13px;padding:8px 18px;box-shadow:none}
+  @media (max-width:700px){ .seq-carte{grid-template-columns:repeat(2,1fr)} .overlay .seq-caso{font-size:16px} }
+  /* cornice da sala operativa sopra la scena: solo nel livello Cybersecurity */
+  #cyberHud{position:fixed;inset:0;z-index:3;pointer-events:none;display:none}
+  html.cyber #cyberHud{display:block}
+  #cyberHud::before{content:'';position:absolute;inset:0;
+    background:repeating-linear-gradient(0deg,rgba(86,200,255,.035) 0 1px,transparent 1px 4px),radial-gradient(ellipse at center,transparent 58%,rgba(4,20,44,.55) 100%)}
+  #cyberHud i{position:absolute;width:38px;height:38px;border:2px solid rgba(86,200,255,.75)}
+  #cyberHud i:nth-child(1){left:14px;top:14px;border-right:0;border-bottom:0}
+  #cyberHud i:nth-child(2){right:14px;top:14px;border-left:0;border-bottom:0}
+  #cyberHud i:nth-child(3){left:14px;bottom:14px;border-right:0;border-top:0}
+  #cyberHud i:nth-child(4){right:14px;bottom:14px;border-left:0;border-top:0}
+  #cyberHud b{position:absolute;left:50%;top:12px;transform:translateX(-50%);font:700 11.5px 'Courier New',ui-monospace,Menlo,monospace;
+    letter-spacing:2.5px;color:#9fdcff;background:rgba(4,16,34,.72);border:1px solid rgba(86,200,255,.5);padding:5px 12px;border-radius:3px;white-space:nowrap}
   .cover{display:block;width:100%;height:auto;border-radius:14px;
     margin:2px 0 16px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
   .mac-mappa{display:grid;grid-template-columns:repeat(7,60px);gap:7px;justify-content:center;margin:0 auto 16px}
@@ -329,14 +370,30 @@
 <div id="ytsfx"></div>
 <div id="ytmatrix"></div>
 
+<div id="cyberHud" aria-hidden="true"><i></i><i></i><i></i><i></i><b>CENTRALE OPERATIVA · LIVELLO CYBERSECURITY</b></div>
 <div class="overlay" id="consegna">
   <div class="box">
     <img class="cover" src="escape.jpg" alt="Escape Lab">
+    <div class="livelli" id="livelli">
+      <button type="button" class="liv sel" data-liv="base" aria-pressed="true"><b>Livello base</b><small>Cittadinanza digitale</small></button>
+      <button type="button" class="liv" data-liv="cyber" aria-pressed="false"><b>Livello Cybersecurity</b><small>Centrale operativa · dopo la lezione Hacker &amp; Cybersecurity</small></button>
+    </div>
     <div class="mac-mappa" id="macMappa" title="I 28 computer del laboratorio"></div>
     <button id="btnInizia">Inizia la fuga</button>
   </div>
 </div>
 
+<div class="overlay" id="sequenza" style="display:none">
+  <div class="box seq-box">
+    <div class="seq-testa"><b>SEQUENZA DI SBLOCCO</b><span id="seqPasso"></span></div>
+    <div class="seq-barra" id="seqBarra"></div>
+    <p class="seq-guida">Per ogni caso scegli la parola-chiave giusta fra quelle che hai raccolto. Ogni carta si usa una volta sola.</p>
+    <p class="seq-caso" id="seqCaso"></p>
+    <div class="seq-carte" id="seqCarte"></div>
+    <div class="seq-msg" id="seqMsg"></div>
+    <button type="button" id="btnSeqEsci" class="seq-esci">Torna in laboratorio</button>
+  </div>
+</div>
 <div class="overlay" id="enigma" style="display:none">
   <canvas id="galassia"></canvas>
   <div id="cardsFaint"></div>
@@ -1984,20 +2041,20 @@ function clueMac(n){ return Math.random()<0.5 ? clueNumero(n) : cluePosizione(n)
 function costruisciPartita(macStudente){
   const start=(macStudente>=1 && macStudente<=28) ? macStudente : (1+Math.floor(Math.random()*28));
   G.macStart=start;
-  const domande=mescola(POOL).slice(0,N_TAPPE);
+  const domande=mescola(G.livello==='cyber'?POOL_CYBER:POOL).slice(0,N_TAPPE);   // il livello sceglie il pool
   const altri=[]; for(let i=1;i<=28;i++) if(i!==start) altri.push(i);
   const mezzo=mescola(altri).slice(0,N_TAPPE-2);              // 10 Mac intermedi casuali
   const macs=[start].concat(mezzo).concat([0]);              // studente → 10 casuali → cattedra (0)
   const idxCif=2+Math.floor(Math.random()*8);                 // tappa cifrata: fra la 3ª e la 10ª (mai prima/ultima)
   const shift=3+Math.floor(Math.random()*5);                  // shift Cesare 3..7
   ENIGMI=domande.map((d,i)=>{
-    const e={ mac:macs[i], tema:d.tema, testo:d.testo, chiavi:d.chiavi, sugg:d.sugg };
+    const e={ mac:macs[i], tema:d.tema, testo:d.testo, chiavi:d.chiavi, sugg:d.sugg, lez:d.lez||0, caso:d.caso||d.testo };
     if(i===0)                    e.trova='La TUA postazione: il tuo computer, il Mac numero '+start+'.';
     else if(i===N_TAPPE-1)       e.trova='La CATTEDRA del prof. Andrea: l’iMac grande in testa ai tavoli, nel varco centrale.';
     else                         e.trova=clueMac(e.mac);
     if(i===idxCif){
       e.cifrato=true; e.shift=shift; e.codice=cesare(d.chiavi[0],shift);
-      e.testo='Lo schermo mostra solo un codice cifrato. Decifralo per ottenere la parola-chiave (un termine di cittadinanza digitale).';
+      e.testo='Lo schermo mostra solo un codice cifrato. Decifralo per ottenere la parola-chiave (un termine di '+(G.livello==='cyber'?'cybersicurezza':'cittadinanza digitale')+').';
       e.sugg='Serve il CIFRARIO stampato in 3D (sul bancone). Poi sposta ogni lettera indietro di '+shift+'.';
     }
     return e;
@@ -2117,6 +2174,7 @@ function raccogli(tipo,mesh){
 function usaPorta(){
   if(!G.serraturaPronta){ splash('La serratura non è ancora pronta','#ffd28a'); return; }
   if(!G.inv.chiave){ splash('Serve la chiave stampata in 3D (bancone)','#ffd28a'); return; }
+  if(G.livello==='cyber' && !G.sequenzaOk){ apriSequenza(); return; }   // la serratura elettronica vuole la sequenza
   apriPorta();
 }
 function usaMirato(){
@@ -2381,7 +2439,7 @@ const torceLuci=[], neonLuci=[];
 
 // ---- HUD / overlay ----
 function aggiornaHUD(){
-  $('hudTappa').textContent = G.tappa>0 ? ('Enigma '+G.tappa+' / '+N_TAPPE) : '';
+  $('hudTappa').textContent = G.tappa>0 ? ((G.livello==='cyber'?'Sistema ':'Enigma ')+G.tappa+' / '+N_TAPPE) : '';
   const e = G.tappa>0 ? ENIGMI[G.tappa-1] : null;
   $('hudTema').textContent = '';                 // niente tema: rivelerebbe la parola-chiave
   $('indizioTxt').textContent = e ? e.trova : '';
@@ -2573,6 +2631,7 @@ function verificaRisposta(){
     return;
   }
   if(rispostaOk($('enInput').value,e.chiavi)){
+    e.risolto=true; if(G.livello==='cyber') cyberRisolto(e);   // la centrale segna il sistema in sicurezza
     $('enForm').style.display='none';
     if(G.tappa<N_TAPPE){
       const prox=ENIGMI[G.tappa];
@@ -2580,7 +2639,9 @@ function verificaRisposta(){
         '<p>Prossimo indizio:</p><p class="clue">'+prox.trova+'</p>';
     } else {
       $('enEsito').innerHTML='<h3 style="color:#8fc0ff;margin-bottom:8px">Ultima serratura pronta!</h3>'+
-        '<p>Ora prendi la <b>chiave stampata in 3D</b> dal bancone della stampante e usala sulla porta per uscire.</p>';
+        (G.livello==='cyber'
+          ? '<p>Tutti i sistemi sono in sicurezza. Prendi la <b>chiave stampata in 3D</b> dal bancone e vai alla porta: la serratura ti chiederà la <b>sequenza di sblocco</b>, da costruire con <b>tutte le parole-chiave</b> che hai raccolto (le ritrovi sulla lavagna).</p>'
+          : '<p>Ora prendi la <b>chiave stampata in 3D</b> dal bancone della stampante e usala sulla porta per uscire.</p>');
     }
     $('enEsito').style.display='block';
     $('btnContinua').style.display='inline-block';
@@ -2598,7 +2659,9 @@ function continuaDopoEnigma(){
       G.serraturaPronta=true;
       $('hudTappa').textContent='Enigmi risolti'; $('hudTema').textContent='';
       $('indizio').style.display='block';
-      $('indizioTxt').textContent='Serratura pronta! Prendi la CHIAVE 3D dal bancone e usala sulla porta.';
+      $('indizioTxt').textContent=G.livello==='cyber'
+        ? 'Rete in sicurezza! Prendi la CHIAVE 3D dal bancone: alla porta ti aspetta la SEQUENZA DI SBLOCCO.'
+        : 'Serratura pronta! Prendi la CHIAVE 3D dal bancone e usala sulla porta.';
       splash('Serratura pronta!','#8fc0ff');
     }
   }
@@ -2623,10 +2686,356 @@ const INTRO_TARGET=new THREE.Vector3(0,1.2,0.15);
 const INTRO_LAND=new THREE.Vector3(-0.6,1.5,0.7);
 const INTRO_LOOK=new THREE.Vector3(-2.35,1.15,0.15);   // guarda la cattedra atterrando
 
+// ======================================================================
+//  LIVELLO CYBERSECURITY — "CENTRALE OPERATIVA".
+//  Stessa meccanica dell'escape base (12 Mac, cifrario, chiave, porta), ma con le domande
+//  della lezione Hacker & Cybersecurity e l'aula trasformata in sala operativa:
+//   · luce fredda da sala controllo e lampeggianti AMBRA (mai rosso);
+//   · sulla smart TV il QUADRO DELLA CENTRALE: mappa di rete dei 28 Mac che diventano verdi
+//     man mano che vengono messi in sicurezza, contatore dei sistemi, registro degli eventi;
+//   · su 7 Mac le TELECAMERE DI SICUREZZA: riprese VERE della scena (render su texture) da 4
+//     telecamere, corridoio compreso; sugli altri un terminale che scorre;
+//   · ogni Mac risolto mostra lo scudo verde "sistema in sicurezza".
+//  Tutto è creato solo alla prima attivazione: il livello base non paga nulla.
+// ======================================================================
+// ---- POOL del livello CYBERSECURITY: domande tratte dalla lezione "Hacker & Cybersecurity"
+//      (CyberStudent). Le frasi riprendono le definizioni e i titoli del telegiornale della
+//      lezione; `lez` dice da quale delle quattro lezioni viene la domanda (1 I frigoriferi,
+//      2 La trappola, 3 Il dispositivo, 4 La casa). La prima chiave è la parola-chiave
+//      "primaria": deve essere senza spazi né accenti, perché è quella che può finire cifrata.
+//      `caso` è una situazione concreta (mai la parola stessa): serve alla SEQUENZA DI SBLOCCO finale.
+const POOL_CYBER=[
+ {lez:1,tema:'Hacker', caso:'Un’azienda paga Marta per cercare, con il permesso, i punti deboli dei suoi computer. Chi è Marta?',            testo:'Il Comune cerca chi trovi le falle nei suoi computer, con il permesso: cerca un …?', chiavi:['hacker'], sugg:'Conosce a fondo i sistemi informatici: può difenderli, con il permesso, o entrarci senza.'},
+ {lez:1,tema:'Hacktivisti', caso:'Un gruppo oscura il sito di una fabbrica per protesta e firma l’attacco. Chi sono?',       testo:'Sito di un’azienda oscurato per protesta: lo rivendicano gli …? (hacker che attaccano per una causa)', chiavi:['hacktivisti','hacktivista','attivisti'], sugg:'Hacker + attivisti. Il nome più noto è Anonymous.'},
+ {lez:1,tema:'Forza bruta', caso:'Sul pannello arrivano mille password al minuto, tutte diverse, finché una funziona.',       testo:'Milioni di password provate in automatico in una notte, finché una funziona: è un attacco a forza …?', chiavi:['bruta','forza bruta'], sugg:'Nessuna astuzia: solo moltissimi tentativi, uno dopo l’altro.'},
+ {lez:1,tema:'Infrastrutture critiche', caso:'L’attacco ferma l’acquedotto e l’ospedale della città. Che cosa è stato colpito?', testo:'Energia, acqua, ospedali, trasporti, cibo: i servizi senza cui un Paese si ferma sono le infrastrutture …?', chiavi:['critiche','infrastrutture critiche'], sugg:'Se si fermano loro, si ferma tutto: per questo si chiamano così.'},
+ {lez:1,tema:'Il permesso', caso:'Luca saprebbe entrare nel registro della scuola, ma non lo fa: gli manca una cosa sola.',       testo:'Che cosa distingue l’hacker che difende da quello che attacca? Nei sistemi degli altri non si entra senza il …?', chiavi:['permesso','autorizzazione'], sugg:'È ciò che chiedi prima di entrare in casa d’altri.'},
+ {lez:1,tema:'Password lunga', caso:'“Gatto1” regge pochi secondi; una di 12 caratteri misti regge anni. Che cosa fa la differenza?',    testo:'Una password sicura è lunga: almeno quanti caratteri deve avere? (scrivi il numero)', chiavi:['dodici','12'], sugg:'Più di dieci, meno di quindici: più è lunga, più regge.'},
+ {lez:1,tema:'Antivirus', caso:'Sul PC del tecnico un programma riconosce un file cattivo appena scaricato e lo ferma.',         testo:'Riconosce i programmi cattivi e va aggiornato spesso: è l’…?', chiavi:['antivirus'], sugg:'Anti + il nome di ciò che combatte.'},
+ {lez:1,tema:'Blocco schermo', caso:'Il tecnico va a prendere un caffè: dopo un minuto il suo computer si chiude da solo.',    testo:'Se ti alzi dal computer, lo schermo si chiude da solo: è il … dello schermo.', chiavi:['blocco'], sugg:'Il contrario di “sblocco”.'},
+ {lez:1,tema:'Doppia chiave', caso:'Hanno rubato la password di Giulia, ma senza il suo telefono non entrano lo stesso.',     testo:'Oltre alla password serve un codice sul telefono: regge anche se la password viene rubata. È la doppia …?', chiavi:['chiave','doppia chiave','due passaggi'], sugg:'Come una porta con due serrature: ne servono due.'},
+ {lez:1,tema:'Aggiornamenti', caso:'La centralina GeloNet aveva una falla nota da anni: bastava installare le correzioni del produttore.',     testo:'Le correzioni che il produttore manda per chiudere le falle già note si chiamano …?', chiavi:['aggiornamenti','aggiornamento','update'], sugg:'Riparano i difetti già noti; ne escono sempre di nuovi.'},
+ {lez:1,tema:'Firewall', caso:'Qualcuno bussa da Internet a tutti gli ingressi del supermercato: li trova chiusi. Merito di chi?',          testo:'Chiude le porte che non servono: chi bussa da fuori non trova ingressi. È il …?', chiavi:['firewall'], sugg:'In inglese: “muro di fuoco”.'},
+ {lez:1,tema:'Da remoto', caso:'Il tecnico regola il banco frigo dal divano di casa, senza andare al supermercato.',         testo:'Comandare una macchina da lontano, attraverso internet, senza essere sul posto: è un accesso da …?', chiavi:['remoto'], sugg:'Come un telecomando che funziona da casa.'},
+ {lez:1,tema:'Vulnerabilità', caso:'Nel programma c’è un punto debole che nessuno ha ancora riparato: da lì si può entrare.',     testo:'Un punto debole di un sistema, da cui qualcuno può entrare, si chiama …? (nel gioco: “falla”)', chiavi:['vulnerabilita','vulnerabilità','falla'], sugg:'Viene da “vulnerabile”: che può essere ferito.'},
+ {lez:1,tema:'Centralina', caso:'È il “cervello” del banco frigo: decide temperature, sbrinamento e allarmi.',        testo:'Nel caso dei frigoriferi dei supermercati, il “cervello” del banco frigo preso di mira è la …?', chiavi:['centralina'], sugg:'Una piccola centrale di comando.'},
+ {lez:1,tema:'Rivendicazione', caso:'Su un canale compare il messaggio «siamo stati noi». Non è ancora una prova.',    testo:'Qualcuno dice «siamo stati noi», ma non è ancora una prova: è una …?', chiavi:['rivendicazione'], sugg:'È l’atto di attribuirsi un attacco.'},
+ {lez:1,tema:'Guerra ibrida', caso:'Blackout, notizie false e sabotaggi nello stesso mese, ma nessuno ha dichiarato guerra.',     testo:'Attacchi informatici, notizie false e sabotaggi per colpire un Paese senza dichiarargli guerra: è la guerra …?', chiavi:['ibrida','guerra ibrida'], sugg:'Mescola strumenti diversi, come un’auto con due motori.'},
+ {lez:1,tema:'Configurare', caso:'Prima accensione della telecamera: scegli chi può entrare, da dove e con quale password.',       testo:'Scegliere le impostazioni di un dispositivo (chi può entrare, da dove, con quale password) si dice …?', chiavi:['configurare','configurazione'], sugg:'Si fa alla prima accensione, e andrebbe fatto bene.'},
+ {lez:1,tema:'Hardware', caso:'Scheda, cavi, schermo: tutto ciò che del computer puoi toccare con le mani.',          testo:'La parte di un computer che si può toccare è l’…?', chiavi:['hardware'], sugg:'In inglese “hard” vuol dire duro.'},
+ {lez:1,tema:'Software', caso:'Le istruzioni che dicono alla macchina che cosa fare: non si toccano, si installano.',          testo:'I programmi, cioè le istruzioni che dicono alla macchina che cosa fare, sono il …?', chiavi:['software'], sugg:'In inglese “soft” vuol dire morbido: non si tocca.'},
+ {lez:2,tema:'Phishing', caso:'«Corriere Lampo: pacco in giacenza, inserisci qui la tua password». La mail è falsa.',          testo:'Mail finta del corriere, migliaia di password consegnate: è …?', chiavi:['phishing'], sugg:'Un messaggio falso che ti spinge a consegnare password o dati.'},
+ {lez:2,tema:'Quishing', caso:'Sul parcometro c’è un QR che porta a un sito falso per pagare. Che trappola è?',          testo:'Adesivi falsi sui parcometri: è il phishing fatto con un codice QR, cioè il …?', chiavi:['quishing'], sugg:'QR + phishing: le due parole si fondono.'},
+ {lez:2,tema:'Ingegneria sociale', caso:'Una telefonata piena di fretta e di paura convince zia Carla a dettare i suoi dati. Nessun computer violato.',testo:'Ingannare le persone invece dei computer, con la fretta, la paura, i premi: è l’ingegneria …?', chiavi:['sociale','ingegneria sociale'], sugg:'Non attacca le macchine: attacca chi le usa.'},
+ {lez:2,tema:'Disinformazione', caso:'Una notizia inventata gira in tutte le chat della scuola, messa in giro apposta per far litigare.',   testo:'Notizie false diffuse apposta per ingannare o per far litigare: è la …?', chiavi:['disinformazione'], sugg:'Il contrario di una buona informazione.'},
+ {lez:2,tema:'Spam', caso:'Ogni mattina la casella è piena di pubblicità che nessuno ha chiesto.',              testo:'Un miliardo di mail che nessuno ha chiesto: non si clicca niente, si segnala. È lo …?', chiavi:['spam'], sugg:'Quattro lettere, in inglese.'},
+ {lez:2,tema:'Il mittente', caso:'Il nome dice «Prof. Ferri», ma l’indirizzo vero è un altro. Che cosa hai controllato?',       testo:'«Da chi arriva?» Prima di fidarti di una mail controlli il vero indirizzo del …?', chiavi:['mittente'], sugg:'È chi spedisce.'},
+ {lez:2,tema:'Il link', caso:'Il messaggio sembra della Polisportiva, ma tenendoci il dito sopra vedi che porta altrove. Che cosa hai controllato?',           testo:'«Dove porta?» Il mittente può essere giusto e lui no: prima di toccarlo controlli il …?', chiavi:['link','collegamento'], sugg:'Lo tocchi e ti porta su un’altra pagina.'},
+ {lez:2,tema:'Dillo a un adulto', caso:'Hai già scritto la password nel sito falso. Qual è la prima mossa giusta?', testo:'La trappola è scattata: la prima cosa da fare è dirlo subito a un …?', chiavi:['adulto','genitore','insegnante'], sugg:'Non a un compagno: a un grande di cui ti fidi.'},
+ {lez:2,tema:'L’adesivo', caso:'Il QR del parcometro ha un bordo che si stacca: qualcuno l’ha incollato sopra quello vero.',         testo:'Sul parcometro il QR falso è incollato sopra quello vero: te ne accorgi perché è un … con un bordo che si stacca.', chiavi:['adesivo'], sugg:'Si attacca e si stacca.'},
+ {lez:3,tema:'Malware', caso:'«Monete infinite» per Cubimondo: dentro il gioco c’era un programma fatto per fare danni.',           testo:'Un gioco gratis nascondeva un programma fatto per danneggiare o per spiare: è un …?', chiavi:['malware'], sugg:'“Mal” come malevolo, “ware” come software.'},
+ {lez:3,tema:'Spyware', caso:'Un programma nascosto legge i messaggi di Sara e li manda a uno sconosciuto.',           testo:'Un malware fatto apposta per spiare quello che fai si chiama …?', chiavi:['spyware'], sugg:'In inglese “spy” vuol dire spia.'},
+ {lez:3,tema:'VPN', caso:'«GhostNet»: tutto il traffico dell’iPad passa dal server di chi la gestisce. Può proteggere, oppure spiare.',               testo:'Fa passare il tuo traffico dal server di qualcun altro: protegge o spia, dipende da chi la gestisce. È la …?', chiavi:['vpn'], sugg:'Una sigla di tre lettere.'},
+ {lez:3,tema:'Se è gratis…', caso:'L’app non costa nulla: allora chiediti chi paga. Spesso paghi con i tuoi dati.',      testo:'«Chiediti chi paga: spesso paghi con i tuoi dati». La regola vale per le app che sono …?', chiavi:['gratis','gratuite','gratuita'], sugg:'Non costano soldi. Ma qualcosa costano.'},
+ {lez:3,tema:'Il codice', caso:'«Sono Luca, mi mandi le 6 cifre che ti sono arrivate?» Non si passano a nessuno.',         testo:'Arriva sul telefono, ha 6 cifre, è la chiave del tuo account e non si passa a nessuno: è il …?', chiavi:['codice'], sugg:'Un compagno che te lo chiede in chat si controlla a voce.'},
+ {lez:3,tema:'Zero click', caso:'Il telefono è stato spiato senza che il proprietario toccasse niente: nessun messaggio aperto.',        testo:'Un attacco che non ha bisogno di nessun tuo gesto si chiama zero …?', chiavi:['click','clic','zero click'], sugg:'È il gesto che di solito fai con il mouse, e che qui non serve.'},
+ {lez:3,tema:'Furto d’identità', caso:'Qualcuno scrive dall’account di Giulia fingendo di essere lei.',  testo:'Qualcuno usa i tuoi dati o il tuo account fingendo di essere te: è un furto d’…?', chiavi:['identita','identità'], sugg:'È ciò che dice chi sei.'},
+ {lez:4,tema:'Internet delle cose', caso:'Robot aspirapolvere, altoparlante, termostato e telecamera: tutti collegati alla rete di casa.', testo:'Gli oggetti di casa collegati alla rete formano l’Internet delle …?', chiavi:['cose','internet delle cose','iot'], sugg:'Robot, altoparlanti, telecamere: non sono persone, sono…'},
+ {lez:4,tema:'Botnet', caso:'Migliaia di telecamere di casa, prese di nascosto, obbediscono tutte allo stesso comando.',            testo:'Migliaia di telecamere di casa prese di nascosto e comandate tutte insieme: è una …?', chiavi:['botnet'], sugg:'“Bot” come robot, “net” come rete.'},
+ {lez:4,tema:'DDoS', caso:'Il sito della biblioteca riceve milioni di richieste tutte insieme e smette di rispondere.',              testo:'Moltissimi dispositivi chiedono la stessa pagina e il sito non regge più: è un attacco …? (sigla di 4 lettere)', chiavi:['ddos'], sugg:'Comincia con due D.'},
+ {lez:4,tema:'La porta', caso:'Un passaggio numerato: da lì la telecamera fa uscire solo il video, nient’altro.',          testo:'Un passaggio numerato da cui un oggetto fa entrare e uscire una cosa sola è una … informatica.', chiavi:['porta'], sugg:'Il firewall chiude quelle che non servono.'},
+ {lez:4,tema:'Password di fabbrica', caso:'Il robot arriva con «admin» già impostata, identica su migliaia di robot.', testo:'È uguale per tanti dispositivi e va cambiata subito, alla prima accensione: è la password di …?', chiavi:['fabbrica'], sugg:'È il posto dove l’oggetto è stato costruito.'},
+ {lez:4,tema:'Rete separata', caso:'Il robot viene violato, ma computer e telefoni restano al sicuro: stavano da un’altra parte.',     testo:'Come nel domino: se un oggetto cade, gli altri restano in piedi. Per questo gli oggetti di casa stanno su una rete …?', chiavi:['separata','rete separata'], sugg:'Il contrario di “unita”.'}
+];
+// ---- GLOSSARIO del livello Cybersecurity: le definizioni sono quelle della lezione ----
+const GLOSSARIO_CYBER=[
+ {t:'Adesivo', d:'Sul parcometro il QR falso è incollato sopra quello vero: un bordo si stacca. Nel dubbio si usa l’app ufficiale o la cassa.'},
+ {t:'Adulto', d:'Se la trappola è scattata, dillo subito a un adulto; poi si blocca la carta e si cambia la password.'},
+ {t:'Aggiornamenti', d:'Le correzioni che il produttore manda per chiudere le falle. Riparano i difetti già noti; ne escono sempre di nuovi.'},
+ {t:'Antivirus', d:'Riconosce i programmi cattivi. Va aggiornato spesso.'},
+ {t:'Blocco schermo', d:'Se ti alzi, lo schermo si chiude da solo.'},
+ {t:'Botnet', d:'Tanti dispositivi presi di nascosto e comandati insieme.'},
+ {t:'Centralina', d:'Il cervello del banco frigo: nel caso dei supermercati è stata lei il bersaglio.'},
+ {t:'Codice a 6 cifre', d:'È la chiave del tuo account: non si passa a nessuno. Un compagno che lo chiede in chat si controlla a voce.'},
+ {t:'Configurare', d:'Scegliere le impostazioni di un dispositivo: chi può entrare, da dove, con quale password.'},
+ {t:'DDoS', d:'Moltissimi dispositivi chiedono la stessa cosa a un sito, finché non regge più.'},
+ {t:'Disinformazione', d:'Notizie false diffuse apposta per ingannare o per far litigare.'},
+ {t:'Doppia chiave', d:'Oltre alla password serve un codice sul telefono: regge anche se la password viene rubata. Si chiama anche verifica in due passaggi.'},
+ {t:'Firewall', d:'Chiude le porte che non servono: chi bussa da fuori non trova ingressi.'},
+ {t:'Forza bruta', d:'Provare in automatico moltissime password, finché una funziona.'},
+ {t:'Furto d’identità', d:'Qualcuno usa i tuoi dati o il tuo account fingendo di essere te.'},
+ {t:'Gratis', d:'Se è gratis, chiediti chi paga: spesso paghi con i tuoi dati.'},
+ {t:'Guerra ibrida', d:'Attacchi informatici, notizie false e sabotaggi per colpire un Paese senza dichiarargli guerra.'},
+ {t:'Hacker', d:'Chi conosce a fondo i sistemi informatici. Può difenderli, con il permesso, o entrarci senza.'},
+ {t:'Hacktivisti', d:'Hacker che attaccano per una causa o per protesta. Anonymous è il nome più noto.'},
+ {t:'Hardware', d:'La parte di un computer che si può toccare.'},
+ {t:'Infrastrutture critiche', d:'I servizi senza cui un Paese si ferma: energia, acqua, ospedali, trasporti, cibo.'},
+ {t:'Ingegneria sociale', d:'Ingannare le persone invece dei computer: con la fretta, la paura, i premi.'},
+ {t:'Internet delle cose', d:'Gli oggetti di casa collegati alla rete: robot, altoparlanti, telecamere, termostati.'},
+ {t:'Link', d:'«Dove porta?» Il mittente può essere giusto e il link no: si controlla prima di toccarlo.'},
+ {t:'Malware', d:'Un programma fatto per danneggiare o per spiare. Se spia, si chiama spyware.'},
+ {t:'Mittente', d:'«Da chi arriva?» Di una mail si controlla il vero indirizzo di chi la manda.'},
+ {t:'Password di fabbrica', d:'È uguale per tanti dispositivi: va cambiata subito.'},
+ {t:'Password sicura', d:'Lunga (almeno 12 caratteri), senza parole di senso compiuto, con maiuscole, minuscole, numeri e simboli, e diversa per ogni servizio.'},
+ {t:'Permesso', d:'La differenza è il permesso: senza permesso, nei sistemi degli altri non si entra.'},
+ {t:'Phishing', d:'Un messaggio falso che ti spinge a consegnare password o dati.'},
+ {t:'Porta informatica', d:'Un passaggio numerato da cui un oggetto fa entrare e uscire una cosa sola.'},
+ {t:'Quishing', d:'Il phishing fatto con un codice QR.'},
+ {t:'Remoto', d:'Da lontano, attraverso internet, senza essere sul posto.'},
+ {t:'Rete separata', d:'Come nel domino: se un dispositivo cade, gli altri restano in piedi.'},
+ {t:'Rivendicazione', d:'Qualcuno dice «siamo stati noi». Non è ancora una prova.'},
+ {t:'Software', d:'I programmi: le istruzioni che dicono all’hardware che cosa fare.'},
+ {t:'Spam', d:'Mail che non hai mai chiesto. Non si clicca niente: si segnala.'},
+ {t:'Spyware', d:'Un malware fatto per spiare quello che fai.'},
+ {t:'VPN', d:'Fa passare il tuo traffico dal server di qualcun altro: protegge o spia, dipende da chi la gestisce.'},
+ {t:'Vulnerabilità', d:'Un punto debole di un sistema, da cui qualcuno può entrare. Detta anche falla.'},
+ {t:'Zero click', d:'Un attacco che non ha bisogno di nessun tuo gesto. È raro e mirato: la difesa è tenere tutto aggiornato.'}
+];
+const GLOSSARIO_BASE=GLOSSARIO.slice();
+const CENTRALE={on:false,pronta:false,t:0,frame:0,tvT:9,termT:9,etT:9,giro:0,grp:null,vista:null,piani:{},cams:[],luci:[],salva:null,riga:0};
+function bipCyber(f,d,v){
+  if(typeof musicaOn!=='undefined' && !musicaOn) return;
+  try{ const C=bipCyber.c||(bipCyber.c=new (window.AudioContext||window.webkitAudioContext)()), o=C.createOscillator(), g=C.createGain(), t=C.currentTime;
+    o.type='sine'; o.frequency.setValueAtTime(f,t); g.gain.setValueAtTime(v||.06,t); g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(g); g.connect(C.destination); o.start(t); o.stop(t+d); }catch(e){}
+}
+function preparaCentrale(){
+  const C=CENTRALE; if(C.pronta) return; C.pronta=true;
+  C.grp=new THREE.Group(); C.vista=new THREE.Group(); C.grp.visible=C.vista.visible=false; scene.add(C.grp); scene.add(C.vista);
+  const tela=(w,h)=>{ const c=mkCanvas(w,h), t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=4; return {c,g:c.getContext('2d'),t}; };
+  C.tv=tela(1024,576); C.term=tela(512,288); C.ok=tela(512,288);
+  { const g=C.ok.g;                                              // schermata fissa: sistema in sicurezza
+    g.fillStyle='#04170f'; g.fillRect(0,0,512,288);
+    g.strokeStyle='#3ddc84'; g.lineWidth=7; g.lineJoin='round';
+    g.beginPath(); g.moveTo(256,46); g.lineTo(330,74); g.lineTo(330,138); g.quadraticCurveTo(326,196,256,224); g.quadraticCurveTo(186,196,182,138); g.lineTo(182,74); g.closePath(); g.stroke();
+    g.lineWidth=11; g.lineCap='round'; g.beginPath(); g.moveTo(222,134); g.lineTo(248,162); g.lineTo(296,104); g.stroke();
+    g.fillStyle='#3ddc84'; g.font='bold 26px "Courier New",monospace'; g.textAlign='center'; g.fillText('SISTEMA IN SICUREZZA',256,262); C.ok.t.needsUpdate=true; }
+  // --- 4 telecamere di sicurezza: riprese vere della scena su una texture a bassa risoluzione
+  [[7.5,2.78,-2.6, 0,.7,.4,'CAM 01  LAB OVEST'],[-7.5,2.78,2.9, -1,.7,0,'CAM 02  LAB EST'],
+   [-0.5,2.8,2.9, -0.5,.6,-1.6,'CAM 03  VARCO'],[0.85,2.5,-11.5, -0.4,1.1,-3.6,'CAM 04  CORRIDOIO']].forEach(k=>{
+    const cam=new THREE.PerspectiveCamera(74,16/9,.1,60); cam.position.set(k[0],k[1],k[2]); cam.lookAt(k[3],k[4],k[5]);
+    const rt=new THREE.WebGLRenderTarget(320,180), et=tela(320,180);
+    C.cams.push({cam,rt,et,nome:k[6],mFeed:new THREE.MeshBasicMaterial({map:rt.texture}),
+      mEt:new THREE.MeshBasicMaterial({map:et.t,transparent:true,depthWrite:false})});
+  });
+  // --- un piano davanti allo schermo di ogni Mac studente: telecamera, terminale o scudo verde
+  const gp=new THREE.PlaneGeometry(.476,.268);
+  C.mTerm=new THREE.MeshBasicMaterial({map:C.term.t,toneMapped:false}); C.mOk=new THREE.MeshBasicMaterial({map:C.ok.t,toneMapped:false});
+  MAC_REG.filter(m=>m.num>0).forEach(m=>{
+    const av=m.z>0.1, s=av?1:-1, k=(m.num%4===1)?C.cams[((m.num-1)/4|0)%C.cams.length]:null;
+    const p=new THREE.Mesh(gp,k?k.mFeed:C.mTerm); p.position.set(m.x,H_TAV+.296,m.z+s*.0102); p.rotation.y=av?0:Math.PI; C.vista.add(p);
+    let et=null; if(k){ et=new THREE.Mesh(gp,k.mEt); et.position.set(m.x,H_TAV+.296,m.z+s*.0114); et.rotation.y=p.rotation.y; C.vista.add(et); }
+    C.piani[m.num]={p,et,base:p.material};
+  });
+  // --- lampeggianti ambra e bagliore azzurro della TV (in un gruppo a parte: restano accesi
+  //     anche mentre si riprendono le telecamere, così il conteggio delle luci non cambia)
+  for(const [x,y,z,f] of [[-0.5,2.55,-2.45,0],[4.2,2.8,2.6,2.1],[-6.4,2.8,-2.7,4.2]]){
+    const l=new THREE.PointLight(0xffa02a,0,7.5,1.6); l.position.set(x,y,z); C.grp.add(l);
+    const b=new THREE.Mesh(new THREE.SphereGeometry(.06,12,8),new THREE.MeshBasicMaterial({color:new THREE.Color(0xffa02a).convertSRGBToLinear()}));
+    b.position.set(x,y+.12,z); C.grp.add(b); C.luci.push({l,b,f});
+  }
+  { const l=new THREE.PointLight(0x38b6ff,.7,7,1.5); l.position.set(-7.1,1.6,.2); C.grp.add(l); }
+  for(const x of [-5,5]) for(const z of [1.5,-1.2]){ const l=new THREE.PointLight(0x2f9dff,.42,5.5,1.6); l.position.set(x,1.25,z); C.grp.add(l); }   // bagliore dei monitor
+  // la lavagna diventa il QUADRO DELLE LEZIONI: quanti sistemi risolti per ciascuna delle 4 lezioni, e le parole trovate
+  C.quadro=tela(1024,490); scene.traverse(o=>{ if(o.isMesh && o.geometry && o.geometry.type==='PlaneGeometry' && Math.abs(o.position.x+3.6)<.02 && Math.abs(o.position.z+3.26)<.02) C.lav=o; });
+}
+// accende o spegne la centrale (luci, TV, schermi, cornice a video)
+function attivaCentrale(on){
+  const C=CENTRALE; if(on) preparaCentrale(); if(!C.pronta || on===C.on) return;
+  C.on=on; C.grp.visible=C.vista.visible=on; document.documentElement.classList.toggle('cyber',on);
+  if(on){
+    let amb=null; scene.traverse(o=>{ if(o.isAmbientLight) amb=o; });
+    C.salva={amb,ac:amb.color.getHex(),ai:amb.intensity,sole:sole.intensity,fog:scene.fog?scene.fog.color.getHex():0,tv:matTV.map,bg:scene.background.getHex()};
+    amb.color.setHex(0x2f5fc8); amb.intensity=.24; sole.intensity=.10;
+    if(scene.fog) scene.fog.color.setHex(0x071226);
+    scene.background.set(0x050c1a).convertSRGBToLinear();
+    matTV.map=C.tv.t; matTV.toneMapped=false; matTV.needsUpdate=true; C.tvT=C.termT=C.etT=9;
+    if(C.lav){ C.lavMap=C.lav.material.map; C.lav.material.map=C.quadro.t; C.lav.material.toneMapped=false; C.lav.material.needsUpdate=true; C.quadroN=-1; }
+  } else if(C.salva){
+    const s=C.salva; s.amb.color.setHex(s.ac); s.amb.intensity=s.ai; sole.intensity=s.sole;
+    if(scene.fog) scene.fog.color.setHex(s.fog); scene.background.setHex(s.bg);
+    matTV.map=s.tv; matTV.toneMapped=true; matTV.needsUpdate=true;
+    if(C.lav){ C.lav.material.map=C.lavMap; C.lav.material.toneMapped=true; C.lav.material.needsUpdate=true; }
+  }
+}
+// a ogni nuova partita: livello scelto → glossario, schermi azzerati, centrale accesa o spenta
+function applicaLivello(){
+  const cyber=G.livello==='cyber';
+  GLOSSARIO.splice(0,GLOSSARIO.length,...(cyber?GLOSSARIO_CYBER:GLOSSARIO_BASE));
+  if(typeof galMacCostruita!=='undefined' && galMacCostruita){ galMacCostruita=false; galCards=[]; const w=$('galFlightWorld'); if(w) w.innerHTML=''; }
+  attivaCentrale(cyber); G.sequenzaOk=false; SEQ.partita=null;
+  if(CENTRALE.pronta){ CENTRALE.t=0; for(const n in CENTRALE.piani){ const q=CENTRALE.piani[n]; q.p.material=q.base; if(q.et) q.et.visible=true; } }
+}
+function cyberRisolto(e){                               // un Mac messo in sicurezza
+  const q=CENTRALE.piani[e.mac]; if(q){ q.p.material=CENTRALE.mOk; if(q.et) q.et.visible=false; }
+  bipCyber(880,.12); setTimeout(()=>bipCyber(1320,.2),110); CENTRALE.tvT=9;
+}
+// --- SEQUENZA DI SBLOCCO (porta finale del livello Cybersecurity). Servono TUTTE le parole-chiave
+//     raccolte: la serratura propone 12 casi concreti, uno alla volta e in ordine casuale, e per
+//     ciascuno va scelta la carta giusta fra le 12 conquistate. Ogni carta si usa una volta sola;
+//     un errore non azzera nulla ma viene contato (lo vede anche l'insegnante a fine sequenza).
+const SEQ={partita:null,ordine:[],carte:[],passo:0,errori:0};
+function apriSequenza(){
+  G.overlay=true; if(document.pointerLockElement) document.exitPointerLock();
+  if(SEQ.partita!==ENIGMI){ SEQ.partita=ENIGMI; SEQ.ordine=mescola(ENIGMI.map((e,i)=>i)); SEQ.carte=mescola(ENIGMI.map((e,i)=>i)); SEQ.passo=0; SEQ.errori=0; }
+  $('seqMsg').textContent=''; disegnaSequenza(); $('sequenza').style.display='flex';
+}
+function disegnaSequenza(){
+  const n=ENIGMI.length, fatte=new Set(SEQ.ordine.slice(0,SEQ.passo));
+  $('seqPasso').textContent='Passo '+(SEQ.passo+1)+' di '+n;
+  $('seqBarra').innerHTML=SEQ.ordine.map((_,i)=>'<i class="'+(i<SEQ.passo?'ok':i===SEQ.passo?'ora':'')+'"></i>').join('');
+  $('seqCaso').textContent=ENIGMI[SEQ.ordine[SEQ.passo]].caso;
+  const box=$('seqCarte'); box.innerHTML='';
+  SEQ.carte.forEach(i=>{ const b=document.createElement('button'); b.type='button'; b.className='seq-carta'+(fatte.has(i)?' usata':'');
+    b.textContent=ENIGMI[i].tema; b.disabled=fatte.has(i); b.addEventListener('click',()=>sceltaSequenza(i,b)); box.appendChild(b); });
+}
+function sceltaSequenza(i,b){
+  if(i===SEQ.ordine[SEQ.passo]){
+    bipCyber(620+SEQ.passo*45,.11); SEQ.passo++; $('seqMsg').textContent='';
+    if(SEQ.passo>=ENIGMI.length){                       // sequenza completa: la porta si apre
+      G.sequenzaOk=true; chiudiSequenza(); bipCyber(1320,.3);
+      splash(SEQ.errori?('Sequenza corretta! Errori: '+SEQ.errori):'Sequenza perfetta!','#3ddc84'); apriPorta(); return; }
+    disegnaSequenza();
+  } else {
+    SEQ.errori++; b.classList.add('no'); setTimeout(()=>b.classList.remove('no'),450); bipCyber(170,.2);
+    $('seqMsg').textContent='Non è questa: rileggi bene il caso. Errori: '+SEQ.errori;
+  }
+}
+function chiudiSequenza(){ $('sequenza').style.display='none'; G.overlay=false; if(G.gioco && !G.finita) bloccaMouse(); }
+// --- QUADRO DELLA CENTRALE sulla smart TV
+const LOG_CYBER=['Phishing bloccato: finta mail del Corriere Lampo','Forza bruta respinta: migliaia di password provate sul pannello','Aggiornamento installato sulla centralina GeloNet',
+  'QR sospetto segnalato: adesivo sul parcometro','Firewall: chiusa una porta che non serviva','Spam in arrivo: segnalato, nessun clic',
+  'Botnet: telecamera di casa isolata sulla rete separata','Password di fabbrica cambiata sul robot aspirapolvere','Doppia chiave attivata su un account',
+  'Accesso da remoto fuori orario: rifiutato','VPN gratuita “GhostNet” rimossa da un iPad','Codice a 6 cifre chiesto in chat: non consegnato',
+  'DDoS sul sito della scuola: traffico filtrato','Disinformazione segnalata al moderatore di Cubimondo','Profilo sconosciuto rifiutato: i giochi si installano dallo store'];
+function disegnaTVCentrale(){
+  const C=CENTRALE, g=C.tv.g, W=1024, H=576, t=C.t, fatti=ENIGMI.filter(e=>e.risolto).length, tot=ENIGMI.length||N_TAPPE;
+  const VERDE='#3ddc84', AMBRA='#ffb347', CIANO='#56c8ff', TESTO='#d8ecff';
+  g.fillStyle='#050b16'; g.fillRect(0,0,W,H);
+  g.strokeStyle='rgba(86,200,255,.07)'; g.lineWidth=1; g.beginPath();
+  for(let x=0;x<=W;x+=32){ g.moveTo(x,0); g.lineTo(x,H); } for(let y=0;y<=H;y+=32){ g.moveTo(0,y); g.lineTo(W,y); } g.stroke();
+  // intestazione: scudo, titolo, orologio, livello di allerta
+  g.fillStyle='#0b1a30'; g.fillRect(0,0,W,58); g.fillStyle=CIANO; g.fillRect(0,58,W,2);
+  g.strokeStyle=CIANO; g.lineWidth=3; g.lineJoin='round'; g.beginPath(); g.moveTo(34,10); g.lineTo(54,18); g.lineTo(54,34); g.quadraticCurveTo(52,46,34,52); g.quadraticCurveTo(16,46,14,34); g.lineTo(14,18); g.closePath(); g.stroke();
+  g.fillStyle=TESTO; g.textAlign='left'; g.font='bold 30px "Courier New",monospace'; g.fillText('CENTRALE OPERATIVA · CYBERSICUREZZA',70,30);
+  g.fillStyle=CIANO; g.font='bold 16px "Courier New",monospace'; g.fillText('LABORATORIO DI INFORMATICA — SACRA FAMIGLIA',70,50);
+  const ora=new Date(), p2=n=>String(n).padStart(2,'0');
+  g.textAlign='right'; g.fillStyle=TESTO; g.font='bold 26px "Courier New",monospace'; g.fillText(p2(ora.getHours())+':'+p2(ora.getMinutes())+':'+p2(ora.getSeconds()),W-18,30);
+  const liv=fatti>=tot?['RETE IN SICUREZZA',VERDE]:fatti>=8?['ALLERTA BASSA',VERDE]:fatti>=4?['ALLERTA MEDIA','#ffd75e']:['ALLERTA ALTA',AMBRA];
+  g.fillStyle=liv[1]; g.font='bold 18px "Courier New",monospace'; g.fillText(liv[0],W-18,51);
+  // mappa di rete: Internet → firewall → server → 28 Mac (verdi quando sono in sicurezza)
+  g.textAlign='left'; g.fillStyle=CIANO; g.font='bold 18px "Courier New",monospace'; g.fillText('RETE DEL LABORATORIO',24,88);
+  const px=x=>330+x*37, py=z=>z>0.1?250:330, SX=330, SY=150;
+  const sicuri={}; ENIGMI.forEach(e=>{ if(e.risolto) sicuri[e.mac]=1; });
+  g.strokeStyle='rgba(86,200,255,.35)'; g.lineWidth=1.5; g.beginPath();
+  g.moveTo(SX,100); g.lineTo(SX,SY);
+  for(const cx of [-5,5]){ g.moveTo(SX,SY); g.lineTo(px(cx),290); g.moveTo(px(cx)-112,290); g.lineTo(px(cx)+112,290); }
+  MAC_REG.forEach(m=>{ if(m.num>0){ g.moveTo(px(m.x),py(m.z)); g.lineTo(px(m.x),290); } });
+  g.stroke();
+  g.fillStyle='#0b1a30'; g.strokeStyle=CIANO; g.lineWidth=2;
+  g.fillRect(SX-56,92,112,22); g.strokeRect(SX-56,92,112,22); g.fillRect(SX-46,SY-13,92,26); g.strokeRect(SX-46,SY-13,92,26);
+  g.fillStyle=TESTO; g.textAlign='center'; g.font='bold 15px "Courier New",monospace'; g.fillText('FIREWALL',SX,109); g.fillText('SERVER',SX,SY+5);
+  const att=MAC_REG.filter(m=>m.num>0 && !sicuri[m.num]);      // pacchetti sospetti verso i Mac non ancora sicuri
+  for(let i=0;i<5 && att.length;i++){ const m=att[(i*7+(t/2.4|0))%att.length], u=((t*.42+i*.21)%1);
+    const tx=px(m.x), ty=py(m.z); let x,y; if(u<.5){ x=SX+(tx-SX)*(u*2); y=SY+(290-SY)*(u*2); } else { x=tx; y=290+(ty-290)*((u-.5)*2); }
+    g.fillStyle=AMBRA; g.beginPath(); g.arc(x,y,3.5,0,7); g.fill(); }
+  MAC_REG.forEach(m=>{ if(m.num<=0) return; const ok=sicuri[m.num], x=px(m.x), y=py(m.z), pul=.55+.45*Math.sin(t*3+m.num);
+    g.fillStyle=ok?VERDE:'rgba(255,179,71,'+(.45+.4*pul).toFixed(2)+')'; g.fillRect(x-11,y-10,22,20);
+    g.fillStyle='#050b16'; g.font='bold 14px "Courier New",monospace'; g.fillText(String(m.num),x,y+5); });
+  g.textAlign='left'; g.font='bold 16px "Courier New",monospace';
+  g.fillStyle=VERDE; g.fillRect(24,378,16,14); g.fillStyle=TESTO; g.fillText('in sicurezza',48,391);
+  g.fillStyle=AMBRA; g.fillRect(210,378,16,14); g.fillStyle=TESTO; g.fillText('da verificare',234,391);
+  // pannello di destra: sistemi in sicurezza, minacce respinte, tempo
+  g.strokeStyle='rgba(86,200,255,.5)'; g.lineWidth=1.5; g.strokeRect(664,76,340,330);
+  g.fillStyle=CIANO; g.font='bold 18px "Courier New",monospace'; g.fillText('SISTEMI IN SICUREZZA',680,102);
+  g.fillStyle=fatti>=tot?VERDE:TESTO; g.font='bold 100px "Courier New",monospace'; g.fillText(fatti+'/'+tot,676,192);
+  for(let i=0;i<tot;i++){ g.fillStyle=i<fatti?VERDE:'rgba(86,200,255,.18)'; g.fillRect(680+i*26,204,21,16); }
+  g.fillStyle=CIANO; g.font='bold 18px "Courier New",monospace'; g.fillText('MINACCE RESPINTE',680,258);
+  g.fillStyle=TESTO; g.font='bold 40px "Courier New",monospace'; g.fillText(String(1200+Math.floor(t*2.3)).replace(/\B(?=(\d{3})+$)/g,'.'),680,300);
+  g.fillStyle=CIANO; g.font='bold 18px "Courier New",monospace'; g.fillText('TEMPO OPERAZIONE',680,346);
+  g.fillStyle=TESTO; g.font='bold 40px "Courier New",monospace'; g.fillText(p2(t/60|0)+':'+p2(t%60|0),680,388);
+  // registro degli eventi (scorre)
+  g.fillStyle='#0b1a30'; g.fillRect(0,420,W,156); g.fillStyle=CIANO; g.fillRect(0,420,W,2);
+  g.font='bold 18px "Courier New",monospace'; g.fillText('REGISTRO EVENTI',24,448);
+  g.font='bold 21px "Courier New",monospace';
+  const base=Math.floor(t/2.2);
+  for(let i=0;i<3;i++){ const k=base-i; if(k<0) break; const d=new Date(ora.getTime()-i*2200-(t%2.2)*1000);
+    g.fillStyle=i?'rgba(216,236,255,'+(.8-i*.17)+')':VERDE;
+    g.fillText('['+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds())+'] '+LOG_CYBER[k%LOG_CYBER.length],24,482+i*32); }
+  C.tv.t.needsUpdate=true;
+  if(C.lav && C.quadroN!==fatti){ C.quadroN=fatti; disegnaQuadroLezioni(); }
+}
+// --- QUADRO DELLE LEZIONI sulla lavagna: per ciascuna delle 4 lezioni, quanti dei sistemi di questa
+//     partita sono già in sicurezza, e le parole-chiave ritrovate (un ripasso che cresce giocando)
+const LEZIONI_CYBER=['','I frigoriferi','La trappola','Il dispositivo','La casa'];
+function disegnaQuadroLezioni(){
+  const C=CENTRALE, g=C.quadro.g, W=1024, H=490;
+  g.fillStyle='#050b16'; g.fillRect(0,0,W,H); g.fillStyle='#0b1a30'; g.fillRect(0,0,W,62); g.fillStyle='#56c8ff'; g.fillRect(0,62,W,3);
+  g.textAlign='left'; g.fillStyle='#d8ecff'; g.font='bold 34px "Courier New",monospace'; g.fillText('COMPETENZE VERIFICATE',24,43);
+  g.textAlign='right'; g.fillStyle='#56c8ff'; g.font='bold 20px "Courier New",monospace'; g.fillText('HACKER & CYBERSECURITY',W-22,40);
+  for(let l=1;l<=4;l++){
+    const es=ENIGMI.filter(e=>e.lez===l), ok=es.filter(e=>e.risolto), y=78+(l-1)*100;
+    g.textAlign='left'; g.fillStyle='#56c8ff'; g.font='bold 24px "Courier New",monospace'; g.fillText('LEZIONE '+l+' · '+LEZIONI_CYBER[l].toUpperCase(),24,y+30);
+    g.textAlign='right'; g.fillStyle=es.length&&ok.length===es.length?'#3ddc84':'#d8ecff'; g.font='bold 30px "Courier New",monospace'; g.fillText(ok.length+'/'+es.length,W-22,y+32);
+    g.fillStyle='rgba(86,200,255,.16)'; g.fillRect(24,y+42,W-48,14);
+    if(es.length){ g.fillStyle='#3ddc84'; g.fillRect(24,y+42,(W-48)*ok.length/es.length,14); }
+    g.textAlign='left'; g.fillStyle='#ffd75e'; g.font='bold 20px "Courier New",monospace';
+    g.fillText(ok.length?ok.map(e=>e.tema).join(' · ').slice(0,74):'— ancora nessun sistema in sicurezza —',24,y+80);
+  }
+  C.quadro.t.needsUpdate=true;
+}
+// --- terminale che scorre (stessa immagine per tutti i Mac "in analisi")
+function disegnaTerminale(){
+  const C=CENTRALE, g=C.term.g; C.riga++;
+  g.fillStyle='#03080f'; g.fillRect(0,0,512,288);
+  g.fillStyle='#0b1a30'; g.fillRect(0,0,512,26); g.fillStyle='#56c8ff'; g.font='bold 14px "Courier New",monospace'; g.textAlign='left';
+  g.fillText('NODO IN ANALISI  >_',12,18);
+  g.font='bold 21px "Courier New",monospace';
+  const V=['scansione porte ........ OK','controllo aggiornamenti . OK','firma antivirus ......... OK','verifica password ....... DEBOLE','traffico in uscita ...... ANOMALO',
+           'copia di sicurezza ...... ASSENTE','certificato del sito .... DA VERIFICARE','accessi notturni ........ 3 TENTATIVI','posta in arrivo ......... 1 SOSPETTA','connessione ............. NON PROTETTA'];
+  for(let i=0;i<8;i++){ const k=(C.riga+i)*7919%V.length, riga=V[k], al=/OK$/.test(riga);
+    g.fillStyle=al?'#3ddc84':'#ffb347'; g.fillText(riga,12,56+i*29); }
+  g.fillStyle=(C.riga%2)?'#56c8ff':'#03080f'; g.fillRect(12,276,10,3);
+  C.term.t.needsUpdate=true;
+}
+function etichettaCam(k){                                // sovrimpressione: nome, REC ambra, ora, righe di scansione
+  const g=k.et.g, ora=new Date(), p2=n=>String(n).padStart(2,'0');
+  g.clearRect(0,0,320,180); g.fillStyle='rgba(0,0,0,.20)'; for(let y=0;y<180;y+=3) g.fillRect(0,y,320,1);
+  g.strokeStyle='rgba(255,255,255,.55)'; g.lineWidth=2; g.strokeRect(6,6,308,168);
+  g.fillStyle='#fff'; g.font='bold 13px "Courier New",monospace'; g.textAlign='left'; g.fillText(k.nome,14,24);
+  g.textAlign='right'; g.fillText(p2(ora.getHours())+':'+p2(ora.getMinutes())+':'+p2(ora.getSeconds()),306,168);
+  if(ora.getSeconds()%2){ g.fillStyle='#ffa02a'; g.beginPath(); g.arc(298,20,5,0,7); g.fill(); }
+  g.fillStyle='#fff'; g.fillText('REC',288,24);
+  k.et.t.needsUpdate=true;
+}
+// a ogni fotogramma (solo a centrale accesa)
+function aggiornaCentrale(dt){
+  const C=CENTRALE; C.t+=dt; C.frame++;
+  for(const q of C.luci){ const s=Math.max(0,Math.sin(C.t*2.6+q.f)); q.l.intensity=.08+.8*s*s; q.b.scale.setScalar(.8+.5*s*s); }
+  if((C.tvT+=dt)>.4){ C.tvT=0; disegnaTVCentrale(); }
+  if((C.termT+=dt)>.24){ C.termT=0; disegnaTerminale(); }
+  if((C.etT+=dt)>1){ C.etT=0; C.cams.forEach(etichettaCam); }
+  // una telecamera per volta, ogni 3 fotogrammi (6 su tablet): riprese a scatti, come le vere.
+  // Gli schermi si nascondono durante la ripresa: una texture non può essere letta mentre la si scrive.
+  if(C.frame%(TOUCH?6:3)===0){
+    const k=C.cams[C.giro++%C.cams.length], au=renderer.shadowMap.autoUpdate;
+    renderer.shadowMap.autoUpdate=false; C.vista.visible=false;
+    renderer.setRenderTarget(k.rt); renderer.render(scene,k.cam); renderer.setRenderTarget(null);
+    C.vista.visible=true; renderer.shadowMap.autoUpdate=au;
+  }
+}
+// scelta del livello nella schermata d'avvio
+G.livello='base';
+document.querySelectorAll('#livelli .liv').forEach(b=>b.addEventListener('click',()=>{
+  G.livello=b.dataset.liv;
+  document.querySelectorAll('#livelli .liv').forEach(x=>{ x.classList.toggle('sel',x===b); x.setAttribute('aria-pressed',x===b); });
+}));
+
 // ---- avvio / vittoria ----
 function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al termine
   $('consegna').style.display='none';
   costruisciPartita(macScelto); // parte dal Mac scelto (o casuale se non selezionato)
+  applicaLivello();              // glossario del livello e, per il Cybersecurity, centrale operativa
   G.intro=true; G.introT=0; G.gioco=false; G.finita=false; G.tappa=0;
   $('btnSalta').style.display='block';
   avviaMusica();                   // il clic su "Inizia" sblocca l'autoplay della musica
@@ -2813,6 +3222,7 @@ $('matrixVid').addEventListener('ended',()=>{ if(matrixOn) disattivaMatrix(); })
 $('btnVerifica').addEventListener('click',verificaRisposta);
 $('btnContinua').addEventListener('click',continuaDopoEnigma);
 $('btnDecoyEsci').addEventListener('click',chiudiEnigma);
+$('btnSeqEsci').addEventListener('click',chiudiSequenza);
 $('btnRicomincia').addEventListener('click',()=>location.reload());
 // info / regole
 (function(){
@@ -2833,7 +3243,7 @@ function accessoSegreto(){
   $('regole').style.display='none';
   if(!G.gioco){                                    // avvio rapido: salta intro e laboratorio di informatica
     $('consegna').style.display='none'; $('btnSalta').style.display='none';
-    if(!G.intro){ costruisciPartita(macScelto||1); }   // se la partita non era ancora stata costruita
+    if(!G.intro){ costruisciPartita(macScelto||1); applicaLivello(); }   // se la partita non era ancora stata costruita
     G.intro=false; G.gioco=true; G.tappa=1; G.finita=false;
     aggiornaHUD(); aggiornaInventario(); avviaMusica();
   }
@@ -3038,6 +3448,7 @@ function animate(){
   requestAnimationFrame(animate);
   regolaQualita();
   const dt=Math.min(clock.getDelta(),.05);
+  if(CENTRALE.on) aggiornaCentrale(dt);                 // livello Cybersecurity: TV, telecamere, lampeggianti
   // atmosfera: neon che sfarfalla appena + temporale fuori dalle finestre
   const fk=NEON_BASE*(0.82+0.12*Math.sin(clock.elapsedTime*8.3)) - (Math.random()<0.02?NEON_BASE*0.5:0);
   neon2.intensity=Math.max(0,fk); neon1.intensity=Math.max(0,NEON_BASE*(0.9+0.08*Math.sin(clock.elapsedTime*5.1)));
