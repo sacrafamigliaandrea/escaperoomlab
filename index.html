@@ -275,10 +275,18 @@
   #hmMonC .liv small{font-size:18.5px}
   #hmMonC #btnInizia{margin:auto 0 0;width:100%;padding:20px;font-size:38px;font-weight:800;letter-spacing:2px;border-radius:16px;
     background:#56c8ff;color:#04101c;box-shadow:0 0 34px rgba(86,200,255,.45)}
-  #hmMonC .mac-mappa{grid-template-columns:repeat(7,1fr);gap:11px;margin:0 0 14px}
-  #hmMonC .mac-q{width:auto;height:118px;font-size:40px;font-weight:700;border-radius:12px;border:2px solid rgba(86,200,255,.5);background:rgba(86,200,255,.10);color:#d8ecff}
-  #hmMonC .mac-q:hover{background:rgba(86,200,255,.24)}
-  #hmMonC .mac-q.sel{background:#3ddc84;color:#04170f;border-color:#3ddc84;box-shadow:0 0 22px rgba(61,220,132,.5)}
+  #hmMonC .mac-mappa{grid-template-columns:repeat(7,1fr);gap:16px 14px;margin:6px 0 16px}
+  /* le 28 postazioni sono piccoli iMac (SVG): si capisce subito che si sceglie un computer, non un numero d'elenco.
+     Il filo colorato sotto lo schermo è il colore della fila (azzurro, rosso, verde, giallo). */
+  #hmMonC .mac-q{width:auto;height:auto;padding:0;border:0;background:transparent;border-radius:10px;cursor:pointer;line-height:0;transition:transform .12s}
+  #hmMonC .mac-q svg{display:block;width:100%;height:auto;overflow:visible}
+  #hmMonC .mac-q .im-corpo{fill:#0a0c10;stroke:#c9ced6;stroke-width:2.5} #hmMonC .mac-q .im-schermo{fill:#0b2140}
+  #hmMonC .mac-q .im-mento{fill:#c9ced6} #hmMonC .mac-q .im-mela{fill:#20242b} #hmMonC .mac-q .im-piede{fill:#aeb4bd} #hmMonC .mac-q .im-base{fill:#c9ced6}
+  #hmMonC .mac-q .im-num{fill:#e8f4ff;font:800 34px 'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif}
+  #hmMonC .mac-q:hover{background:transparent;transform:translateY(-4px)} #hmMonC .mac-q:hover .im-schermo{fill:#14407a}
+  #hmMonC .mac-q.sel{background:transparent;box-shadow:none;transform:translateY(-4px) scale(1.08)}
+  #hmMonC .mac-q.sel .im-schermo{fill:#3ddc84} #hmMonC .mac-q.sel .im-num{fill:#04170f} #hmMonC .mac-q.sel .im-corpo{stroke:#3ddc84;filter:drop-shadow(0 0 8px rgba(61,220,132,.8))}
+  #hmMonC .mac-q:focus-visible{outline:3px solid #fff;outline-offset:3px}
   .hmNota{font-size:23px;color:#ffd75e;font-weight:700}
   #hmMonD{background:#000;box-shadow:inset 0 0 30px rgba(25,194,90,.35)}
   #hmPioggia,#hmPioggia2{position:absolute;inset:0;width:100%;height:100%}
@@ -455,9 +463,9 @@
         <button id="btnInizia">Inizia la fuga</button>
       </div>
       <div class="hmDx">
-        <div class="hmPasso"><b>2</b>Scegli la tua postazione di partenza</div>
-        <div class="mac-mappa" id="macMappa" title="I 28 computer del laboratorio"></div>
-        <div class="hmNota" id="hmNota">Nessuna postazione scelta: partirai da un Mac a caso.</div>
+        <div class="hmPasso"><b>2</b>Scegli il tuo Mac di partenza</div>
+        <div class="mac-mappa" id="macMappa" title="I 28 Mac del laboratorio"></div>
+        <div class="hmNota" id="hmNota">Nessun Mac scelto: partirai da un Mac a caso.</div>
       </div>
     </div>
     <div class="hmMon" id="hmMonD">
@@ -3328,7 +3336,7 @@ function consoleErrore(){ CONSOLE.tent=(CONSOLE.tent||0)+1; G.cyErrori=(G.cyErro
   const col=Array.from({length:Math.ceil(W/PASSO)},()=>-(Math.random()*24|0)), vel=col.map(()=>.6+Math.random()*.8);
   const CH='01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロ<>/{}#=+*';
   g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  const frase='Scegli la tua postazione e inizia la fuga.'; let n=0;
+  const frase='Scegli il tuo Mac e inizia la fuga.'; let n=0;
   const t=setInterval(()=>{                             // si ferma da sola quando parte il gioco
     if($('consegna').style.display==='none'){ clearInterval(t); return; }
     g.fillStyle='rgba(0,0,0,.085)'; g.fillRect(0,0,W,H); g.font='bold 16px monospace'; g.textAlign='center';
@@ -3340,7 +3348,7 @@ function consoleErrore(){ CONSOLE.tent=(CONSOLE.tent||0)+1; G.cyErrori=(G.cyErro
     if(n<frase.length){ n++; $('hmFrase').textContent=frase.slice(0,n); }
   },70);
   $('macMappa').addEventListener('click',()=>setTimeout(()=>{
-    $('hmNota').textContent=macScelto?('Partirai dalla postazione '+macScelto+'.'):'Nessuna postazione scelta: partirai da un Mac a caso.'; },0));
+    $('hmNota').textContent=macScelto?('Partirai dal Mac '+macScelto+'.'):'Nessun Mac scelto: partirai da un Mac a caso.'; },0));
 })();
 
 // ---- avvio / vittoria ----
@@ -3466,7 +3474,12 @@ let macScelto=0;
   const quad=[];
   for(let n=1;n<=28;n++){
     const b=document.createElement('button');
-    b.className='mac-q'; b.type='button'; b.textContent=n; b.style.borderColor=bordo(n);
+    b.className='mac-q'; b.type='button'; b.setAttribute('aria-label','Mac '+n);
+    b.innerHTML='<svg viewBox="0 0 120 106" aria-hidden="true"><rect class="im-corpo" x="3" y="2" width="114" height="80" rx="7"/>'+
+      '<rect class="im-schermo" x="8" y="7" width="104" height="56" rx="3"/><rect x="8" y="63" width="104" height="3.5" fill="'+bordo(n)+'"/>'+
+      '<path class="im-mento" d="M4.5 67 H115.5 V75 Q115.5 80.5 110 80.5 H10 Q4.5 80.5 4.5 75 Z"/><circle class="im-mela" cx="60" cy="74" r="3"/>'+
+      '<path class="im-piede" d="M50 82 H70 L74 99 H46 Z"/><rect class="im-base" x="37" y="98" width="46" height="5" rx="2.5"/>'+
+      '<text class="im-num" x="60" y="47" text-anchor="middle">'+n+'</text></svg>';
     b.title='Mac '+n;
     b.addEventListener('click',()=>{ macScelto=n; quad.forEach((q,i)=>q.classList.toggle('sel', i+1===n)); });
     cont.appendChild(b); quad.push(b);
