@@ -798,6 +798,134 @@ sole.shadow.bias=-0.0006;  sole.shadow.radius=4;
 const neon1=new THREE.PointLight(0xbfd0e6,.16,18); neon1.position.set(-8,2.7,0); scene.add(neon1);
 const neon2=new THREE.PointLight(0xbfd0e6,.16,18); neon2.position.set(0,2.7,0); scene.add(neon2);
 const neon3=new THREE.PointLight(0xbfd0e6,.16,18); neon3.position.set(8,2.7,0); scene.add(neon3);
+sole.shadow.normalBias=.025;   // evita le striature d'ombra sulle superfici quasi parallele alla luce
+// ======================================================================
+//  RESA — migliorie riprese dal "Minigolf delle Skill" (Skill_Case/index.html),
+//  dove il laboratorio è stato rifatto partendo da una scansione reale.
+//  Qui si porta SOLO la qualità di resa: geometrie e arredi restano i nostri.
+// ======================================================================
+// PRNG deterministico: le texture sono identiche a ogni caricamento
+let _seme=20260210;
+function rnd(){ _seme=(_seme*1664525+1013904223)>>>0; return _seme/4294967296; }
+// texture LINEARE: per bump e maschere d'ombra non va usata la sRGB di tex()
+function texLin(c){ const t=new THREE.CanvasTexture(c); t.anisotropy=8; return t; }
+
+// --- intonaco: bump sottile, toglie alle pareti l'aria di cartone ---
+const TEX_INTONACO=(()=>{ const c=mkCanvas(512,512), g=c.getContext('2d');
+  g.fillStyle='#808080'; g.fillRect(0,0,512,512);
+  for(let i=0;i<26000;i++){ const v=110+rnd()*36|0;
+    g.fillStyle='rgba('+v+','+v+','+v+',.22)'; g.fillRect(rnd()*512,rnd()*512,1+rnd()*2,1+rnd()*2); }
+  const t=texLin(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,2); return t; })();
+
+// --- box con spigoli VERAMENTE arrotondati (con cache): niente mobili a scatola ---
+const _rbCache={};
+function rbox(w,h,d,r,k){
+  k=k||3;
+  r=Math.max(1e-4,Math.min(r,w/2-1e-4,h/2-1e-4,d/2-1e-4));
+  const key=[w,h,d,r,k].map(v=>(+v).toFixed(4)).join('|');
+  if(_rbCache[key]) return _rbCache[key];
+  const n=2*k+1, g=new THREE.BoxGeometry(1,1,1,n,n,n);
+  const pos=g.attributes.position, nor=g.attributes.normal;
+  const hx=w/2, hy=h/2, hz=d/2;
+  const rimappa=(t,half)=>{ const i=Math.round((t+.5)*n); return i<=k ? -half+r*(i/k) : half-r*((n-i)/k); };
+  for(let i=0;i<pos.count;i++){
+    const x=rimappa(pos.getX(i),hx), y=rimappa(pos.getY(i),hy), z=rimappa(pos.getZ(i),hz);
+    const qx=Math.max(-hx+r,Math.min(hx-r,x)), qy=Math.max(-hy+r,Math.min(hy-r,y)), qz=Math.max(-hz+r,Math.min(hz-r,z));
+    let nx=x-qx, ny=y-qy, nz=z-qz; const l=Math.hypot(nx,ny,nz)||1; nx/=l; ny/=l; nz/=l;
+    pos.setXYZ(i,qx+nx*r,qy+ny*r,qz+nz*r); nor.setXYZ(i,nx,ny,nz);
+  }
+  return _rbCache[key]=g;
+}
+
+// --- OMBRE DI CONTATTO: macchie sfumate che "appoggiano" gli oggetti a terra.
+//     Costano quanto un quad: nessuna luce in più, nessuna shadow map.
+const TEX_OMBRA=(()=>{ const c=mkCanvas(128,128), g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,'rgba(0,0,0,.62)'); gr.addColorStop(.45,'rgba(0,0,0,.30)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr; g.fillRect(0,0,128,128); return texLin(c); })();
+const _matOmbra={};
+function ombraContatto(x,z,raggio,opacita,y){
+  const op=(opacita==null)?.5:opacita;
+  const m=_matOmbra[op]||(_matOmbra[op]=new THREE.MeshBasicMaterial(
+    {map:TEX_OMBRA,transparent:true,opacity:op,depthWrite:false,toneMapped:false}));
+  const q=new THREE.Mesh(new THREE.PlaneGeometry(raggio*2,raggio*2),m);
+  q.rotation.x=-Math.PI/2; q.position.set(x,(y==null?0:y)+.006,z); q.renderOrder=1; scene.add(q); return q;
+}
+
+// --- PEZZI UNITI: ogni oggetto dettagliato nasce da decine di parti, ma in scena arriva
+//     UNA mesh per materiale (28 iMac = 1 draw call per l'alluminio, 1 per il vetro, ...).
+//     pezzo() = copia trasformata di una geometria; unisci() = fusione posizione+normale+uv.
+const _m4=new THREE.Matrix4(), _q4=new THREE.Quaternion(), _eu=new THREE.Euler(), _v3=new THREE.Vector3(), _s3=new THREE.Vector3();
+function pezzo(geo,x=0,y=0,z=0,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1){
+  const g=geo.clone();
+  g.applyMatrix4(_m4.compose(_v3.set(x,y,z),_q4.setFromEuler(_eu.set(rx,ry,rz)),_s3.set(sx,sy,sz)));
+  return g;
+}
+function unisci(lista){
+  const parti=lista.map(g=>g.index?g.toNonIndexed():g);
+  let n=0; for(const g of parti) n+=g.attributes.position.count;
+  const P=new Float32Array(n*3), N=new Float32Array(n*3), U=new Float32Array(n*2);
+  let o=0;
+  for(const g of parti){
+    P.set(g.attributes.position.array,o*3); N.set(g.attributes.normal.array,o*3);
+    if(g.attributes.uv) U.set(g.attributes.uv.array,o*2);
+    o+=g.attributes.position.count;
+  }
+  const r=new THREE.BufferGeometry();
+  r.setAttribute('position',new THREE.BufferAttribute(P,3));
+  r.setAttribute('normal',new THREE.BufferAttribute(N,3));
+  r.setAttribute('uv',new THREE.BufferAttribute(U,2));
+  r.computeBoundingSphere(); return r;
+}
+function cilindroTraGeo(a,b,r0,r1=r0,seg=10){
+  const d=new THREE.Vector3().subVectors(b,a), L=d.length();
+  const g=new THREE.CylinderGeometry(r1,r0,L,seg);
+  g.applyMatrix4(new THREE.Matrix4().compose(a.clone().addScaledVector(d,.5),
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().normalize()),new THREE.Vector3(1,1,1)));
+  return g;
+}
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const STD=(col,o)=>new THREE.MeshStandardMaterial(Object.assign({color:col,roughness:.7},o||{}));
+const PHY=(col,o)=>new THREE.MeshPhysicalMaterial(Object.assign({color:col,roughness:.5},o||{}));
+// ritaglia le UV di un piano su una finestra [u0,u1]×[v0,v1] della texture
+function ritagliaUV(geo,u0,v0,u1,v1){
+  const uv=geo.attributes.uv;
+  for(let i=0;i<uv.count;i++) uv.setXY(i,u0+uv.getX(i)*(u1-u0),v0+uv.getY(i)*(v1-v0));
+  return geo;
+}
+// legno con venature lunghe (1024×256: va steso UNA volta sul pezzo, fibra lungo la U)
+function texLegnoFine(tinta,venature){
+  const c=mkCanvas(1024,256), g=c.getContext('2d');
+  g.fillStyle=tinta; g.fillRect(0,0,1024,256);
+  for(let i=0;i<150;i++){
+    const y=rnd()*256, a=.05+rnd()*.12;
+    g.strokeStyle='rgba('+venature+','+a+')'; g.lineWidth=.6+rnd()*2.2; g.beginPath(); g.moveTo(0,y);
+    g.bezierCurveTo(300,y+rnd()*10-5,700,y+rnd()*10-5,1024,y+rnd()*6-3); g.stroke();
+  }
+  for(let i=0;i<26;i++){                                  // fiammature chiare
+    const y=rnd()*256; g.strokeStyle='rgba(255,236,200,'+(.04+rnd()*.06)+')'; g.lineWidth=2+rnd()*5;
+    g.beginPath(); g.moveTo(0,y); g.bezierCurveTo(340,y+rnd()*14-7,680,y+rnd()*14-7,1024,y+rnd()*8-4); g.stroke();
+  }
+  const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+}
+
+// --- AMBIENTE PMREM: una stanza-schizzo resa in mappa riflessa. Metalli, schermi e
+//     piani laccati riflettono la stanza invece di un grigio piatto. (qui tenuta BASSA: di notte la stanza non deve schiarirsi)
+{
+  const pm=new THREE.PMREMGenerator(renderer);
+  const s=new THREE.Scene();
+  const B=(hex,k)=>new THREE.MeshBasicMaterial({color:new THREE.Color(hex).convertSRGBToLinear().multiplyScalar(k),side:THREE.BackSide});
+  const box=new THREE.Mesh(new THREE.BoxGeometry(16,3.0,6.7),
+    [B(0xe8721c,0.18),B(0xe8721c,0.18),B(0xf6f6f2,0.18),B(0xb99484,0.13),B(0xf2efe8,0.18),B(0xf2efe8,0.18)]);
+  box.position.y=1.5; s.add(box);
+  const F=(hex,k)=>new THREE.MeshBasicMaterial({color:new THREE.Color(hex).convertSRGBToLinear().multiplyScalar(k),side:THREE.DoubleSide});
+  for(const x of [6.4,3.4,0.4,-2.6,-5.6]){            // le finestre, come sorgenti luminose
+    const p=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.75),F(0x24324a,1.1));
+    p.position.set(x,1.85,3.33); s.add(p);
+  }
+  scene.environment=pm.fromScene(s,.03).texture; pm.dispose();
+}
+
 const NEON_BASE=.16;   // luci al neon smorzate; sfarfallano nel loop per atmosfera
 const luceLampo=new THREE.PointLight(0xbcd0ff,0,32); luceLampo.position.set(0,2.6,4.6); scene.add(luceLampo);  // fuori dalle finestre
 
@@ -805,8 +933,8 @@ const luceLampo=new THREE.PointLight(0xbcd0ff,0,32); luceLampo.position.set(0,2.
 // parete porte z=-3.35: bianca con sezione arancione verso il fondo
 // parete corta x=+8: ARANCIONE col maxischermo — x=-8: ARANCIONE
 // con la vetrata interna a mele, dietro il capotavolo (IMG_3983)
-const matArancio=new THREE.MeshStandardMaterial({color:0xe8721c,roughness:.9});
-const matBianco=new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:.95});
+const matArancio=new THREE.MeshStandardMaterial({color:0xe8721c,roughness:.9,bumpMap:TEX_INTONACO,bumpScale:.0015,envMapIntensity:.45});
+const matBianco=new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:.95,bumpMap:TEX_INTONACO,bumpScale:.0015,envMapIntensity:.45});
 const matSoffitto=new THREE.MeshStandardMaterial({color:0xf8f8f6,roughness:1});
 const legnoTex=texLegno();
 const matLegno=new THREE.MeshStandardMaterial({map:legnoTex,roughness:.55});
@@ -1042,153 +1170,370 @@ let legoGrp=null, legoMela=null, legoCore=null;   // easter egg: la mela si apre
   lego.position.set(-7.3,0,2.55); lego.rotation.y=2.35;
   scene.add(lego); legoGrp=lego; legoMela=logo;
 }
-// ---------- costruttore iMac ----------
-const geoCache={};
-function mkiMac(largh,alt,mappa){
-  const gruppo=new THREE.Group();
-  const chiave=largh.toFixed(2);
-  if(!geoCache[chiave]){
-    geoCache[chiave]={
-      corpo:new THREE.BoxGeometry(largh,alt,.045),
-      piede:new THREE.BoxGeometry(largh*.36,.015,largh*.30),
-      collo:new THREE.BoxGeometry(largh*.12,alt*.42,.02)
-    };
-  }
-  const matAll=new THREE.MeshStandardMaterial({color:0xd6d8dc,metalness:.55,roughness:.4});
-  const corpo=new THREE.Mesh(geoCache[chiave].corpo,matAll);
-  corpo.position.y=alt*.78; gruppo.add(corpo);
-  const schermo=new THREE.Mesh(new THREE.PlaneGeometry(largh*.94,alt*.80),
-    new THREE.MeshBasicMaterial({map:mappa}));
-  schermo.position.set(0,alt*.82,.024); gruppo.add(schermo);
-  // mento alluminio con mela
-  const mc=mkCanvas(128,32); const mg=mc.getContext('2d');
-  mg.fillStyle='#d6d8dc'; mg.fillRect(0,0,128,32); melaApple(mg,64,16,9,'#8e9094');
-  const mento=new THREE.Mesh(new THREE.PlaneGeometry(largh*.94,alt*.13),
-    new THREE.MeshBasicMaterial({map:tex(mc)}));
-  mento.position.set(0,alt*.36,.024); gruppo.add(mento);
-  // mela sul retro
-  const rc=mkCanvas(64,64); melaApple(rc.getContext('2d'),32,32,18,'#8e9094');
-  const retro=new THREE.Mesh(new THREE.PlaneGeometry(largh*.3,largh*.3),
-    new THREE.MeshBasicMaterial({map:tex(rc),transparent:true}));
-  retro.position.set(0,alt*.8,-.024); retro.rotation.y=Math.PI; gruppo.add(retro);
-  const collo=new THREE.Mesh(geoCache[chiave].collo,matAll);
-  collo.position.set(0,alt*.2,-.05); collo.rotation.x=.18; gruppo.add(collo);
-  const piede=new THREE.Mesh(geoCache[chiave].piede,matAll);
-  piede.position.set(0,.008,-.02); gruppo.add(piede);
-  const tast=new THREE.Mesh(new THREE.BoxGeometry(largh*.62,.012,.115),
-    new THREE.MeshStandardMaterial({color:0xe8eaee,roughness:.5}));
-  tast.position.set(0,.006,.30); gruppo.add(tast);
-  const topo=new THREE.Mesh(new THREE.BoxGeometry(.06,.014,.095),
-    new THREE.MeshStandardMaterial({color:0xf2f4f6,roughness:.35}));
-  topo.position.set(largh*.45,.007,.31); gruppo.add(topo);
-  return gruppo;
+const regMac=(num,x,z,catt)=>MAC_REG.push(catt?{num,x,z,cattedra:true}:{num,x,z});   // registro dei Mac degli enigmi
+// ======================================================================
+//  ARREDI REALISTICI — tavoloni, iMac 21,5", tastiere e mouse, sedie monoscocca, girevole.
+//  Geometrie riprese dal "Minigolf delle Skill" (Skill_Case/index.html) e adattate alle
+//  misure di quest'aula; confrontate con le foto 101/106/108 e IMG_4958/4963.
+//  Tutto ciò che è ripetuto (28 postazioni) viene UNITO per materiale: poche draw call.
+// ======================================================================
+const H_TAV=.77, Z_TAV=.15, L_TAV=6.0, P_TAV=1.4;      // piano a 77 cm, tavoloni 6,0 × 1,4 m
+const matAllum=STD(0xc6c9ce,{metalness:.55,roughness:.38,envMapIntensity:2});
+const matAllumChiaro=STD(0xd6d9dd,{metalness:.35,roughness:.4,envMapIntensity:1.4});
+const matVetroNero=PHY(0x050506,{roughness:.05,clearcoat:1,clearcoatRoughness:.03,metalness:.2});
+const matPlastica=PHY(0xf07a16,{roughness:.38,clearcoat:.3,clearcoatRoughness:.4});
+const matLacca=PHY(0xffffff,{map:texLegnoFine('#c98a47','105,55,15'),roughness:.42,clearcoat:.6,clearcoatRoughness:.14,envMapIntensity:.6});
+// schermo acceso: nero lucido che EMETTE la texture (resta leggibile al buio e riflette la stanza)
+function matSchermo(t){ return PHY(0x000000,{emissive:0xffffff,emissiveMap:t,emissiveIntensity:1,roughness:.06,clearcoat:1,clearcoatRoughness:.04}); }
+const TEX_LOGO=(()=>{ const c=mkCanvas(64,64); melaApple(c.getContext('2d'),32,34,22,'#18181a'); return tex(c); })();
+function texTastiera(){
+  const c=mkCanvas(512,200), g=c.getContext('2d');
+  g.fillStyle='#d9dce1'; g.fillRect(0,0,512,200);
+  const righe=[14,14,13,12,11]; let y=10;
+  righe.forEach(n=>{ const w=(492-(n-1)*5)/n;
+    for(let i=0;i<n;i++){ rRect(g,10+i*(w+5),y,w,30,5); g.fillStyle='#fbfbfc'; g.fill(); }
+    y+=36; });
+  rRect(g,140,y-2,232,26,5); g.fillStyle='#fbfbfc'; g.fill();
+  return tex(c);
 }
-// ---------- sedia arancione ----------
-function mkSedia(){
-  const s=new THREE.Group();
-  const matPl=new THREE.MeshStandardMaterial({color:0xef7d1a,roughness:.6});
-  const sed=new THREE.Mesh(new THREE.BoxGeometry(.42,.04,.4),matPl); sed.position.y=.45; s.add(sed);
-  const sch=new THREE.Mesh(new THREE.BoxGeometry(.4,.42,.04),matPl); sch.position.set(0,.68,-.19); sch.rotation.x=-.12; s.add(sch);
-  for(const [dx,dz] of [[-.17,-.16],[.17,-.16],[-.17,.16],[.17,.16]]){
-    const g=new THREE.Mesh(new THREE.CylinderGeometry(.018,.014,.45,6),matPl);
-    g.position.set(dx,.22,dz); s.add(g);
-  }
-  return s;
+// --- iMac 21,5" (2012-2019): corpo sottile in alluminio con gobba posteriore, vetro nero,
+//     mento con mela, piede in lamiera piegata col foro passacavo. Coordinate locali:
+//     y=0 sul piano del tavolo, schermo rivolto a +z. uv = finestra 16:9 della texture.
+function geoIMac(sc,uv){
+  const W=.528*sc, H=.37*sc, mento=.07*sc, yB=.08*sc;       // yB = quota del bordo inferiore del corpo
+  const alu=[], nero=[], loghi=[], scuro=[];
+  alu.push(pezzo(rbox(W,H,.012*sc,.012*sc,3),0,yB+H/2,0));
+  alu.push(pezzo(geoDorso(W-.014*sc,H-.014*sc,.036*sc),0,yB+H/2,-.0055*sc,0,Math.PI,0));   // dorso bombato
+  // piede: lamiera piegata (profilo estruso); il collo sale fin DENTRO la gobba (niente piede sospeso)
+  const sp=.006*sc, pr=new THREE.Shape();
+  pr.moveTo(.075*sc,0); pr.lineTo(-.098*sc,0);
+  pr.absarc(-.098*sc,.03*sc,.03*sc,-Math.PI/2,-Math.PI+.25,true);
+  pr.lineTo(-.036*sc,.265*sc); pr.lineTo(-.036*sc+sp,.265*sc);
+  pr.lineTo(-.128*sc+sp*1.6,.034*sc); pr.absarc(-.098*sc,.03*sc,.03*sc-sp,-Math.PI+.25,-Math.PI/2,false);
+  pr.lineTo(.075*sc,sp); pr.closePath();
+  const piede=new THREE.ExtrudeGeometry(pr,{depth:.14*sc,bevelEnabled:true,bevelThickness:.002,bevelSize:.002,bevelSegments:2,curveSegments:10});
+  piede.translate(0,0,-.07*sc); piede.rotateY(-Math.PI/2);
+  alu.push(piede);
+  // foro passacavo sul retro del collo (disco scuro appoggiato alla lamiera inclinata)
+  scuro.push(pezzo(new THREE.CircleGeometry(.017*sc,20),0,(.14379+.3517*.0009)*sc,(-.08154-.9361*.0009)*sc,.3594,Math.PI,0));
+  // vetro nero sopra il mento, schermo, mela sul mento e mela sul dorso
+  nero.push(pezzo(new THREE.PlaneGeometry(W-.010,H-mento-.005),0,yB+mento+(H-mento-.005)/2,.0068*sc));
+  const schermo=pezzo(ritagliaUV(new THREE.PlaneGeometry(.476*sc,.268*sc),uv[0],uv[1],uv[2],uv[3]),0,yB+mento+(H-mento)/2-.004*sc,.0078*sc);
+  loghi.push(pezzo(new THREE.PlaneGeometry(.026*sc,.026*sc),0,yB+mento/2,.0070*sc));
+  loghi.push(pezzo(new THREE.PlaneGeometry(.062*sc,.062*sc),0,yB+H*.62,-.0414*sc,0,Math.PI,0));
+  return {alu,nero,schermo,loghi,scuro};
 }
-// ---------- tavoli, iMac e sedie: DUE tavoloni da 10 m in linea con ampio
-// spazio centrale (dal rendering Laboratori.sh3d), postazione del docente
-// a capotavola CENTRALE, nel varco tra i due tavoli ----------
+// dorso dell'iMac: una "pancia" continua dal bordo sottile al centro (non una calotta appoggiata)
+function geoDorso(w,h,d){
+  const g=new THREE.PlaneGeometry(w,h,22,14), p=g.attributes.position;
+  for(let i=0;i<p.count;i++){ const u=p.getX(i)/(w/2), v=p.getY(i)/(h/2);
+    p.setZ(i,d*Math.pow(Math.max(0,(1-u*u)*(1-v*v)),.6)); }
+  g.computeVertexNormals(); return g;
+}
+// Magic Keyboard + Magic Mouse (bianchi su alluminio)
+function geoTastiera(){
+  const base=pezzo(rbox(.279,.008,.115,.004,2),0,.004,0);
+  const tasti=pezzo(new THREE.PlaneGeometry(.27,.106),0,.0085,0,-Math.PI/2);
+  const mouse=pezzo(new THREE.SphereGeometry(1,18,8,0,Math.PI*2,0,Math.PI/2),0,0,0,0,0,0,.0285,.019,.0565);
+  return {base,tasti,mouse};
+}
+// sedia monoscocca in polipropilene come quelle del laboratorio (tipo Pedrali Snow, foto di Andrea):
+// guscio unico seduta+schienale con bordino rialzato, fianchi avvolgenti, gambe rastremate senza traverse.
+const GAMBE_SEDIA=[[-.205,-.245],[.205,-.245],[-.214,.229],[.214,.229]];   // [x,z] centri dei piedi a terra: post. sx/dx, ant. sx/dx (raggio piede 1,25 cm)
+const GEO_SEDIA=(()=>{
+  // Sedia monoscocca in polipropilene tipo Pedrali "Snow" (h 0,80, seduta 0,45, l 0,45, p 0,50; guarda verso +z).
+  // TECNICA (riusabile per altri gusci):
+  //  GUSCIO = rbox SUDDIVISO (stazioni fitte solo dove serve) deformato da una mappa F(x,s,t)->mondo, con
+  //   s = ascissa lungo il profilo laterale (bordo anteriore -> cima dello schienale) e t = spessore:
+  //   1) angoli in pianta arrotondati con una mappa radiale (quadrato con spigolo RE -> quarto di cerchio)
+  //   2) larghezza e spessore variabili lungo s
+  //   3) sezione piegata ad arco a spessore costante (fianchi dello schienale che avvolgono la schiena)
+  //   4) piegatura sul profilo laterale (cascata anteriore, raccordo seduta-schienale, schienale inclinato)
+  //   Le normali dell'rbox si trasformano con i cofattori dello jacobiano numerico di F: lisce e corrette.
+  //  BORDI A RULLO + GAMBE = tubi a raggio variabile (anelli adattivi, trasporto parallelo, calotte):
+  //   B) un solo tubo: piede post. sx -> gamba -> bordo sx dello schienale -> bordo superiore -> bordo dx -> piede post. dx
+  //   A) per lato: piede ant. -> gamba -> gomito nell'angolo della seduta -> bordo laterale -> raccordo, finisce dentro B
+  //   I tubi inglobano il bordo arrotondato del guscio e sporgono di LIP/LAT: superfici mai coincidenti (niente
+  //   zig-zag di intersezione). Nessuna traversa tra le gambe. ~5750 triangoli, ~15 ms di costruzione.
+  const PI=Math.PI, D2R=PI/180, cl=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
+  const sst=(a,b,x)=>{ const t=cl((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+  // ---------- profilo laterale della linea media (piano z-y), tratti [lunghezza, rotazione]; th = direzione
+  const TH0=163*D2R, LS=.30, RB=.05, AB=84*D2R;
+  const SEG=[[.03,20*D2R],[LS,0],[RB*AB,-AB],[.192,0],[.15,6*D2R]];
+  const S=[]; let L=0, fine;
+  { let z=0,y=0,th=TH0;
+    for(const [l,a] of SEG){ const k=a/l; S.push({s:L,z,y,th,l,k});
+      if(a===0){ z+=l*Math.cos(th); y+=l*Math.sin(th); } else { z+=(Math.sin(th+a)-Math.sin(th))/k; y-=(Math.cos(th+a)-Math.cos(th))/k; }
+      th+=a; L+=l; }
+    fine={z,y,th}; }
+  const S1=.03, SB0=.03+LS, SB1=SB0+RB*AB;            // fine cascata, inizio/fine raccordo seduta-schienale
+  function prof0(s){
+    if(s<=0){ const q=S[0]; return {z:q.z+s*Math.cos(q.th),y:q.y+s*Math.sin(q.th),th:q.th}; }
+    if(s>=L){ const d=s-L; return {z:fine.z+d*Math.cos(fine.th),y:fine.y+d*Math.sin(fine.th),th:fine.th}; }
+    let q=S[0]; for(const g of S) if(s>=g.s) q=g;
+    const d=s-q.s;
+    if(q.k===0) return {z:q.z+d*Math.cos(q.th),y:q.y+d*Math.sin(q.th),th:q.th};
+    const th=q.th+q.k*d; return {z:q.z+(Math.sin(th)-Math.sin(q.th))/q.k,y:q.y-(Math.cos(th)-Math.cos(q.th))/q.k,th};
+  }
+  // tabelle lungo s (interpolazione smussata tra chiavi)
+  const tab=K=>s=>{ if(s<=K[0][0]) return K[0][1]; for(let i=1;i<K.length;i++) if(s<=K[i][0]) return lerp(K[i-1][1],K[i][1],sst(K[i-1][0],K[i][0],s)); return K[K.length-1][1]; };
+  const HW=tab([[0,.224],[SB0,.21],[SB1,.205],[L,.208]]);       // semilarghezza
+  const TH=tab([[0,.034],[SB0,.03],[SB1,.025],[L,.023]]);       // spessore guscio
+  const Y0=.45-TH(S1)/2-prof0(S1).y, Z0=.231-S[0].z;             // seduta a 0,45 m, fronte a z=+0,245 circa
+  const prof=s=>{ const p=prof0(s); p.z+=Z0; p.y+=Y0; return p; };
+  // sezione: angolo della tangente lungo la mezza larghezza (fianchi che avvolgono sullo schienale)
+  const PHIs=4*D2R, PHIb=66*D2R, G=v=>{ v=cl(v,0,1); const e=cl((v-.45)/.55,0,1); return .12*v+.88*e*e; };
+  function sezione(u,tt,s){
+    const hw=HW(s), fm=lerp(PHIs,PHIb,sst(SB1-.02,SB1+.1,s)), au=Math.abs(u), M=20, h=au/M;
+    let X=0,Y=0; for(let i=0;i<M;i++){ const f=fm*G((i+.5)*h/hw); X+=Math.cos(f)*h; Y+=Math.sin(f)*h; }
+    const f=fm*G(au/hw);
+    return [(u<0?-1:1)*(X-tt*Math.sin(f)), Y+tt*Math.cos(f)];
+  }
+  // dominio sviluppato (u lungo la sezione, s lungo il profilo, tt nello spessore) -> mondo [x,y,z]
+  function piega(u,s,tt){ const q=sezione(u,tt,s), p=prof(s); return [q[0], p.y-q[1]*Math.cos(p.th), p.z+q[1]*Math.sin(p.th)]; }
+  // ---------- guscio: rbox suddiviso
+  const W0=.42, T0=.026, RE=.0125, RC=.065, RF=.045;
+  function arrot(dx,ds,R){            // quadrato [0,R]^2 con spigolo esterno di raggio RE -> quarto di cerchio di raggio R
+    const d=Math.hypot(dx,ds); if(d<1e-9) return [dx,ds];
+    const a=dx/d, b=ds/d, c=R-RE; let tau;
+    if(a>1e-9 && b*R/a<=c) tau=R/a; else if(b>1e-9 && a*R/b<=c) tau=R/b;
+    else { const p=(a+b)*c; tau=p+Math.sqrt(Math.max(0,p*p-2*c*c+RE*RE)); }
+    return [dx*R/tau, ds*R/tau];
+  }
+  function mappa(x,s,t){
+    let ax=Math.abs(x); const sg=x<0?-1:1, h0=W0/2;
+    if(ax>h0-RC && s>L-RC){ const m=arrot(ax-(h0-RC),s-(L-RC),RC); ax=h0-RC+m[0]; s=L-RC+m[1]; }
+    else if(ax>h0-RF && s<RF){ const m=arrot(ax-(h0-RF),RF-s,RF); ax=h0-RF+m[0]; s=RF-m[1]; }
+    return piega(sg*ax*HW(s)/h0, s, t*TH(s)/T0);
+  }
+  const tratti=(a,P)=>{ const r=[a]; let p=a; for(const [b,n] of P){ for(let i=1;i<=n;i++) r.push(p+(b-p)*i/n); p=b; } return r; };
+  function rboxS(w,h,d,r,k,SX,SY,SZ){  // come rbox, ma con stazioni intermedie (coordinate centrate) sulle parti piane
+    const nx=2*k+SX.length-1, ny=2*k+SY.length-1, nz=2*k+SZ.length-1;
+    const g=new THREE.BoxGeometry(1,1,1,nx,ny,nz), P=g.attributes.position, N=g.attributes.normal, hx=w/2, hy=h/2, hz=d/2;
+    const ax=(t,half,st,n)=>{ const i=Math.round((t+.5)*n); return i<=k ? -half+r*i/k : i>=n-k ? half-r*(n-i)/k : st[i-k]; };
+    for(let i=0;i<P.count;i++){
+      const x=ax(P.getX(i),hx,SX,nx), y=ax(P.getY(i),hy,SY,ny), z=ax(P.getZ(i),hz,SZ,nz);
+      const qx=cl(x,-hx+r,hx-r), qy=cl(y,-hy+r,hy-r), qz=cl(z,-hz+r,hz-r);
+      let a=x-qx, b=y-qy, c=z-qz; const l=Math.hypot(a,b,c)||1; a/=l; b/=l; c/=l;
+      P.setXYZ(i,qx+a*r,qy+b*r,qz+c*r); N.setXYZ(i,a,b,c);
+    }
+    return g;
+  }
+  const hx=W0/2-RE, SX=tratti(-hx,[[-.17,3],[-.09,3],[.09,3],[.17,3],[hx,3]]);
+  const SY=tratti(RE,[[RF,3],[SB0,4],[SB1,5],[SB1+.12,3],[L-RC,3],[L-RE,4]]).map(s=>s-L/2);
+  const guscio=rboxS(W0,L,T0,RE,2,SX,SY,[-(T0/2-RE),T0/2-RE]);
+  { const P=guscio.attributes.position, N=guscio.attributes.normal, e=1e-5, F=(x,y,z)=>mappa(x,y+L/2,z);
+    const sub=(a,b)=>[(a[0]-b[0])/(2*e),(a[1]-b[1])/(2*e),(a[2]-b[2])/(2*e)];
+    const cr=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+    for(let i=0;i<P.count;i++){
+      const x=P.getX(i), y=P.getY(i), z=P.getZ(i), nx=N.getX(i), ny=N.getY(i), nz=N.getZ(i);
+      const jx=sub(F(x+e,y,z),F(x-e,y,z)), jy=sub(F(x,y+e,z),F(x,y-e,z)), jz=sub(F(x,y,z+e),F(x,y,z-e));
+      const A=cr(jy,jz), B=cr(jz,jx), C=cr(jx,jy);
+      let m0=nx*A[0]+ny*B[0]+nz*C[0], m1=nx*A[1]+ny*B[1]+nz*C[1], m2=nx*A[2]+ny*B[2]+nz*C[2]; const l=Math.hypot(m0,m1,m2)||1;
+      const p=F(x,y,z); P.setXYZ(i,p[0],p[1],p[2]); N.setXYZ(i,m0/l,m1/l,m2/l);
+    }
+  }
+  const parti=[guscio];
+  // ---------- tubo a raggio variabile lungo una Catmull-Rom centripeta per punti [[Vector3,r],...];
+  // anelli adattivi (fitti dove la curva gira), calotte emisferiche schiacciate di capI/capF (0 = aperto)
+  function tubo(Q,NR,capI,capF,dsMax=.09,daMax=.2){
+    const curva=new THREE.CatmullRomCurve3(Q.map(q=>q[0]),false,'centripetal'), nQ=Q.length-1, M=500, cp=[];
+    const rad=t=>{ const f=t*nQ, i=Math.min(nQ-1,Math.floor(f)); return lerp(Q[i][1],Q[i+1][1],f-i); };
+    for(let j=0;j<=M;j++) cp.push(curva.getPoint(j/M));
+    const sel=[0]; let acc=0;
+    for(let j=1;j<=M;j++){
+      const d1=cp[j].clone().sub(cp[j-1]); let da=0;
+      if(j>1) da=cp[j-1].clone().sub(cp[j-2]).angleTo(d1);
+      acc+=d1.length()/dsMax+da/daMax;
+      if(acc>=1||j===M){ if(j===M&&acc<.4&&sel.length>1) sel.pop(); sel.push(j); acc=0; }
+    }
+    const an=sel.map(j=>({c:cp[j],T:cp[Math.min(M,j+1)].clone().sub(cp[Math.max(0,j-1)]).normalize(),r:rad(j/M)}));
+    for(let i=0;i<an.length;i++){ const a=an[Math.max(0,i-1)], b=an[Math.min(an.length-1,i+1)];
+      const al=Math.atan2(b.r-a.r,b.c.distanceTo(a.c)||1); an[i].kr=Math.cos(al); an[i].kt=-Math.sin(al); }
+    const calotta=(a,sgn,sq,NC=3)=>{ const o=[]; for(let k=NC;k>=1;k--){ const b=k/NC*PI/2;
+      o.push({c:a.c.clone().addScaledVector(a.T,sgn*a.r*Math.sin(b)*sq),T:a.T,r:a.r*Math.cos(b),kr:Math.cos(b),kt:sgn*Math.sin(b)}); } return o; };
+    let A=an;
+    if(capI) A=calotta(an[0],-1,capI).concat(A);
+    if(capF) A=A.concat(calotta(an[an.length-1],1,capF).reverse());
+    // anelli orientati per trasporto parallelo (nessuna torsione); normali inclinate secondo la rastremazione
+    let Nv=Math.abs(A[0].T.y)<.9?V(0,1,0):V(1,0,0); Nv.sub(A[0].T.clone().multiplyScalar(A[0].T.dot(Nv))).normalize();
+    const pos=[],nor=[],uv=[],idx=[], kF=1/Math.cos(PI/NR);   // vertici sul cerchio circoscritto: le facce del poligono stanno sul raggio nominale
+    A.forEach((a,i)=>{
+      Nv.sub(a.T.clone().multiplyScalar(a.T.dot(Nv))).normalize(); const B=a.T.clone().cross(Nv);
+      for(let k=0;k<=NR;k++){ const g=k/NR*2*PI, ra=Nv.clone().multiplyScalar(Math.cos(g)).addScaledVector(B,Math.sin(g));
+        const p=a.c.clone().addScaledVector(ra,a.r*kF), n=ra.multiplyScalar(a.kr).addScaledVector(a.T,a.kt).normalize();
+        pos.push(p.x,p.y,p.z); nor.push(n.x,n.y,n.z); uv.push(k/NR,i/(A.length-1)); }
+    });
+    for(let i=0;i<A.length-1;i++) for(let k=0;k<NR;k++){
+      const a=i*(NR+1)+k, c=a+1, b=a+NR+1, d=b+1;
+      if(A[i].r>1e-7) idx.push(a,c,b); if(A[i+1].r>1e-7) idx.push(c,d,b);
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+    g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); return g;
+  }
+  const vp=q=>V(q[0],q[1],q[2]);
+  // ---------- bordi a rullo: tubi che inglobano completamente il bordo arrotondato del guscio
+  // (sporgono di LIP sulle facce e di LAT in pianta: le superfici non coincidono mai, niente zig-zag)
+  const LIP=.0025, LAT=.0015, h0=W0/2;
+  const toff=(s,r)=>Math.min(0,TH(s)/2+LIP-r);                       // se il tubo e' grosso, sporge sul retro/sotto
+  const lato=(sg,s,r)=>[vp(piega(sg*(HW(s)-r+LAT),s,toff(s,r))),r];  // lungo il fianco (u dal bordo)
+  const piano=(xf,s,r)=>[vp(piega(xf*HW(s)/h0,s,toff(s,r))),r];      // da coordinate piane (angoli e bordo superiore)
+  const RP=.0125, RT=.02, RS=.0185, RJ=.023, RA=.014, SC=L-RC, SL=.018, RG=.03, SQ=.8;
+  // B) UN solo tubo: piede post. sx -> gamba -> bordo sx dello schienale -> bordo superiore -> bordo dx -> gamba -> piede post. dx
+  //    Nodo j (fine del raccordo seduta-schienale) spostato del 30% verso il centro del rullo A: la sfera RJ contiene
+  //    la fine di A e copre ancora il bordo del guscio (prima il bordo bucava i rulli di ~2 mm nell'angolo interno).
+  const rFi=s=>lerp(RJ,RA,sst(SB1,SC,s)), QB=[];
+  for(const sg of [-1,1]){
+    const [gx,gz]=GAMBE_SEDIA[sg<0?0:1], piede=V(gx,RP*SQ,gz), j=lato(sg,SB1,RJ)[0].lerp(lato(sg,SB1,RS)[0],.3), gamba=[[piede,RP],[piede.clone().lerp(j,.5),lerp(RP,RJ,.5)],[j,RJ]];
+    const fianco=[]; for(let i=1;i<=10;i++){ const ss=SB1+(SC-SB1)*i/10; fianco.push(lato(sg,ss,rFi(ss))); }
+    const ang=[]; for(let i=1;i<=8;i++){ const a=PI/2*i/8, ro=RC-RA+LAT; ang.push(piano(sg*(h0-RC+ro*Math.cos(a)),SC+ro*Math.sin(a),RA)); }  // dal fianco verso l'alto
+    if(sg<0) QB.push(...gamba,...fianco,...ang);
+    else { const cima=[]; for(let i=1;i<=9;i++) cima.push(piano(-(h0-RC)+2*(h0-RC)*i/10,L-RA+LAT,RA)); QB.push(...cima,...ang.reverse(),...fianco.reverse(),...gamba.reverse()); }
+  }
+  parti.push(tubo(QB,12,SQ,SQ,.07));
+  // A) per lato: piede ant. -> gamba -> gomito nell'angolo -> bordo laterale della seduta -> raccordo; termina dentro B
+  for(const sg of [-1,1]){
+    const [fx,fz]=GAMBE_SEDIA[sg<0?2:3], piede=V(fx,RP*SQ,fz);
+    const top=lato(sg,SL,RT)[0], d1=top.clone().sub(piede).normalize(), d2=lato(sg,SL+.05,RS)[0].sub(top).normalize();
+    const td=RG*Math.tan(d1.angleTo(d2)/2), P1=top.clone().addScaledVector(d1,-td), P2=lato(sg,SL+td,RS)[0];
+    const QA=[[piede,RP],[piede.clone().lerp(P1,.5),lerp(RP,RT,.5)],[P1,RT]];
+    for(const t of [.25,.5,.75]) QA.push([P1.clone().multiplyScalar((1-t)*(1-t)).addScaledVector(top,2*t*(1-t)).addScaledVector(P2,t*t),lerp(RT,RS,t)]);
+    QA.push([P2,RS]);
+    for(const s of [.13,.2,.27,SB0-.02,SB0,SB0+.25*(SB1-SB0),SB0+.5*(SB1-SB0),SB0+.75*(SB1-SB0)]) QA.push(lato(sg,s,RS));
+    // il rullo segue il bordo fino a SB1 (guscio sempre coperto), poi si stringe dentro il nodo j del tubo B e finisce li'
+    QA.push([lato(sg,SB1,RS)[0],RS-.002],[lato(sg,SB1+.025,rFi(SB1+.025))[0],rFi(SB1+.025)-.005]);
+    parti.push(tubo(QA,12,SQ,1));
+  }
+  return unisci(parti);
+})();
+// ---------- tavoli, iMac e sedie: DUE tavoloni da 6 m in linea con ampio spazio centrale
+// (dal rendering Laboratori.sh3d), postazione del docente a capotavola, nel varco ----------
 const mViola=texSchermoViola(), mViola2=texSchermoViola();
 const heroTex=texSchermoVerde();
-// centro dello schermo eroe nel mondo — serve per lo zoom del tuffo
-const SCHERMO_EROE=new THREE.Vector3(-2.326,1.16,0.15);
+// finestre 16:9 delle texture degli schermi: via la vecchia cornice nera disegnata (ora la
+// cornice è il vetro vero) e taglio in basso come una pagina web che continua sotto
+const UV_STUD=[18/512,76/360,494/512,344/360], UV_DOC=[24/1024,151/720,1000/1024,700/720];
+// centro dello schermo del docente nel mondo
+const SCHERMO_EROE=new THREE.Vector3(-2.342,1.14,0.15);
 {
-  // TAVOLONE OVEST e TAVOLONE EST: 6.0 × 1.4 m ciascuno (misure reali),
-  // appoggiati alle pareti corte, con il varco centrale di 4 m
+  const metti=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); scene.add(m); return m; };
+  const legno=[], scuro=[], alu=[], nero=[], schA=[], schB=[], loghi=[], basi=[], tasti=[], mouse=[], cavi=[], panni=[], ombre=[], POSTI=[];
+  // --- TAVOLONI: piano con spigoli arrotondati, gambe a pannello, traversa reggicavi, canalina
   for(const cx of [-5,5]){
-    const t=new THREE.Mesh(new THREE.BoxGeometry(6.0,.06,1.4),matLegno);
-    t.position.set(cx,.74,0.15); scene.add(t);
+    legno.push(pezzo(rbox(L_TAV,.05,P_TAV,.012,3),cx,H_TAV-.025,Z_TAV));
+    for(const dx of [-2.9,0,2.9]) legno.push(pezzo(rbox(.08,H_TAV-.05,P_TAV-.12,.012,2),cx+dx,(H_TAV-.05)/2,Z_TAV));
+    legno.push(pezzo(rbox(L_TAV-.3,.09,.045,.01,2),cx,H_TAV-.095,Z_TAV));
+    scuro.push(pezzo(new THREE.PlaneGeometry(L_TAV-.5,.05),cx,H_TAV+.0008,Z_TAV,-Math.PI/2));
   }
-  for(const x of [-7.9,-5,-2.1,2.1,5,7.9]){
-    const gamba=new THREE.Mesh(new THREE.BoxGeometry(.12,.72,1.3),matLegno);
-    gamba.position.set(x,.36,0.15); scene.add(gamba);
+  // --- POSTAZIONE: iMac + tastiera + mouse + cavo bianco verso la canalina + casacca piegata
+  const IM=geoIMac(1,UV_STUD), TA=geoTastiera();
+  const GEO_PANNO=rbox(.22,.02,.15,.0098,3), GEO_OMBRA=new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2);
+  const posa=(arr,g,x,z,ry)=>arr.push(pezzo(g,x,H_TAV,z,0,ry,0));
+  function postazione(x,z,ry,alt){                       // ry=0: schermo verso +z (finestre); ry=π: verso le porte
+    const s=ry?-1:1;
+    IM.alu.forEach(g=>posa(alu,g,x,z,ry)); IM.nero.forEach(g=>posa(nero,g,x,z,ry));
+    IM.loghi.forEach(g=>posa(loghi,g,x,z,ry)); IM.scuro.forEach(g=>posa(scuro,g,x,z,ry));
+    posa(alt?schA:schB,IM.schermo,x,z,ry);
+    const kx=(rnd()-.5)*.03, kr=ry+(rnd()-.5)*.09;     // tastiere e mouse mai perfettamente allineati
+    posa(basi,TA.base,x+kx,z+s*.30,kr); posa(tasti,TA.tasti,x+kx,z+s*.30,kr);
+    posa(mouse,TA.mouse,x+s*(.21+rnd()*.03),z+s*(.29+rnd()*.03),ry+(rnd()-.5)*.5);
+    cavi.push(cilindroTraGeo(V(x,H_TAV+.144,z-s*.082),V(x+s*.02,H_TAV+.004,z-s*.17),.003,.003,6));
+    panni.push(pezzo(GEO_PANNO,x+(rnd()-.5)*.04,H_TAV+.010,z+s*.155,0,ry+(rnd()-.5)*.35,0));
+    ombre.push(pezzo(GEO_OMBRA,x,H_TAV+.0015,z-s*.02,0,0,0,.30,1,.34));
   }
-  // 28 iMac studenti ("Osservo 28 computer"): 14 per tavolone, schiena contro
-  // schiena — 7 rivolti alle finestre (+z) e 7 alle porte (-z), sedie sui due lati
-  // NUMERAZIONE (da numerazione.png). Orientamento reale del mondo 3D:
-  //  +x = OVEST (bancone stampante),  -x = EST (lavagna),  +z = NORD (finestre),  -z = SUD (porte).
-  //  Angoli: Mac1 = sud-est, Mac14 = sud-ovest, Mac15 = nord-ovest, Mac28 = nord-est.
-  //  Il "tavolo a x negativo" nel codice è il tavolo EST (Mac 22..28 nord, 7..1 sud);
-  //  il "tavolo a x positivo" è il tavolo OVEST (Mac 21..15 nord, 8..14 sud).
+  // 28 iMac studenti ("Osservo 28 computer"): 14 per tavolone, schiena contro schiena —
+  // 7 rivolti alle finestre (+z) e 7 alle porte (-z), sedie sui due lati.
+  // NUMERAZIONE (da numerazione.png): +x = OVEST (bancone stampante), -x = EST (lavagna),
+  //  +z = NORD (finestre), -z = SUD (porte). Mac1 = sud-est, 14 = sud-ovest, 15 = nord-ovest, 28 = nord-est.
   for(let i=0;i<7;i++){
-    // tavolo a x NEGATIVO = EST (verso la lavagna)
-    const xo=-3.1-i*0.7;
-    const imF=mkiMac(.5,.42,i%2?mViola2:mViola);
-    imF.position.set(xo,.77,0.34); scene.add(imF); MAC_REG.push({num:22+i,x:xo,z:0.34});   // nord-est: 22..28
-    const sF=mkSedia(); sF.position.set(xo,0,1.32); sF.rotation.y=Math.PI; scene.add(sF);
-    const imP=mkiMac(.5,.42,i%2?mViola:mViola2);
-    imP.position.set(xo-.35,.77,-0.04); imP.rotation.y=Math.PI; scene.add(imP); MAC_REG.push({num:7-i,x:xo-.35,z:-0.04});  // sud-est: 7..1
-    const sP=mkSedia(); sP.position.set(xo-.35,0,-0.82); scene.add(sP);
-    // tavolo a x POSITIVO = OVEST (verso il bancone stampante)
-    const xe=2.55+i*0.75;
-    const imF2=mkiMac(.5,.42,i%2?mViola:mViola2);
-    imF2.position.set(xe,.77,0.34); scene.add(imF2); MAC_REG.push({num:21-i,x:xe,z:0.34});   // nord-ovest: 21..15
-    const sF2=mkSedia(); sF2.position.set(xe,0,1.32); sF2.rotation.y=Math.PI; scene.add(sF2);
-    const imP2=mkiMac(.5,.42,i%2?mViola2:mViola);
-    imP2.position.set(xe+.36,.77,-0.04); imP2.rotation.y=Math.PI; scene.add(imP2); MAC_REG.push({num:8+i,x:xe+.36,z:-0.04});  // sud-ovest: 8..14
-    const sP2=mkSedia(); sP2.position.set(xe+.36,0,-0.82); scene.add(sP2);
+    const xo=-3.1-i*0.7;                                  // tavolo a x NEGATIVO = EST (verso la lavagna)
+    postazione(xo,0.34,0,i%2);           regMac(22+i,xo,0.34);        POSTI.push([xo,1.32,Math.PI]);
+    postazione(xo-.35,-0.04,Math.PI,(i+1)%2); regMac(7-i,xo-.35,-0.04); POSTI.push([xo-.35,-0.82,0]);
+    const xe=2.55+i*0.75;                                 // tavolo a x POSITIVO = OVEST (verso il bancone)
+    postazione(xe,0.34,0,(i+1)%2);       regMac(21-i,xe,0.34);        POSTI.push([xe,1.32,Math.PI]);
+    postazione(xe+.36,-0.04,Math.PI,i%2); regMac(8+i,xe+.36,-0.04);   POSTI.push([xe+.36,-0.82,0]);
   }
-  // CAPOTAVOLA CENTRALE: l'iMac 27" del docente in testa al tavolone est,
-  // schermo rivolto verso il varco centrale (-x). Nel gioco è il "Mac 0" (cattedra), tappa di partenza.
-  const eroe=mkiMac(.66,.52,heroTex);
-  eroe.rotation.y=Math.PI/2;                 // schermo rivolto verso il varco (+x)
-  eroe.position.set(-2.35,.77,0.15); scene.add(eroe); MAC_REG.push({num:0,x:-2.35,z:0.15,cattedra:true});
+  // CAPOTAVOLA: l'iMac 27" del docente in testa al tavolone, schermo rivolto al varco (+x)
+  {
+    const D=geoIMac(1.25,UV_DOC), x0=-2.35, ry=Math.PI/2;
+    D.alu.forEach(g=>posa(alu,g,x0,Z_TAV,ry)); D.nero.forEach(g=>posa(nero,g,x0,Z_TAV,ry));
+    D.loghi.forEach(g=>posa(loghi,g,x0,Z_TAV,ry)); D.scuro.forEach(g=>posa(scuro,g,x0,Z_TAV,ry));
+    metti(pezzo(D.schermo,x0,H_TAV,Z_TAV,0,ry,0),matSchermo(heroTex));
+    posa(basi,TA.base,x0+.27,Z_TAV,ry); posa(tasti,TA.tasti,x0+.27,Z_TAV,ry); posa(mouse,TA.mouse,x0+.27,Z_TAV-.2,ry+.2);
+    cavi.push(cilindroTraGeo(V(x0-.1,H_TAV+.18,Z_TAV),V(x0-.2,H_TAV+.004,Z_TAV+.03),.003,.003,6));
+    ombre.push(pezzo(GEO_OMBRA,x0-.02,H_TAV+.0015,Z_TAV,0,0,0,.40,1,.36));
+    regMac(0,x0,Z_TAV,true);
+  }
+  metti(unisci(legno),matLacca);
+  metti(unisci(scuro),STD(0x1b1a19,{roughness:.6}));
+  metti(unisci(alu),matAllum); metti(unisci(nero),matVetroNero);
+  metti(unisci(schA),matSchermo(mViola)); metti(unisci(schB),matSchermo(mViola2));
+  metti(unisci(loghi),STD(0xffffff,{map:TEX_LOGO,transparent:true,roughness:.3,depthWrite:false}));
+  metti(unisci(basi),matAllumChiaro); metti(unisci(tasti),STD(0xffffff,{map:texTastiera(),roughness:.45}));
+  metti(unisci(mouse),PHY(0xf4f5f7,{roughness:.15,clearcoat:1}));
+  metti(unisci(cavi),STD(0xeeeeec,{roughness:.5}));
+  metti(unisci(panni),STD(0x1b7a4f,{roughness:.95}));
+  // --- 28 SEDIE monoscocca: una InstancedMesh (1 draw call), ognuna con un filo di disordine
+  const sedie=new THREE.InstancedMesh(GEO_SEDIA,matPlastica,POSTI.length), dm=new THREE.Object3D();
+  POSTI.forEach((p,i)=>{
+    const x=p[0]+(rnd()-.5)*.05, z=p[1]+(rnd()-.5)*.06, ry=p[2]+(rnd()-.5)*.16;
+    dm.position.set(x,0,z); dm.rotation.set(0,ry,0); dm.updateMatrix(); sedie.setMatrixAt(i,dm.matrix);
+    ombre.push(pezzo(GEO_OMBRA,x,.004,z,0,0,0,.74,1,.74));
+  });
+  sedie.frustumCulled=false; scene.add(sedie);
   // MacBook nero del docente, aperto sulla schermata di Claude
   {
-    const mb=new THREE.Group();
-    const matNero=new THREE.MeshStandardMaterial({color:0x1d1d1f,roughness:.35,metalness:.55});
-    const mbBase=new THREE.Mesh(new THREE.BoxGeometry(.32,.014,.22),matNero); mb.add(mbBase);
+    const mb=new THREE.Group(), mNero=STD(0x1d1d1f,{roughness:.3,metalness:.7});
+    { const m=new THREE.Mesh(rbox(.31,.012,.215,.006,2),mNero); m.position.y=.006; mb.add(m); }
     // piano tastiera con conca, tasti, barra spazio e trackpad
     const kc=mkCanvas(256,176), kg=kc.getContext('2d');
     kg.fillStyle='#1d1d1f'; kg.fillRect(0,0,256,176);
     kg.fillStyle='#0d0d0f'; rRect(kg,18,6,220,100,6); kg.fill();
-    for(let r=0;r<4;r++)for(let cl=0;cl<14;cl++){
-      kg.fillStyle='#38383b'; rRect(kg,22+cl*15.4,10+r*19,13.4,16,2.5); kg.fill();
-    }
+    for(let r=0;r<4;r++)for(let cl=0;cl<14;cl++){ kg.fillStyle='#38383b'; rRect(kg,22+cl*15.4,10+r*19,13.4,16,2.5); kg.fill(); }
     kg.fillStyle='#38383b'; rRect(kg,80,88,96,14,3); kg.fill();
     kg.strokeStyle='#3d3d40'; kg.lineWidth=2; rRect(kg,83,116,90,52,8); kg.stroke();
-    const piano=new THREE.Mesh(new THREE.PlaneGeometry(.30,.20),
-      new THREE.MeshBasicMaterial({map:tex(kc)}));
-    piano.rotation.x=-Math.PI/2; piano.position.y=.0078; mb.add(piano);
-    // coperchio con lo schermo acceso su Claude
-    const lid=new THREE.Mesh(new THREE.BoxGeometry(.32,.21,.006),matNero);
-    lid.position.set(0,.10,-.115); lid.rotation.x=-.2; mb.add(lid);
-    const visore=new THREE.Mesh(new THREE.PlaneGeometry(.30,.19),
-      new THREE.MeshBasicMaterial({map:texClaude()}));
-    visore.position.copy(lid.position); visore.rotation.copy(lid.rotation);
-    mb.add(visore); visore.translateZ(.004);
-    // mela sul retro del coperchio
+    const piano=new THREE.Mesh(new THREE.PlaneGeometry(.29,.195),STD(0xffffff,{map:tex(kc),roughness:.5}));
+    piano.rotation.x=-Math.PI/2; piano.position.y=.0125; mb.add(piano);
+    const lid=new THREE.Group(); lid.position.set(0,.012,-.105); lid.rotation.x=-.25; mb.add(lid);
+    { const m=new THREE.Mesh(rbox(.31,.21,.006,.006,2),mNero); m.position.y=.105; lid.add(m); }
+    const visore=new THREE.Mesh(new THREE.PlaneGeometry(.29,.185),matSchermo(texClaude())); visore.position.set(0,.107,.0035); lid.add(visore);
     const mc=mkCanvas(64,64); melaApple(mc.getContext('2d'),32,32,16,'#7a7a7e');
-    const melaLid=new THREE.Mesh(new THREE.PlaneGeometry(.06,.06),
-      new THREE.MeshBasicMaterial({map:tex(mc),transparent:true}));
-    melaLid.position.copy(lid.position); melaLid.rotation.copy(lid.rotation);
-    melaLid.rotateY(Math.PI); mb.add(melaLid); melaLid.translateZ(.004);
-    mb.position.set(-2.5,.775,-0.35); mb.rotation.y=Math.PI/2-0.35; scene.add(mb);
+    const melaLid=new THREE.Mesh(new THREE.PlaneGeometry(.06,.06),STD(0xffffff,{map:tex(mc),transparent:true,roughness:.3}));
+    melaLid.position.set(0,.105,-.0035); melaLid.rotation.y=Math.PI; lid.add(melaLid);
+    mb.position.set(-2.5,H_TAV,-0.35); mb.rotation.y=Math.PI/2-0.35; scene.add(mb);
+    ombre.push(pezzo(GEO_OMBRA,-2.5,H_TAV+.0015,-0.35,0,0,0,.42,1,.42));
   }
-  // sedia girevole arancione del docente, nel varco, rivolta allo schermo
-  const gir=new THREE.Group();
-  const mGir=new THREE.MeshStandardMaterial({color:0xe8641e,roughness:.6});
-  const gs=new THREE.Mesh(new THREE.BoxGeometry(.46,.08,.44),mGir); gs.position.y=.5; gir.add(gs);
-  const gb=new THREE.Mesh(new THREE.BoxGeometry(.44,.5,.07),mGir); gb.position.set(0,.82,-.2); gir.add(gb);
-  const stelo=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.34,8),
-    new THREE.MeshStandardMaterial({color:0x222,roughness:.4})); stelo.position.y=.3; gir.add(stelo);
-  for(let i=0;i<5;i++){
-    const r=new THREE.Mesh(new THREE.BoxGeometry(.26,.03,.05),
-      new THREE.MeshStandardMaterial({color:0x222}));
-    r.position.set(Math.cos(i*1.257)*.14,.07,Math.sin(i*1.257)*.14);
-    r.rotation.y=-i*1.257; gir.add(r);
+  // sedia girevole del docente (foto IMG_4958): tessuto arancione, struttura, braccioli e
+  // base a 5 razze con ruote in nylon nero, pistone a gas cromato
+  {
+    const gir=new THREE.Group();
+    const mTess=STD(0xe8641e,{roughness:.92}), mNera=STD(0x1c1c1e,{roughness:.5}), mCromo=STD(0xdadde2,{metalness:1,roughness:.18,envMapIntensity:2});
+    const nere=[], tess=[];
+    for(let i=0;i<5;i++){ const a=i*Math.PI*2/5+.3, c=Math.cos(a), s=Math.sin(a);
+      nere.push(cilindroTraGeo(V(c*.03,.105,s*.03),V(c*.30,.078,s*.30),.021,.015,10));
+      nere.push(pezzo(new THREE.CylinderGeometry(.026,.026,.04,16),c*.30,.026,s*.30,Math.PI/2,0,-a+Math.PI/2));
+      nere.push(pezzo(rbox(.03,.035,.03,.008,2),c*.30,.062,s*.30)); }
+    nere.push(pezzo(new THREE.CylinderGeometry(.048,.055,.055,20),0,.105,0));
+    nere.push(pezzo(new THREE.CylinderGeometry(.032,.036,.13,16),0,.19,0));                     // soffietto del pistone
+    nere.push(pezzo(rbox(.22,.045,.24,.012,2),0,.415,-.01));                                    // meccanismo sotto la seduta
+    nere.push(pezzo(rbox(.055,.40,.028,.012,2),0,.62,-.225,-.22));                              // lama dello schienale
+    for(const sx of [-1,1]){                                                                    // braccioli a T
+      nere.push(pezzo(rbox(.03,.22,.045,.01,2),sx*.262,.55,-.03));
+      nere.push(pezzo(rbox(.05,.028,.25,.012,3),sx*.262,.672,-.01));
+      nere.push(pezzo(rbox(.06,.03,.05,.01,2),sx*.235,.445,-.03));
+    }
+    tess.push(pezzo(rbox(.48,.085,.46,.038,4),0,.475,0));
+    tess.push(pezzo(rbox(.44,.46,.075,.036,4),0,.83,-.205,-.1));
+    gir.add(new THREE.Mesh(unisci(nere),mNera));
+    gir.add(new THREE.Mesh(unisci(tess),mTess));
+    { const m=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.16,14),mCromo); m.position.y=.33; gir.add(m); }
+    gir.position.set(-1.45,0,0.2); gir.rotation.y=-Math.PI/2+.45; scene.add(gir);
+    ombre.push(pezzo(GEO_OMBRA,-1.45,.004,0.2,0,0,0,.86,1,.86));
   }
-  gir.position.set(-1.5,0,0.15); gir.rotation.y=Math.PI/2; scene.add(gir);
+  // ombre di contatto unite (sedie, girevole, iMac): un solo quad-batch, nessuna luce in più
+  { const mo=new THREE.Mesh(unisci(ombre),new THREE.MeshBasicMaterial({map:TEX_OMBRA,transparent:true,opacity:.42,depthWrite:false,toneMapped:false}));
+    mo.renderOrder=1; scene.add(mo); }
 }
 // ---------- bancone con la stampante 3D (dalle foto), parete delle porte ----------
 {
@@ -1460,9 +1805,11 @@ scene.add(lab);
   lab.updateMatrixWorld(true);
   lab.traverse(o=>{
     if(o.isMesh && o.material && !o.material.transparent && !o.material.wireframe){
-      o.receiveShadow=true;
       o.getWorldPosition(wp);
       const aParete=Math.abs(wp.z)>3.1 || Math.abs(wp.x)>7.7;
+      // l'ombra la ricevono pavimento e arredi, NON le pareti verticali:
+      // con shadow map a bassa risoluzione vi comparirebbero macchie squadrate
+      o.receiveShadow=!aParete;
       o.castShadow=!aParete && !(o.geometry && o.geometry.type==='PlaneGeometry');
     }
   });
@@ -2672,8 +3019,24 @@ addEventListener('keydown',e=>{
 });
 
 // ---- loop ----
+// --- REGOLATORE DI QUALITÀ. La scena è ricca (≈260.000 triangoli, vernici lucide): su iPad o PC
+//     lenti, se i fotogrammi durano troppo la risoluzione di resa scende da sola a scatti di 0,25
+//     (mai sotto 1×); come ultima risorsa si dimezza la mappa delle ombre. Si scende soltanto,
+//     mai risalire: niente oscillazioni. Nessuna impostazione da toccare.
+const QUAL={t:0,n:0,acc:0,salta:90,pr:Math.min(devicePixelRatio,2)};
+function regolaQualita(){
+  const ora=performance.now(), d=ora-QUAL.t; QUAL.t=ora;
+  if(d<=0 || d>250) return;                              // primo giro o scheda in pausa: non fa media
+  if(QUAL.salta>0){ QUAL.salta--; return; }              // i primi fotogrammi compilano gli shader
+  QUAL.acc+=d; if(++QUAL.n<45) return;
+  const media=QUAL.acc/QUAL.n; QUAL.acc=0; QUAL.n=0;
+  if(media>26 && QUAL.pr>1){ QUAL.pr=Math.max(1,QUAL.pr-.25); renderer.setPixelRatio(QUAL.pr); ridimensiona(); QUAL.salta=20; }
+  else if(media>30 && QUAL.pr<=1 && sole.shadow.mapSize.x>1024){
+    sole.shadow.mapSize.set(1024,1024); if(sole.shadow.map){ sole.shadow.map.dispose(); sole.shadow.map=null; } }
+}
 function animate(){
   requestAnimationFrame(animate);
+  regolaQualita();
   const dt=Math.min(clock.getDelta(),.05);
   // atmosfera: neon che sfarfalla appena + temporale fuori dalle finestre
   const fk=NEON_BASE*(0.82+0.12*Math.sin(clock.elapsedTime*8.3)) - (Math.random()<0.02?NEON_BASE*0.5:0);
