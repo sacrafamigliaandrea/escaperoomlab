@@ -302,6 +302,50 @@
   .overlay .liv:hover{transform:none;background:rgba(255,255,255,.14)}
   .overlay .liv.sel{background:rgba(143,192,255,.22);border-color:#8fc0ff}
   .overlay .liv[data-liv="cyber"].sel{background:rgba(86,200,255,.18);border-color:#56c8ff;box-shadow:0 0 0 2px rgba(86,200,255,.25),0 0 26px rgba(86,200,255,.28)}
+  /* AZIONI PRATICHE (livello base): scheda con la foto dell'oggetto e il primo piano su cui agire */
+  #banco{background:#04070b;overflow:hidden;padding:14px}
+  #bnSfondo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.38) blur(2px);pointer-events:none;user-select:none}
+  .bnScheda{position:relative;width:min(900px,96vw);max-height:96vh;overflow:auto;background:#0a1626;border:2px solid #8fc0ff;border-radius:16px;padding:18px 24px;
+    color:#fff;text-align:left;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+  .bnTappa{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8fc0ff;margin-bottom:4px}
+  .bnScheda h3{font-size:21px;margin:0 0 6px;color:#fff} .overlay .bnScheda p{font-size:16px;line-height:1.45;opacity:1;margin:0 0 12px}
+  #bnFoto{display:block;width:100%;height:150px;object-fit:cover;border-radius:10px 10px 0 0;border:2px solid #c9d6e8;border-bottom:0} #bnFoto[hidden]{display:none}
+  #bnFoto:not([hidden])+#bnCorpo .bnSvg{border-radius:0 0 10px 10px;border:2px solid #c9d6e8;border-top:1px dashed rgba(201,214,232,.6)}
+  .bnSvg{display:block;width:100%;height:auto;background:#0e1c30;border-radius:10px}
+  .bnSvg .pann{fill:#1a2a42;stroke:#c9d6e8;stroke-width:2.5} .bnSvg .foro{fill:#05080e;stroke:#c9d6e8;stroke-width:2}
+  .bnSvg .oro{fill:#e8c341;stroke:#e8c341;stroke-width:2} .bnSvg .oro2{fill:none;stroke:#e8f0ff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+  .bnSvg .et{fill:#c9d6e8;font:700 13px 'Courier New',ui-monospace,Menlo,monospace;text-anchor:middle}
+  .bnSvg .bnTocco{fill:transparent;stroke:transparent;stroke-width:3} .bnSvg .bnP{cursor:pointer;outline:none}
+  .bnSvg .bnP:hover .bnTocco,.bnSvg .bnP:focus-visible .bnTocco{stroke:#8fc0ff;fill:rgba(143,192,255,.10)}
+  .bnSvg .bnP.no .bnTocco{stroke:#ffb347;fill:rgba(255,179,71,.22)} .bnSvg .bnP.si .bnTocco{stroke:#3ddc84;fill:rgba(61,220,132,.22)}
+  .bnTele{display:flex;gap:22px;align-items:center} .bnTeleFoto{position:relative;width:200px;height:480px;flex:none;border-radius:16px;overflow:hidden;border:2px solid #c9d6e8}
+  .bnTeleFoto img{display:block;width:200px;height:480px;pointer-events:none}
+  .overlay .bnTasto{position:absolute;margin:0;padding:0;border-radius:50%;transform:translate(-50%,-50%);background:transparent;border:2.5px solid transparent;box-shadow:none;cursor:pointer}
+  .overlay .bnTasto:hover,.overlay .bnTasto:focus-visible{border-color:#8fc0ff;background:rgba(143,192,255,.18);transform:translate(-50%,-50%)}
+  .overlay .bnTasto.no{border-color:#ffb347;background:rgba(255,179,71,.3)} .overlay .bnTasto.si{border-color:#3ddc84;background:rgba(61,220,132,.35)}
+  .overlay .bnTeleNota{font-size:15px;opacity:.9;margin:0}
+  @media (max-height:740px){ .bnTeleFoto{zoom:.74} }
+  .bnMsg{min-height:44px;margin-top:12px;font-size:15px;line-height:1.4;color:#d8e6ff} .bnMsg.no{color:#ffb347} .bnMsg.si{color:#7dffa8;font-weight:700}
+  .bnPoi{display:block;margin-top:8px;padding:10px 12px;border-radius:8px;background:rgba(18,62,144,.5);color:#fff;font-weight:500}
+  .bnPiede{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px} #bnConto{font-size:12px;opacity:.75}
+  .bnAzioni{display:flex;gap:10px;justify-content:flex-end}
+  .overlay .bnAzioni button{margin:0;padding:9px 16px;font-size:13.5px;background:transparent;border:1.5px solid rgba(143,192,255,.6);color:#d8e6ff;box-shadow:none}
+  .overlay .bnAzioni #bnContinua{background:#3ddc84;border-color:#3ddc84;color:#04170f;font-weight:700}
+  .bnMac{position:relative;height:250px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#1d3f73,#0f2444 60%,#3a2a66);border:2px solid #c9d6e8}
+  .bnMac.spento{background:#000} .bnMac.spento>*{display:none}
+  .bnBarra{display:flex;align-items:center;gap:16px;height:30px;padding:0 10px;background:rgba(10,14,22,.78);color:#fff;font-size:13.5px}
+  .overlay .bnMela{margin:0;padding:3px 6px;background:transparent;box-shadow:none;border-radius:5px;line-height:0} .bnMela svg{width:18px;height:18px;fill:#fff}
+  .overlay .bnMela:hover{background:rgba(255,255,255,.2);transform:none}
+  .bnMenu{position:absolute;left:8px;top:32px;width:250px;background:rgba(30,34,44,.97);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:5px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  .bnMenu[hidden],.bnDialogo[hidden]{display:none}
+  .overlay .bnMenu button{display:block;width:100%;margin:0;padding:6px 10px;background:transparent;color:#fff;font-size:13.5px;font-weight:400;text-align:left;border-radius:5px;box-shadow:none}
+  .overlay .bnMenu button:hover{background:#2f6fd0;transform:none} .bnMenu i{display:block;height:1px;background:rgba(255,255,255,.2);margin:4px 6px}
+  .bnDialogo{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:300px;background:rgba(40,44,54,.98);border-radius:12px;padding:16px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+  .overlay .bnDialogo p{font-size:14.5px;margin:0 0 12px} .bnDialogo div{display:flex;gap:8px;justify-content:center}
+  .overlay .bnDialogo button{margin:0;padding:7px 18px;font-size:13.5px;background:#555b68;color:#fff;box-shadow:none} .overlay .bnDialogo button.pri{background:#2f6fd0}
+  .bnFisici{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .overlay .bnFisici button{margin:0;flex:1;padding:10px;font-size:13.5px;background:#1a2a42;border:1.5px solid #c9d6e8;color:#fff;box-shadow:none}
+  .overlay #vittAzioni{font-size:14.5px;line-height:1.55;text-align:left;background:rgba(18,62,144,.35);border:1px solid rgba(143,192,255,.45);border-radius:10px;padding:12px 16px} #vittAzioni[hidden]{display:none}
   /* CONSOLE DELL'OPERATORE: schermata delle domande del livello Cybersecurity */
   #cySala{display:none;position:absolute;left:0;top:0;width:2752px;height:1536px;transform-origin:0 0;z-index:2}
   #enigma.cySch{background:#03070b;overflow:hidden}
@@ -477,6 +521,13 @@
   </div>
 </div>
 
+<div class="overlay" id="banco" style="display:none">
+  <img id="bnSfondo" alt="" draggable="false" src="banco.jpg">
+  <div class="bnScheda"><div class="bnTappa" id="bnTappa"></div><h3 id="bnTitolo"></h3><p id="bnDomanda"></p>
+    <img id="bnFoto" alt="" hidden draggable="false"><div id="bnCorpo"></div><div class="bnMsg" id="bnMsg"></div>
+    <div class="bnPiede"><span id="bnConto"></span><div class="bnAzioni"><button type="button" id="bnAiuto">Chiedi un aiuto</button>
+      <button type="button" id="bnEsci">Esci dal computer</button><button type="button" id="bnContinua" hidden>Continua</button></div></div></div>
+</div>
 <div class="overlay" id="sequenza" style="display:none">
   <div class="box seq-box">
     <div class="seq-testa"><b>SEQUENZA DI SBLOCCO</b><span id="seqPasso"></span></div>
@@ -520,8 +571,9 @@
 <span class="wm"><span class="wm-r">sacra</span><span class="wm-b">famiglia</span><span class="wm-i">.education</span></span>
     </div>
     <h2>Sei <span>fuggito!</span></h2>
-    <p>Complimenti: hai risolto tutti e 12 gli enigmi di cittadinanza digitale e hai aperto la porta
+    <p id="vittTesto">Complimenti: hai risolto tutti e 12 gli enigmi di cittadinanza digitale e hai aperto la porta
        del laboratorio. Sei nel corridoio: libero!</p>
+    <p id="vittAzioni" hidden></p>
     <button id="btnRicomincia">Gioca ancora</button>
   </div>
 </div>
@@ -536,6 +588,8 @@
          Ogni Mac ha un <b>cartellino azzurro</b> col numero sopra lo schermo; la cattedra del prof &egrave; segnata <b>PROF</b>.</p>
       <p><b>Enigma.</b> Scrivi la <b>parola-chiave</b> giusta. Se sbagli, va&rsquo; a studiare le parole nel
          <b>MacBook del prof. Andrea</b> (a capotavola) e poi riprova. Se &egrave; corretta ricevi l&rsquo;<b>indizio</b> per il Mac successivo.</p>
+      <p><b>Azione pratica.</b> Nel livello base alcuni Mac, al posto della domanda, ti chiedono un <b>gesto</b>: scegliere la porta, il cavo o il tasto giusto.
+         Se sbagli scopri perch&eacute; non va e riprovi; se ti serve, chiedi un aiuto.</p>
       <p><b>Indizio.</b> A volte &egrave; un numero da calcolare (quello &egrave; il Mac), a volte descrive la
          posizione nell&rsquo;aula: fila <b>nord</b> (finestre) o <b>sud</b> (porte), tavolo <b>est</b> o <b>ovest</b>.</p>
       <p><b>Oggetti stampati in 3D.</b> Sul <b>bancone della stampante</b> ci sono due pezzi da raccogliere: il <b>Cifrario</b> (serve per un enigma con messaggio cifrato) e la <b>Chiave</b> (serve per aprire la porta finale). Avvicinati e fai clic per prenderli; li vedi nell'inventario in alto a sinistra.</p>
@@ -2165,6 +2219,7 @@ function costruisciPartita(macStudente){
     }
     return e;
   });
+  assegnaAzioni(idxCif);                               // livello base: alcune tappe diventano azioni pratiche
 }
 
 // ---- collisioni tavoli (footprint dei due tavoloni) ----
@@ -2620,6 +2675,7 @@ function costruisciCifrario(e){
     '<div class="cf-aiuto">Per ogni lettera del <b>codice</b>, cercala nella riga in alto (in evidenza) e scrivi la lettera <b>sotto</b>: è la parola-chiave.</div>';
 }
 function apriEnigma(e){
+  if(e.azione){ apriAzione(e); return; }                // tappa-azione: al posto della domanda c'è un gesto da compiere
   G.overlay=true;
   consoleCyber(G.livello==='cyber',e);                // livello Cybersecurity: la domanda compare nei monitor della console
   if(document.pointerLockElement) document.exitPointerLock();
@@ -3351,6 +3407,150 @@ function consoleErrore(){ CONSOLE.tent=(CONSOLE.tent||0)+1; G.cyErrori=(G.cyErro
     $('hmNota').textContent=macScelto?('Partirai dal Mac '+macScelto+'.'):'Nessun Mac scelto: partirai da un Mac a caso.'; },0));
 })();
 
+// ======================================================================
+//  AZIONI PRATICHE (livello base). Alcune delle 12 tappe non chiedono una parola ma un GESTO:
+//  quando lo studente apre quel Mac, al posto della domanda compare l'azione da svolgere.
+//  Il laboratorio 3D non cambia: tutto avviene nella schermata della tappa.
+//   · tre tappe a caso fra le intermedie (mai la prima, l'ultima o quella cifrata) ricevono
+//     un'azione fra: collegare il cavo di rete, inserire la chiavetta USB, mettere in carica
+//     l'iPad, accendere la smart TV dal telecomando;
+//   · l'ultima tappa, alla cattedra, è sempre "spegni il Mac nel modo giusto".
+//  Ogni azione mostra la FOTO dell'oggetto (ritagli delle immagini di Andrea) e chiede una
+//  decisione vera: quale porta, quale cavo, quale tasto, quale procedura. Un errore non blocca:
+//  spiega PERCHÉ non va e viene contato. Gli aiuti arrivano solo su richiesta, in due gradini.
+// ======================================================================
+const N_AZIONI=3;                                     // quante tappe intermedie diventano azioni (leva del docente)
+const AZIONE={pronta:false,cur:null,e:null,liv:0,errori:0,aiuti:0};
+const bnS=(w,h,corpo)=>'<svg viewBox="0 0 '+w+' '+h+'" class="bnSvg" role="group">'+corpo+'</svg>';
+const bnP=(k,nome,corpo,x,y,w,h)=>'<g class="bnP" data-k="'+k+'" tabindex="0" role="button" aria-label="'+nome+'"><rect class="bnTocco" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8"/>'+corpo+'</g>';
+const bnRJ=(x,y,w,h,n)=>{ let c=''; for(let i=0;i<n;i++) c+='<line x1="'+(x+6+i*(w-12)/(n-1))+'" y1="'+(y+4)+'" x2="'+(x+6+i*(w-12)/(n-1))+'" y2="'+(y+13)+'" class="oro"/>';
+  return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="3" class="foro"/><rect x="'+(x+w*.3)+'" y="'+(y+h-7)+'" width="'+w*.4+'" height="9" class="foro"/>'+c; };
+const bnT=(x,y,t)=>'<text x="'+x+'" y="'+y+'" class="et">'+t+'</text>';
+const BN_COMPITI=[
+ {id:'rete', nome:'Collega il cavo di rete', foto:'banco_router.jpg',
+  domanda:'Hai in mano il connettore del cavo di rete (RJ45). Sotto la foto vedi ingrandito il retro del router: in quale porta lo colleghi?', giuste:['rj45'],
+  svg:()=>bnS(760,230,'<rect x="10" y="20" width="740" height="170" rx="14" class="pann"/>'+
+    bnP('alim','Ingresso tondo','<circle cx="80" cy="100" r="17" class="foro"/><circle cx="80" cy="100" r="4" class="oro"/>'+bnT(80,150,'DC 12V'),50,66,60,96)+
+    bnP('reset','Forellino','<circle cx="150" cy="100" r="5" class="foro"/>'+bnT(150,150,'RESET'),122,66,56,96)+
+    bnP('usb','Porta rettangolare','<rect x="196" y="89" width="48" height="20" rx="2" class="foro"/><rect x="202" y="97" width="36" height="6" class="oro"/>'+bnT(220,150,'USB'),188,66,64,96)+
+    bnP('tel','Porta stretta',bnRJ(275,82,34,34,4)+bnT(292,150,'TEL'),264,66,56,96)+
+    [0,1,2,3].map(i=>bnP('rj45','Porta di rete '+(i+1),bnRJ(346+i*66,78,50,40,8)+bnT(371+i*66,150,'LAN '+(i+1)),340+i*66,66,62,96)).join('')+
+    bnP('rj45','Porta di rete WAN',bnRJ(646,78,50,40,8)+bnT(671,150,'WAN'),640,66,62,96)),
+  errori:{tel:'Quella è la porta del telefono (RJ11): è più stretta e ha meno contatti, il connettore di rete non entra.',
+          usb:'Quella è una porta USB: rettangolare e piatta, per chiavette e periferiche.',
+          alim:'Quello è l’ingresso dell’alimentazione: è tondo e porta la corrente, non i dati.',
+          reset:'Quello è il forellino di reset: riporta il router alle impostazioni di fabbrica.'},
+  aiuti:['Guarda la forma: il connettore di rete è largo, con 8 contatti dorati e una linguetta che fa «clic».','Cerca le porte quadrate tutte uguali, in fila: LAN e WAN sono porte di rete.'],
+  ok:'Collegato: le spie della porta lampeggiano, il banco è in rete.'},
+ {id:'usb', nome:'Inserisci la chiavetta USB', foto:'banco_imac.jpg',
+  domanda:'Vuoi leggere una chiavetta USB (connettore rettangolare). Le porte sono sul retro dell’iMac: sotto la foto le vedi ingrandite. In quale la inserisci?', giuste:['usba'],
+  svg:()=>bnS(760,200,'<rect x="10" y="30" width="740" height="120" rx="60" class="pann"/>'+
+    bnP('jack','Foro tondo','<circle cx="110" cy="90" r="10" class="foro"/>',84,54,52,72)+
+    bnP('sd','Fessura sottile','<rect x="160" y="86" width="50" height="8" rx="2" class="foro"/>',152,54,66,72)+
+    [0,1,2,3].map(i=>bnP('usba','Porta rettangolare','<rect x="'+(242+i*56)+'" y="80" width="40" height="18" rx="2" class="foro"/><rect x="'+(247+i*56)+'" y="88" width="30" height="5" class="oro"/>',236+i*56,54,52,72)).join('')+
+    [0,1].map(i=>bnP('tb','Porta ovale piccola','<rect x="'+(478+i*50)+'" y="82" width="30" height="14" rx="7" class="foro"/>',470+i*50,54,46,72)).join('')+
+    bnP('eth','Porta quadrata',bnRJ(596,70,48,40,8),588,54,64,72)),
+  errori:{jack:'Quello è l’ingresso per le cuffie: tondo e piccolo.',
+          sd:'Quella è la fessura per le schede SD delle fotocamere: è molto più sottile.',
+          tb:'Quella è una porta Thunderbolt/USB-C: piccola e ovale. La tua chiavetta ha il connettore rettangolare.',
+          eth:'Quella è la porta di rete: serve al cavo di rete, non alle chiavette.'},
+  aiuti:['Confronta le forme: il connettore della chiavetta è un rettangolo piatto e largo.','Sul retro dell’iMac ce ne sono quattro uguali, una accanto all’altra.'],
+  ok:'Inserita: sulla scrivania del Mac compare l’icona della chiavetta.'},
+ {id:'ipad', nome:'Metti in carica l’iPad', foto:'banco_ipad.jpg',
+  domanda:'L’iPad è scarico. Sotto la foto vedi ingrandita la sua porta: quale di questi tre cavi serve per caricarlo?', giuste:['usbc'],
+  svg:()=>bnS(760,270,'<rect x="250" y="14" width="260" height="46" rx="12" class="pann"/><rect x="345" y="30" width="70" height="14" rx="7" class="foro"/>'+bnT(380,82,'la porta dell’iPad')+
+    bnP('usbc','Connettore ovale','<rect x="85" y="140" width="130" height="50" rx="25" class="pann"/><rect x="108" y="158" width="84" height="14" rx="7" class="foro"/><rect x="118" y="190" width="64" height="60" rx="8" class="pann"/>',60,112,180,150)+
+    bnP('lightning','Connettore piatto','<rect x="325" y="146" width="110" height="38" rx="9" class="pann"/>'+[0,1,2,3,4,5,6,7].map(i=>'<rect x="'+(338+i*11)+'" y="154" width="6" height="22" class="oro"/>').join('')+'<rect x="348" y="184" width="64" height="66" rx="8" class="pann"/>',290,112,180,150)+
+    bnP('micro','Connettore a trapezio','<path d="M560 142 H690 L676 188 H574 Z" class="pann"/>'+[0,1,2,3,4].map(i=>'<rect x="'+(590+i*17)+'" y="152" width="8" height="16" class="oro"/>').join('')+'<rect x="593" y="188" width="64" height="62" rx="8" class="pann"/>',535,112,180,150)),
+  errori:{lightning:'Quello è un connettore Lightning: piatto, con i contatti a vista. La porta di questo iPad è ovale.',
+          micro:'Quello è un micro-USB: a trapezio, entra in un solo verso. La porta di questo iPad è ovale e simmetrica.'},
+  aiuti:['Guarda la porta dell’iPad: è un ovale simmetrico, senza un sopra e un sotto.','Il connettore giusto ha la stessa forma ovale e si inserisce in entrambi i versi.'],
+  ok:'In carica: sullo schermo dell’iPad compare la batteria con il fulmine.'},
+ {id:'tv', nome:'Accendi la smart TV',
+  domanda:'Questo è il telecomando della smart TV. Tocca il tasto che la accende.', giuste:['power'],
+  // tasti misurati sulla foto (banco_tv.jpg, ritaglio 200×480 di telecomando.jpeg): [chiave, x, y, raggio]
+  svg:()=>'<div class="bnTele"><div class="bnTeleFoto"><img alt="Telecomando della smart TV" src="banco_tv.jpg" draggable="false">'+
+    [['power',47,46,23],['voce',43,122,22],['casa',98,102,22],['ingresso',148,120,22],['frecce',96,208,68],['ok',96,208,34],['indietro',43,306,22],['casa',96,323,22],['play',148,304,22],
+     ['vol',47,392,22],['vol',145,392,22],['stream',45,446,22],['stream',96,446,22],['stream',148,446,22]].map(b=>
+      '<button type="button" class="bnTasto" data-k="'+b[0]+'" aria-label="Tasto del telecomando" style="left:'+b[1]+'px;top:'+b[2]+'px;width:'+b[3]*2+'px;height:'+b[3]*2+'px"></button>').join('')+
+    '</div><p class="bnTeleNota">Su ogni telecomando il tasto di accensione ha lo stesso simbolo, uguale in tutto il mondo: cercalo.</p></div>',
+  errori:{casa:'Quel tasto apre la schermata principale: la TV dev’essere già accesa.', voce:'Quel tasto apre una funzione della TV: non la accende.',
+          ingresso:'Quel tasto sceglie la sorgente (HDMI, antenna…): non accende.', ok:'Quello è il tasto centrale: conferma una scelta nei menu.', frecce:'Quello è l’anello delle frecce: serve a spostarsi nei menu.',
+          indietro:'Quel tasto torna alla schermata precedente.', play:'Quel tasto mette in pausa o fa ripartire un video.',
+          vol:'Quel tasto regola il volume.', stream:'Quel tasto apre un servizio di video in streaming: la TV dev’essere già accesa.'},
+  aiuti:['Il simbolo dell’accensione è un cerchio aperto in alto, attraversato da una barretta verticale.','Di solito è in alto, in un angolo del telecomando, e spesso è l’unico tasto colorato.'],
+  ok:'Accesa. Il simbolo unisce una barretta (1 = acceso) e un cerchio (0 = spento).'},
+ {id:'mac', nome:'Spegni il Mac nel modo giusto',
+  domanda:'Hai finito: spegni il Mac. Fallo come si deve.', giuste:[],
+  svg:()=>'<div class="bnMac" id="bnMac"><div class="bnBarra"><button type="button" class="bnMela" data-m="mela" aria-label="Menu mela"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.6c-2-1.7-6.2-.8-6.2 4 0 4 2.6 8.2 4.5 8.2 1 0 1.2-.5 1.7-.5s.7.5 1.7.5c1.9 0 4.5-4.2 4.5-8.2 0-4.8-4.2-5.7-6.2-4z"/><path d="M12.2 6.2c0-1.6 1.2-3 2.800-3.2 0 1.7-1.2 3.1-2.8 3.2z"/></svg></button><b>Finder</b><span>File</span><span>Modifica</span><span>Vista</span></div>'+
+    '<div class="bnMenu" id="bnMenu" hidden><button type="button" data-m="info">Informazioni su questo Mac</button><button type="button" data-m="imp">Impostazioni di Sistema…</button><i></i>'+
+      '<button type="button" data-m="stop">Stop</button><button type="button" data-m="riavvia">Riavvia…</button><button type="button" data-m="spegni">Spegni…</button><i></i><button type="button" data-m="blocca">Blocca schermo</button></div>'+
+    '<div class="bnDialogo" id="bnDialogo" hidden><p>Vuoi spegnere il computer adesso?</p><div><button type="button" data-m="annulla">Annulla</button><button type="button" data-m="conferma" class="pri">Spegni</button></div></div></div>'+
+    '<div class="bnFisici"><button type="button" data-m="tasto">Tieni premuto il tasto di accensione</button><button type="button" data-m="spina">Stacca la spina</button></div>',
+  errori:{info:'Quella voce mostra le caratteristiche del Mac: non lo spegne.', imp:'Quella voce apre le impostazioni.',
+          stop:'«Stop» mette il Mac a riposo: resta acceso, con lo schermo nero.', riavvia:'«Riavvia» lo spegne e lo riaccende subito.',
+          blocca:'«Blocca schermo» chiude lo schermo con la password: il Mac resta acceso.', annulla:'Hai annullato: il Mac è ancora acceso.',
+          tasto:'Tenendo premuto il tasto si forza lo spegnimento: si rischia di perdere il lavoro non salvato. Si fa solo se il Mac è bloccato.',
+          spina:'Staccare la spina spegne di colpo: può rovinare i file aperti. Non si fa mai.'},
+  aiuti:['Sul Mac si spegne dal menu, non dai tasti.','Il menu giusto è quello con la mela, in alto a sinistra.'],
+  ok:'Spento correttamente: il Mac ha chiuso i programmi e si è fermato.'}
+];
+function assegnaAzioni(idxCif){                         // chiamata da costruisciPartita, solo nel livello base
+  if(G.livello==='cyber') return;
+  const liberi=[]; for(let i=1;i<N_TAPPE-1;i++) if(i!==idxCif) liberi.push(i);
+  const dove=mescola(liberi).slice(0,N_AZIONI), cosa=mescola(['rete','usb','ipad','tv']).slice(0,N_AZIONI);
+  dove.forEach((i,k)=>{ ENIGMI[i].azione=cosa[k]; });
+  ENIGMI[N_TAPPE-1].azione='mac';                      // prima di uscire si spegne il Mac della cattedra
+  AZIONE.errori=0; AZIONE.aiuti=0;
+}
+function preparaAzioni(){
+  if(AZIONE.pronta) return; AZIONE.pronta=true;
+  $('bnAiuto').addEventListener('click',()=>{ const c=AZIONE.cur; if(!c || AZIONE.liv>=c.aiuti.length) return;
+    AZIONE.aiuti++; $('bnMsg').className='bnMsg'; $('bnMsg').textContent='Aiuto: '+c.aiuti[AZIONE.liv++]; $('bnAiuto').hidden=AZIONE.liv>=c.aiuti.length; contoAzioni(); });
+  $('bnEsci').addEventListener('click',()=>{ $('banco').style.display='none'; G.overlay=false; if(G.gioco && !G.finita) bloccaMouse(); });
+  $('bnContinua').addEventListener('click',()=>{ $('banco').style.display='none'; G.avanzaAllaChiusura=true; continuaDopoEnigma(); });
+  $('bnCorpo').addEventListener('click',ev=>{ const t=ev.target.closest('[data-k],[data-m]'); if(t) sceltaAzione(t.dataset.k||t.dataset.m,t); });
+  $('bnCorpo').addEventListener('keydown',ev=>{ if(ev.key==='Enter'||ev.key===' '){ const t=ev.target.closest('.bnP'); if(t){ ev.preventDefault(); sceltaAzione(t.dataset.k,t); } } });
+}
+function contoAzioni(){ $('bnConto').textContent='Errori '+AZIONE.errori+' · aiuti '+AZIONE.aiuti; }
+function apriAzione(e){                                // al posto della domanda, quando la tappa è un'azione
+  const c=BN_COMPITI.find(x=>x.id===e.azione); if(!c) return;
+  G.overlay=true; if(document.pointerLockElement) document.exitPointerLock();
+  preparaAzioni(); AZIONE.cur=c; AZIONE.e=e; AZIONE.liv=0;
+  $('bnTappa').textContent='Azione pratica · tappa '+G.tappa+' / '+N_TAPPE;
+  $('bnTitolo').textContent=c.nome; $('bnDomanda').textContent=c.domanda; $('bnMsg').className='bnMsg'; $('bnMsg').textContent='';
+  const f=$('bnFoto'); f.hidden=!c.foto; if(c.foto) f.src=c.foto;
+  $('bnCorpo').innerHTML=c.svg(); $('bnAiuto').hidden=false; $('bnEsci').hidden=false; $('bnContinua').hidden=true;
+  contoAzioni(); $('banco').style.display='flex';
+}
+function sceltaAzione(k,el){
+  const c=AZIONE.cur, e=AZIONE.e; if(!c || !e || e.risolto) return;
+  const msg=$('bnMsg'), sbaglio=t=>{ AZIONE.errori++; msg.className='bnMsg no'; msg.textContent=t; if(el){ el.classList.add('no'); setTimeout(()=>el.classList.remove('no'),450); } contoAzioni(); };
+  const fatto=()=>{ e.risolto=true; if(el) el.classList.add('si');
+    msg.className='bnMsg si';
+    msg.innerHTML=c.ok+'<span class="bnPoi">'+(G.tappa<N_TAPPE ? 'Prossimo indizio: '+ENIGMI[G.tappa].trova
+      : 'Ultima serratura pronta! Ora prendi la chiave stampata in 3D dal bancone della stampante e usala sulla porta.')+'</span>';
+    $('bnAiuto').hidden=true; $('bnEsci').hidden=true; $('bnContinua').hidden=false; };
+  if(c.id==='mac'){                                   // procedura in tre gesti: mela → Spegni… → Spegni
+    if(k==='mela'){ $('bnMenu').hidden=!$('bnMenu').hidden; msg.textContent=''; return; }
+    if(k==='spegni'){ $('bnMenu').hidden=true; $('bnDialogo').hidden=false; msg.textContent=''; return; }
+    if(k==='conferma'){ $('bnDialogo').hidden=true; $('bnMac').classList.add('spento'); fatto(); return; }
+    if(k==='annulla'){ $('bnDialogo').hidden=true; msg.className='bnMsg'; msg.textContent=c.errori.annulla; return; }   // ripensarci non è un errore: non si conta
+    $('bnMenu').hidden=true; sbaglio(c.errori[k]||'Non è il modo giusto.'); return;
+  }
+  if(c.giuste.includes(k)) fatto(); else sbaglio(c.errori[k]||'Non è quella.');
+}
+function testoVittoria(){                              // chiamata da vittoria(): il testo finale dipende dal livello e dalle azioni svolte
+  const az=ENIGMI.filter(e=>e.azione), cy=G.livello==='cyber';
+  $('vittTesto').textContent = cy
+    ? 'Complimenti: hai messo in sicurezza tutti e '+N_TAPPE+' i sistemi, hai ricostruito la sequenza di sblocco e hai aperto la porta della centrale. Sei nel corridoio: libero!'
+    : 'Complimenti: hai risolto '+(N_TAPPE-az.length)+' enigmi di cittadinanza digitale, hai svolto '+az.length+' azioni pratiche e hai aperto la porta del laboratorio. Sei nel corridoio: libero!';
+  const p=$('vittAzioni'); p.hidden=cy||!az.length;
+  if(!p.hidden) p.innerHTML='<b>Azioni pratiche</b>: '+az.map(e=>BN_COMPITI.find(c=>c.id===e.azione).nome).join(' · ')+
+    '.<br>Tentativi sbagliati: '+AZIONE.errori+' · aiuti chiesti: '+AZIONE.aiuti+
+    '.<br><i>Da raccontare in classe: quale porta, cavo o tasto ti ha fatto esitare? Da quale dettaglio hai riconosciuto quello giusto?</i>';
+}
+
 // ---- avvio / vittoria ----
 function iniziaGioco(){          // avvia il VOLO panoramico; il gioco parte al termine
   $('consegna').style.display='none';
@@ -3375,6 +3575,7 @@ function vittoria(){
   if(G.finita) return;
   G.finita=true; G.gioco=false; disattivaMatrix();
   if(document.pointerLockElement) document.exitPointerLock();
+  testoVittoria();
   $('vittoria').style.display='flex';
 }
 
